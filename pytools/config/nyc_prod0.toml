@@ -1,0 +1,50 @@
+[category]
+ name = "electric_load"
+ description = "mwh for zones in iso or rto"
+
+[jar_config]
+ address = "\"/Users/limingzhou/zhoul/work/me/Scala-http/classes/artifacts/scalahttp_jar/*\""
+ comments = """escape the quotation mark as the path will be passed to the command line arguments and in case of spaces
+  in the path"""
+
+[site]
+ # name for sql query
+ name = "NYC"
+ # alias for folder name
+ alias = "nyc-prod"
+ sql_location = "N.Y.C."
+ #site_folder = "/Users/limingzhou/zhoul/work/me/xaog_proj/src/python/pytools/resources/test_data/site/nyiso"
+ site_folder = "/Users/limingzhou/sites/nyiso"
+ center = "\"(40.756,-73.983)\""
+ rect = "\"(80.0,80.0)\""
+ hrrr_paras_file = "/Users/limingzhou/zhoul/work/me/xaog_proj/src/python/pytools/resources/params/hrrr_paras.txt"
+ nam_paras_file = "/Users/limingzhou/zhoul/work/me/xaog_proj/src/python/pytools/resources/params/nam_paras.txt"
+ description = "Zone N.Y.C. of NYISO"
+ comments = """name is used for database query and must match what the database use; while alias is used for setting up
+  the folder structure"""
+
+
+[load]
+ table = "nyiso_hist_load"
+ unit = "mwh"
+ datetime_column = "timestamp"
+ daylightsaving_col = "daylightsaving"
+ load_column = "load"
+ sql_template_file = "sql_template/nyiso_sql_template.toml"
+ #reasonable value range limit
+ limit = [0, 99999]
+ lag_hours = 168
+ utc_to_local_hours = -5
+ load_lag_start = 72
+
+[weather_folder]
+hrrr_hist = ["/Users/limingzhou/zhoul/work/me/hrrrdata/grib2_2018",
+        "/Users/limingzhou/zhoul/work/me/hrrrdata/grib2_2018b",
+        ]
+hrrr_predict = "/Users/limingzhou/zhoul/work/me/weather_forecast/hrrr/2018"
+nam_hist=  "/Users/limingzhou/zhoul/work/me/nem_data"
+nam_predict= "/Users/limingzhou/zhoul/work/me/nem_data"
+
+
+[model]
+y_label = "load"

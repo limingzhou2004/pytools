@@ -1,0 +1,19 @@
+@startuml
+class WebDataScraper {
+  {static} +nyiso_base
+  {static} +nyiso_zip_base
+  +base_url
+  +paras
+  +parse_dates
+  +url
+  -__init__(self, base_url, parse_dates=None, **paras)
+  +check_table_exist(self, tab_name)
+  +read_db_last(self, table='', timestamp='timestamp')
+  +scrap_and_load(self, schema, tab_name, if_exists)
+  +upsert_new(self, schema, tab_name, unique_cols)
+  +build_nyiso_load_scraper(cls, hours_back=2, timestamp=dt.datetime.now()){@classmethod}
+  +build_nyiso_load_zip_scraper(cls, timestamp=dt.datetime.now(), months_back=0){@classmethod}
+  +scrap(self, url=None, parse_dates=None)
+}
+
+@enduml

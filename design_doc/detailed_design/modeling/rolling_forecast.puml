@@ -1,0 +1,15 @@
+@startuml
+
+class RollingForecast{
+-_load
+-_calendar
+-_wea
+-_timestamp_name
+-_models
++__init__(df_load, wea, timestamp_name='timestamp')
++add_model(hrs_ahead, model_path)
++predict(fst_hrs)
+-_check_data()
+-_predict_step(hrs)
+}
+@enduml

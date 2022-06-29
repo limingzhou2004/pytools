@@ -1,0 +1,68 @@
+@startuml
+
+'left to right direction
+
+
+enum EnumOptimizer{
+sgd
+adam
+rsprop
+}
+
+class WeatherPara{
+x_dim
+y_dim
+channel
+embed_load_dim
+calendar_dim
+}
+note top: namedtuple
+
+'use Python namedtuple
+class ModelSetting{
+ device
+ batch_size
+ epoch_num
+ optimizer
+ dropout
+ learning_rate
+ seed
+ log_interval
+}
+note top: namedtuple
+
+class WeatherLayer{
+-weather_conv1_layer
+-weather_conv2_layer
+-load_layer
+-load2_layer
+-calendar_layer
+-final_dense_layer
+
+-__init__(layer_para)
++forward(self, tensor_wea, tensor_embed_load, tensor_calendar)
+}
+
+
+class WeatherNet{
+-train_loader
+-test_loader
+-layer_para
+-model_setting
+-__init__(train_loader, test_loader, layer_para, namedtuple_model_setting, optimizer)
+-_get_cnn_output_dim_1d(self,)
+-_get_cnn_output_dim_2d(self,)
+
++train(self,)
+-train_a_minibatch(wea_arr, load_arr, calendar_arr, y)
++test(self,)
+-test_a_minibatch(wea_arr, load_arr, calendar_arr, y)
++predict(self, wea_arr, load_arr, calendar_arr ) -> torch.tensor
++save(filename)
+}
+
+WeatherNet *--- WeatherLayer
+WeatherNet *---ModelSetting
+WeatherNet *---EnumOptimizer
+WeatherNet *---WeatherPara
+@enduml

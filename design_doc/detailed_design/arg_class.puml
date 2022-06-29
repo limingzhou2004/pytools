@@ -1,0 +1,15 @@
+@startuml
+!include data_prep/weather_task.puml
+class ArgClass{
+__init__(args)
++parse_task(task_no) -> Dict
+-add_task1() -> Dict
+-add_task2() -> Dict
+-add_task3() -> Dict
+-add_task4() -> Dict
+-add_task5() -> Dict
+-add_task6() -> Dict
+}
+
+ArgClass "1"*--"1" weather_tasks
+@enduml

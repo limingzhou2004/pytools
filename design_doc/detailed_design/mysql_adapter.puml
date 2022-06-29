@@ -1,0 +1,23 @@
+@startuml
+class MySqlQuery {
+  +server
+  +user
+  +password
+  +schema
+  +eng_str
+  +mysqldb_str
+  +connection
+  -__init__(self, server='localhost', user='root', password=None, schema='zhoul')
+  +get_sqlalchemy_engine(self)
+  +get_connection(self)
+  +get_mysql_connection(self)
+  +read_dict_query(self, qstr)
+  +non_read_query(self, qstr)
+  +non_read_multi_query(self, qstr)
+  +create_unique_index(self, table, columns)
+  +create_identity(self, table, column)
+  +sql2df(self, qstr: str, paras: Dict)
+  +df2sql(self, df)
+}
+
+@enduml

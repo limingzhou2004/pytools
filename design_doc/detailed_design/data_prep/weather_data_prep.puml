@@ -1,0 +1,66 @@
+@startuml
+Exception <|-- NameException
+class NameException {
+}
+
+Enum <|-- GribType
+class GribType {
+  {static} +hrrr
+  {static} +nam
+}
+
+Enum <|-- HistFst
+class HistFst {
+  {static} +hist
+  {static} +fst
+}
+
+Exception <|-- NoTrainingDataError
+class NoTrainingDataError {
+}
+
+class WeatherDataPrep {
+  {static} +jar_address
+  {static} +hrrr_paras
+  {static} +nam_paras
+  {static} +earliest_time
+  {static} +hrrr_fmt
+  {static} +nam_fmt
+  +jar_address
+  +para_file
+  +para_num
+  +weather_folder
+  +uuid
+  +dest_npy_folder
+  +dest_predict_npy_folder
+  +hist_fst_flag
+  +timestamp_fmt
+  +t0
+  +t1
+  +prefix
+  +grib_type
+  +suffix
+  +pj
+  +data_shape
+  +utc_to_local_hours
+  +check_grib_name_filter
+  +min_filename_length
+  -__init__(self, jar_address: str, para_file: str, weather_folder: List[str
+    ], dest_npy_folder: str, hist_fst_flag: HistFst, timestamp_fmt, t0: dt.datetime, t1: dt.datetime, prefix, para_num: int=13, grib_type=GribType.hrrr, utc_hour_offset: int=None)
+  +extract_datetime_from_grib_filename(self, filename: str, hour_offset: int=None, nptime=True, get_fst_hour=False)
+  +get_pj(self, center: str=None, rect: str=None)
+  +set_npy_predict_folder(self, folder)
+  +timestamp_to_npy_file(self, t)
+  +make_npy_data(self, center: str, rect: str, weather_folder: str=None, folder_out: str=None, last_time: dt.datetime=None, parallel: bool=True, grib_name_filter: Callable=None)
+  +get_weather_train(self, folders=None)
+  +get_weather_predict(self, folders: str=None, predict: bool=True)
+  +load_all_npy(self, folders: List[str
+    ], predict: bool=False, para_num: int=13, npy_ending: str='.npy')
+  +load_a_npy(self, file_name: str, para_num: int)
+  +set_utc_to_local_hours(self, hours)
+  +impute_shape(self, data, para_num)
+  +build_hrrr(cls, weather_folder, dest_npy_folder, utc_hour_offset: int, jar_address=None, weather_para_file=None){@classmethod}
+  +build_nam(cls, weather_folder, dest_npy_folder, utc_hour_offset: int, jar_address=None, weather_para_file=None){@classmethod}
+}
+
+@enduml

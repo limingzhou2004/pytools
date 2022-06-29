@@ -1,0 +1,13 @@
+artifact_path: Albany-NY-fst-6h
+flavors:
+  python_function:
+    data: data
+    env: conda.yaml
+    loader_module: mlflow.pytorch
+    pickle_module_name: mlflow.pytorch.pickle_module
+    python_version: 3.7.7
+  pytorch:
+    model_data: data
+    pytorch_version: 1.7.1
+run_id: af3282ab819b48e88d349d2b110d8f16
+utc_time_created: '2021-01-04 01:13:44.221327'

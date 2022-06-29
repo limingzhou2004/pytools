@@ -1,0 +1,7 @@
+@startuml
+class DataCache {
+  +save_pickle(self, fn: str)
+  +load_pickle(self, fn)
+}
+
+@enduml

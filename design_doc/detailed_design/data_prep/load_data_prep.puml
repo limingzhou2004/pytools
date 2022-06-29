@@ -1,0 +1,30 @@
+@startuml
+class LoadData {
+  +table_name
+  +site_name
+  +date_col
+  +daylightsaving_col
+  +t0
+  +t1
+  +query_str_max_date
+  +query_str_train
+  +query_str_predict
+  -_train_data
+  +y_label
+  +y_mean
+  -__init__(self, table_name: str, site_name: str, date_col: str, y_label: str, t0: str, t1: str, daylightsaving_col='daylightsaving', query_str_max_date: str='', query_str_train: str='', query_str_predict: str='')
+  +train_data(self){@property}
+  +get_query_predict_str(self, t0: str, t1: str, t_max: str)
+  +get_query_train_str(self, t0: str, t1: str)
+  +get_query_max_date_str(self)
+  +query_data(self, query: str)
+  +query_max_load_time(self, date_col=['max_date'])
+  +query_predict_data(self, t0: str, t1: str)
+  +query_train_data(self, t0: str, t1: str)
+  +add_hod(self, df: pd.DataFrame, timestamp='timestamp')
+  +add_dow(self, df, timestamp='timestamp')
+  +sql_query_scaler(self, qm_str: str, date_col: List[str]=['max_date'])
+  +sql_query(self, qstr: str, date_col: List[str]=[])
+}
+
+@enduml

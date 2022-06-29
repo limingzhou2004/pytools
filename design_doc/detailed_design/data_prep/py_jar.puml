@@ -1,0 +1,19 @@
+@startuml
+class PyJar {
+  +jar_address
+  +folder_in
+  +paras_file
+  +center
+  +rect
+  -__init__(self, folder_in: List[str], folder_out: str, paras_file: Union[str, List[str]
+    ], center: str, rect: str, jar_address: str)
+  +create_output_filename(self, fin, out_folder=None, prefix='', suffix='.npy')
+  +process_a_file_list(self, file_list, prefix, suffix='', parallel=False)
+  +process_folders(self, out_prefix: str, out_suffix: str='.npy', parallel: bool=True, exclude: List=[
+    ], include_files: List=None)
+  +process_a_grib(self, f_in, f_out)
+  +set_folder_in(self, folder_in: Union[str, List[str]])
+  +set_folder_out(self, folder_out)
+}
+
+@enduml

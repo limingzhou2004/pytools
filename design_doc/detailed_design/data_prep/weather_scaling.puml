@@ -1,0 +1,13 @@
+@startuml
+class WeatherScaler {
+  +w_mean
+  +w_std
+  +w_min
+  +w_max
+  +mode
+  -__init__(self, data: np.ndarray, mode: str='minmax')
+  +scale(self, data: np.ndarray)
+  -_scale(self, weather_array: np.ndarray, mean: np.ndarray, std: np.ndarray)
+}
+
+@enduml

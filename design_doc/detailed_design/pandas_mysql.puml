@@ -1,0 +1,18 @@
+@startuml
+Exception <|-- sqlError
+class sqlError {
+}
+
+class PandasSql {
+  +clean_col_name(df){static}
+  +csv_to_df(infile, headers=[]){static}
+  +dtype_mapping(){static}
+  +gen_tbl_cols_sql(df){static}
+  +sql_dtype_map(){static}
+  +get_new_dtype(df){static}
+  +create_mysql_tbl_schema(df, conn, db, tbl_name){static}
+  +df_to_mysql(df, engine, schema, tbl_name, new_dtype=None, if_exists='replace'){static}
+  +read_sql_timeseries(engine, qstr, date_col, chunk_size=20000){static}
+}
+
+@enduml

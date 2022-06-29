@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/limingzhou/zhoul/work/me/xaog_proj/src/python/pytools/test/test_data_prep/mlruns/0/d20391b4f2d04916ade9c0e040b34849/artifacts
+end_time: 1609366515079
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+name: ''
+run_id: d20391b4f2d04916ade9c0e040b34849
+run_uuid: d20391b4f2d04916ade9c0e040b34849
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1609366515059
+status: 4
+tags: []
+user_id: limingzhou

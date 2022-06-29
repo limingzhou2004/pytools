@@ -1,0 +1,28 @@
+
+@startuml
+!define module(x) class x << (M,#FFAAAA) >>
+
+!include ../config.puml
+!include data_prep_manager.puml
+
+module(weather_tasks){
+-hist_load(config_file, grib_type, t0, t1, recreate, prefix) -> DataPrepManager
+-hist_weather_prepare(config_file, grib_type, t_after: str)
++train_dataset_assemble(config_file: str, grib_type: wp.GribType)
+-train_data_assemble(config_file: str, grib_type: wp.GribType)
+-get_npz_train_weather_file_name(cfg: Config, grb: dpm.GribType) -> str
++train_model(config_file, grib_type, hour_ahead: int, lag_order=168, batch_size=256)
+
++run_predict(d: dpm, tp0: str, tp1:str)
+-predict_weather_prepare()
++predict_data_assemble(config_file, grib_type, tt0, tt1)
++main()
+    }
+
+weather_tasks "1" *-- "1" Config: contains
+weather_tasks "1" *-- "1" WeatherNet: contains
+DataPrepManager "1" *-- "1" Config: contains
+
+@enduml
+*-
+-+

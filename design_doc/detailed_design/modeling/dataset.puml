@@ -1,0 +1,33 @@
+@startuml
+
+
+class WeatherDataSetBuilder {
+  +weather
+  +target
+  +calendar
+  +lag_loads
+  -_weather
+  -_y_labels
+  -_calendar_data
+  -_lag_load
+  -__init__(self, weather, lag_load, calendar_data, y_labels, hour_ahead, cat_fraction, lag_order)
+  +get_data(cat, fst_hours)
+
+}
+
+WeatherDataSetBuilder *-- WeatherDataSet
+
+
+torch.utils.data.Dataset <|-- WeatherDataSet
+class WeatherDataSet {
+  -_weather
+  -_target
+  -_calendar_data
+  -_lag_load
+  -__init__(self, weather, lag_load, calendar_data, target)
+  -__len__(self)
+  -__getitem__(self, index)
+
+}
+
+@enduml

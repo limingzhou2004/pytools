@@ -1,0 +1,19 @@
+@startuml
+class ArgClass
+{
++task_dict
+-_args
+
+-__init__(args)  # exclude sys.args[0]
++construct_args()
+-_get_json_arg()
+-_add_task1() # set up t0, t1
+-_add_task2() # lag hours, ahead hours, 1 6 12 18 24 30 36 42
+-_add_task3() # train_options:json
+-_add_task4() # t2 --prediction ends time
+-_add_task5() # predict_options:json
+-_add_task6() # steps --steps ahead
+
+}
+
+@enduml

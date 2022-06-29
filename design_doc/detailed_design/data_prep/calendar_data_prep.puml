@@ -1,0 +1,22 @@
+@startuml
+class CalendarData {
+  +holiday_file
+  +holiday_calendar
+  +cal_date
+  +daylightsaving_file
+  +daylightsaving_data
+  -__init__(self, holiday_file=os.path.join(get_file_folder(__file__),
+    '../../resources/calendar/meta data - calendar.csv'
+    ), daylightsaving_file=os.path.join(get_file_folder(__file__),
+    '../../resources/calendar/daylightsaving time.csv'))
+  +construct_calendar_data(self, start_time=dt.datetime.strptime('2016-12-01', '%Y-%m-%d'
+    ), end_time=dt.datetime.strptime('2031-01-01', '%Y-%m-%d'))
+  +load_daylightsaving_to_db(self, schema, table)
+  +load_to_db(self, schema: str, table: str, df=None)
+  +is_daylightsaving(self, t: np.datetime64)
+  +get_daylightsaving_data(self)
+  +get_hourofday(self, df: pd.Series)
+  +get_dayofweek(self, df: pd.Series)
+}
+
+@enduml

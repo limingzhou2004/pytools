@@ -1,0 +1,60 @@
+@startuml
+enum.Enum <|-- DataType
+class DataType {
+  {static} +LoadData
+  {static} +CalendarData
+  {static} +WeatherData
+}
+
+class DataPrepManager {
+  +category
+  +site_name
+  +site_alias
+  +site_description
+  +site_folder
+  +t0
+  +t1
+  +load_name
+  +timestamp_name
+  +load_limit
+  +load_scalar
+  +weather_scaler
+  +data_calendar
+  +max_load_lag_start
+  +load_lag_order
+  +utc_to_local_hours
+  +weather_type
+  +data_standard_load_lag
+  +center
+  +rect
+  +grib_name_filter_hist
+  +grib_name_filter_predict
+  +uuid
+  -_weather_para_file
+  -_weather_predict_folder
+  -__init__(self, category: str, site_name: str, site_alias: str, site_description: str, site_folder: str, t0: str, t1: str, load_data: ldp.LoadData, load_limit: Tuple[
+    float, float
+    ], max_load_lag_start: int=48, load_lag_order: int=168, utc_to_local_hours: int=-5, weather_type: GribType=GribType.hrrr, load_name: str='load', timestamp_name: str='timestamp', load_scaler: float=None, uuid=None)
+  +process_load_data(self, load_data: ldp.LoadData, max_lag_start=None)
+  +add_lag(self, df: pd.DataFrame, start, order)
+  +build_weather(self, weather_folder, jar_address: str, center: str, rect: str, weather_para_file: str=None)
+  +make_npy_train(self, filter_func=None, parallel=True)
+  +make_npy_predict(self, in_folder=None, out_folder=None, time_after=dt.datetime.now(
+    ), filter_func=None, parallel=True)
+  +get_load_scalar(self)
+  +get_npy_folder(self, hrrr=GribType.hrrr, hist: bool=True)
+  +get_predict_weather(self, predict_weather_folder=None)
+  +build_hist_weather(self, weather_folder: str, jar_address: str, grib_type=GribType.hrrr, weather_para_file=None)
+  +get_train_weather(self)
+  +get_prediction_load(self, t0: str, t1: str)
+  +load_data(self){@property}
+  +range_check_clean(self, df: pd.DataFrame, field: str, min_val: float, max_val: float)
+  +reconcile(self, load_df: pd.DataFrame, date_column: str, w_data: wd.WeatherData)
+  +setup_grib_para_file(self, fn: str)
+  +setup_grib_predict_folder(self, folder: str)
+  +standardize(self, df: pd.DataFrame, field, method='minmax')
+  +standardize_predictions(self, prediction_data: ldp.LoadData)
+  +standardize_weather(self, weather_array: np.ndarray, overwrite: bool=False)
+}
+
+@enduml

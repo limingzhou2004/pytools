@@ -1,0 +1,6 @@
+@startuml
+class HistoricalData {
+  +process_historical_nyiso_load(months_back){static}
+}
+
+@enduml

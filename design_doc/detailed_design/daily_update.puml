@@ -1,0 +1,9 @@
+@startuml
+class DailyUpdate {
+  +ws
+  -__init__(self, hour_back=2)
+  +update_nyiso_hist_load(schema='zhoul', table='nyiso_hist_load', unique_cols=('`Time Stamp`',
+    '`Time Zone`', '`PTID`'), hours_back=2){static}
+}
+
+@enduml

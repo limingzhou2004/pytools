@@ -1,0 +1,14 @@
+@startuml
+class DataPrepManagerBuilder {
+  +uuid
+  +t0
+  +t1
+  +config
+  +load_data
+  -__init__(self, config_file: str, train_t0: str, train_t1: str)
+  +build_load_data_from_config(self, config_file: Config=None)
+  +build_dm_from_config_weather(self, weather_type: GribType, config: Config=None)
+  +build_dm_from_config(self)
+}
+
+@enduml

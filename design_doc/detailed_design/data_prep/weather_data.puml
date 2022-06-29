@@ -1,0 +1,24 @@
+@startuml
+Enum <|-- Scaling
+class Scaling {
+  {static} +minmax
+  {static} +standard
+}
+
+class WeatherData {
+  +dict_data
+  +scaling
+  +timestamp
+  -_scaler
+  +data
+  +shape
+  -__init__(self, dict_data, scaling=Scaling.minmax, prediction=False)
+  +scaler(self){@property}
+  +scaler(self, sc){@scaler.setter}
+  +get_timestamps(self)
+  +query_timestamp_sorted_data(self, query_timestamp: List[np.datetime64])
+  +standardize(self)
+  +transform(self, x_data: np.array=None, inverse: bool=False)
+}
+
+@enduml

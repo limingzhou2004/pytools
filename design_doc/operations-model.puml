@@ -1,0 +1,27 @@
+@startuml
+title: Model training and prediction
+start
+repeat: Build a new model;
+: create the toml file;
+: create dataManager with load data;
+floating note left: task 1, (-t0, -t1, --create)
+: extract grib2 files and create npy files for training;
+floating note left: task 2, (--t_after)
+
+:organize training data;
+floating note left: task 3, ()
+
+: train the model;
+floating note left: task 4, (--fst-hr)
+
+repeat: Daily predictions, -- to schedule
+: extract npy from grib2 data for weather prediction;
+
+floating note left: task 5, (--model-options)
+: predictions from a multi hour ahead model;
+floating note left: task 6, (--pred-options)
+: roll out predictions from an hour-ahead model;
+floating note left: task 7, (--pred-options)
+
+
+@enduml

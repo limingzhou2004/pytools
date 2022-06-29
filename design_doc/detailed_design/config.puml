@@ -1,0 +1,18 @@
+@startuml
+class Config {
+  +filename
+  +toml_dict
+  -__init__(self, filename: str='')
+  +get(self, table: str)
+  +get_model_file_name(self, class_name: str='_data_manager_', prefix: str='', suffix: str='')
+  +site_parent_folder(self){@property}
+  +category(self){@property}
+  +load(self){@property}
+  +jar_config(self){@property}
+  +model(self){@property}
+  +site(self){@property}
+  +sql(self){@property}
+  +weather_folder(self){@property}
+}
+
+@enduml

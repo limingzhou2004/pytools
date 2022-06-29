@@ -1,0 +1,275 @@
+from jsonargparse import (
+    ArgumentParser,
+    ActionConfigFile,
+    ActionJsonSchema,
+    ActionJsonnetExtVars,
+)
+import sys, os
+
+from pytools.data_prep import weather_data_prep as wp
+
+
+class ArgClass:
+    """
+    This class process the command line argument.
+    The parent argument is option
+    The get_taskX method returns the dict for each option
+    task numbers are described in the operations-model.puml
+    1 create dataManager with load data;
+    2 extract grib2 files and create npy files for training;
+    3 train the model;
+    4 extract npy from grib2 data for weather prediction;
+    5 predictions from a multi hour ahead model;
+    6 roll out predictions from an hour-ahead model;
+    """
+
+    def __init__(self, args=None):
+        self.tasks_dict = {
+            1: self._add_task1,
+            2: self._add_task2,
+            3: self._add_task3,
+            4: self._add_task4,
+            5: self._add_task5,
+            6: self._add_task6,
+            7: self._add_task7,
+        }
+        parent_parser = ArgumentParser(
+            description="Generate data prep manager and prepare weather data"
+        )
+        self._args = args if args is not None else sys.argv
+        # parent_parser.add_argument("-o" "--option", required=True, type=str, help="options, 1-6 for tasks")
+        parent_parser.add_argument(
+            "-c",
+            "--config",
+            dest="config_file",
+            required=True,
+            type=str,
+            help="config file name",
+        )
+        parent_parser.add_argument(
+            "-g",
+            "--grib_type",
+            dest="grib_type",
+            required=False,
+            type=str,
+            help="hrrr|nam",
+            default="hrrr",
+        )
+        self.parser = parent_parser
+        self.sub_commands = self.parser.add_subcommands()
+        # self.parser.add_subcommands(
+        #     dest="option", help="For different tasks from 1 to 7"
+        # )
+        self._add_task1()
+        self._add_task2()
+        self._add_task3()
+        self._add_task4()
+        self._add_task5()
+        self._add_task6()
+        self._add_task7()
+
+    def construct_args(self):
+        """
+
+        Returns: a dict with all parameters
+
+        """
+        args = self.parser.parse_args(self._args)
+        grib_type = wp.GribType.hrrr if args.grib_type == "hrrr" else wp.GribType.nam
+        args.grib_type = grib_type
+        a_dict = args.__dict__
+
+        def clean_args(dct):
+            return {k: dct[k] for k in dct if not k.startswith("__")}
+
+        sub_cmd = a_dict.pop("subcommand", None)
+        if sub_cmd:
+            a_dict["option"] = sub_cmd
+            a = a_dict.pop(sub_cmd, None)
+            if a:
+                a_dict.update(a.__dict__)
+        else:
+            raise ValueError(
+                "A subcommand like task_1 must be provided in the command line! "
+            )
+        a_dict = clean_args(a_dict)
+        a_dict.pop("grib_type")
+        return {"config_file": args.config_file, "grib_type": grib_type, **a_dict}
+
+    def _add_task1(self):
+        sub_parser = ArgumentParser()
+        sub_parser.add_argument(
+            "-t0",
+            "--datetime0",
+            dest="t0",
+            required=False,
+            type=str,
+            help="start datetime",
+        )
+        sub_parser.add_argument(
+            "-t1",
+            "--datetime1",
+            dest="t1",
+            required=False,
+            type=str,
+            help="end datetime",
+        )
+        sub_parser.add_argument(
+            "-cr",
+            "--create",
+            action="store_true",
+            help="Create a new DataManager",
+        )
+        self.sub_commands.add_subcommand("task_1", sub_parser)
+
+    def _add_task2(self):
+        sub_parser = ArgumentParser()
+        sub_parser.add_argument(
+            "-ta",
+            "--t_after",
+            dest="t_after",
+            required=False,
+            default="1/1/2018",
+            type=str,
+            help="minimum datetime to start the weather",
+        )
+        self.sub_commands.add_subcommand("task_2", sub_parser)
+
+    def _add_task3(self):
+        sub_parser = ArgumentParser()
+        self.sub_commands.add_subcommand("task_3", sub_parser, help="Task 3")
+
+    def _add_task4(self):
+        sub_parser = ArgumentParser()
+        sub_parser.add_argument(
+            "-to",
+            "--train-options",
+            dest="train_options",
+            required=True,
+            default=None,
+            action=ActionJsonnetExtVars(),
+            help="training options as a json",
+        )
+        sub_parser.add_argument(
+            "-ah",
+            "--ahead-hours",
+            dest="ahead_hours",
+            required=False,
+            default=1,
+            type=int,
+            help="hours ahead to forecast",
+        )
+        sub_parser.add_argument(
+            "-uri",
+            "--tracking-uri",
+            dest="tracking_uri",
+            required=False,
+            default=f"file://{os.path.dirname(os.path.realpath(__file__))}/modeling/mlruns",
+            type=str,
+            help="airflow tracking server uri",
+        )
+        sub_parser.add_argument(
+            "-muri",
+            "--model-uri",
+            dest="model_uri",
+            required=False,
+            default=f"file://{os.path.dirname(os.path.realpath(__file__))}/modeling/mlruns",
+            type=str,
+            help="airflow model registry uri",
+        )
+        sub_parser.add_argument(
+            "-env",
+            "--experiment-name",
+            dest="experiment_name",
+            required=False,
+            default=0,
+            type=str,
+            help="airflow experiment name",
+        )
+        sub_parser.add_argument(
+            "-tags",
+            "--tags",
+            dest="tags",
+            required=False,
+            default="",
+            type=str,
+            help="--tags k1=v1,k2=v2",
+        )
+        self.sub_commands.add_subcommand("task_4", sub_parser, help="Task 4")
+
+    def _add_task5(self):
+        sub_parser = ArgumentParser()
+        sub_parser.add_argument(
+            "-mha",
+            "--max-hours-ahead",
+            dest="max_hours_ahead",
+            required=False,
+            default=20,
+            type=int,
+            help="hours ahead to forecast",
+        )
+        sub_parser.add_argument(
+            "-tc",
+            "--current-time",
+            dest="current_time",
+            required=False,
+            default="",
+            type=str,
+            help="current time",
+        )
+        sub_parser.add_argument(
+            "--rebuild-npy",
+            default=True,
+            type=bool,
+            help="create npy files",
+        )
+
+        self.sub_commands.add_subcommand("task_5", sub_parser, help="Task 5")
+
+    def _add_task6(self):
+        sub_parser = ArgumentParser()
+        self.sub_commands.add_subcommand("task_6", sub_parser, help="Task 6")
+        sub_parser.add_argument(
+            "-mha",
+            "--max-hours-ahead",
+            dest="max_hours_ahead",
+            required=False,
+            default=20,
+            type=int,
+            help="hours ahead to forecast",
+        )
+        sub_parser.add_argument(
+            "-tc",
+            "--current-time",
+            dest="current_time",
+            required=False,
+            default="",
+            type=str,
+            help="current time",
+        )
+        sub_parser.add_argument(
+            "-rt0",
+            "--report-t0",
+            dest="report_t0",
+            required=False,
+            default="",
+            type=str,
+            help="Starting report time",
+        )
+        sub_parser.add_argument(
+            "-rt1",
+            "--report-t1",
+            dest="report_t1",
+            required=False,
+            default="",
+            type=str,
+            help="Ending report time",
+        )
+
+        return
+
+    def _add_task7(self):
+        sub_parser = ArgumentParser()
+        self.sub_commands.add_subcommand("task_7", sub_parser, help="Task 7")
+
+        return

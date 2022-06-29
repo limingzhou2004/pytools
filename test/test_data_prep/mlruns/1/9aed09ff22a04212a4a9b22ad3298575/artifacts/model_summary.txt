@@ -1,0 +1,28 @@
+   | Name                        | Type         | Params
+--------------------------------------------------------------
+0  | model                       | WeatherLayer | 35.5 K
+1  | model.weather_conv1_layer   | Sequential   | 15.5 K
+2  | model.weather_conv1_layer.0 | Conv2d       | 15.4 K
+3  | model.weather_conv1_layer.1 | BatchNorm2d  | 102   
+4  | model.weather_conv1_layer.2 | ReLU         | 0     
+5  | model.weather_conv2_layer   | Sequential   | 10.2 K
+6  | model.weather_conv2_layer.0 | Conv2d       | 10.2 K
+7  | model.weather_conv2_layer.1 | BatchNorm2d  | 16    
+8  | model.weather_conv2_layer.2 | ReLU         | 0     
+9  | model.load_layer            | Sequential   | 36    
+10 | model.load_layer.0          | Conv1d       | 36    
+11 | model.load_layer.1          | ReLU         | 0     
+12 | model.load2_layer           | Sequential   | 57    
+13 | model.load2_layer.0         | Conv1d       | 57    
+14 | model.load2_layer.1         | ReLU         | 0     
+15 | model.calendar_layer        | Sequential   | 162   
+16 | model.calendar_layer.0      | Linear       | 84    
+17 | model.calendar_layer.1      | Linear       | 78    
+18 | model.final_dense_layer     | Sequential   | 9.6 K 
+19 | model.final_dense_layer.0   | Linear       | 8.8 K 
+20 | model.final_dense_layer.1   | Linear       | 820   
+21 | model.final_dense_layer.2   | Linear       | 21    
+--------------------------------------------------------------
+35.5 K    Trainable params
+0         Non-trainable params
+35.5 K    Total params

@@ -1,0 +1,14 @@
+@startuml
+title: Daily Operations
+start
+
+caption: Get Data
+repeat: At certain hours of day
+fork
+:Retrieve load data;
+fork again
+:Retrieve weather data;
+end fork
+
+
+@enduml

@@ -1,0 +1,45 @@
+[category]
+ name = "electric_load"
+ description = "mwh for zones in iso or rto"
+
+[jar_config]
+ address = "\"Scala-http/classes/artifacts/scalahttp_jar/*\""
+ comments = """escape the quotation mark as the path will be passed to the command line arguments and in case of spaces
+  in the path"""
+
+[site]
+ base_folder = "/Users/limingzhou/zhoul/work/me"
+ name = "Albany-NY"
+ alias = "albany-test"
+ sql_location = "capitl"
+ site_folder = "xaog_proj/src/python/pytools/resources/test_data/site/nyiso"
+ center = "\"(43.0,-73.0)\""
+ rect = "\"(100.0,100.0)\""
+ hrrr_paras_file = "xaog_proj/src/python/pytools/resources/params/hrrr_paras.txt"
+ nam_paras_file = "xaog_proj/src/python/pytools/resources/params/nam_paras.txt"
+ description = "Zone Capital of NYISO"
+ comments = """name is used for database query and must match what the database use; while alias is used for setting up
+  the folder structure"""
+
+[load]
+ table = "nyiso_hist_load"
+ unit = "mwh"
+ datetime_column = "timestamp"
+ daylightsaving_col = "daylightsaving"
+ load_column = "load"
+ sql_template_file = "sql_template/nyiso_sql_template.toml"
+ #reasonable value range limit
+ limit = [0, 99999]
+ lag_hours = 168
+ utc_to_local_hours = -5
+ load_lag_start = 72
+
+[weather_folder]
+hrrr_hist = ["hrrrdata"]
+hrrr_predict = "hrrr_fst"
+#nam_hist=  "testdata/test_nem_data"
+#nam_predict= "testdata/test_nem_data_pred"
+
+
+[model]
+y_label = "load"

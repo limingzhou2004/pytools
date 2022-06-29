@@ -1,0 +1,9 @@
+@startuml
+torch.nn.Conv1d <|-- CausalConv1d
+class CausalConv1d {
+  -__padding
+  -__init__(self, in_channels, out_channels, kernel_size, stride=1, dilation=1, groups=1, bias=True)
+  +forward(self, input_tensor)
+}
+
+@enduml
