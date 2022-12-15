@@ -15,7 +15,6 @@ from pytools.data_prep import (
     token_max_load_time,
 )
 from pytools.data_prep import calendar_data_prep as Cp
-from pytools.mysql_adapter0 import MySqlQuery as Mq
 from pytools.pandas_pgsql import PandasSql as Ps
 
 
