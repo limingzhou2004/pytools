@@ -28,11 +28,14 @@ load pred data
 generate npy files from hrrr
 extract npy files for WeatherData
 
+---------------------
+
+## Usage
+
+### weather data
 
 
-
-
-
+------
 #### Calendar data and load data
 
 * category or table_name

@@ -1,0 +1,22 @@
+dask
+dill
+envtoml
+jsonargparse
+mlflow
+pandas
+# conda install -c conda-forge pygrib -- not used
+
+psycopg2-binary
+#pynio -- need to use conda 
+#CONDA_SUBDIR=osx-64 conda install pynio
+pytorch-lightning
+read_env
+requests
+scikit-learn
+sqlalchemy
+toml
+torch==1.13 
+tqdm
+xarray
+
+pytest
