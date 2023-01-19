@@ -137,7 +137,7 @@ def hist_weather_prepare(
 def train_data_assemble(
     config_file: str,
     grib_type: wp.GribType,
-) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Assemble training data. Save to a npz file.
 

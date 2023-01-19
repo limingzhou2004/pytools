@@ -1,6 +1,8 @@
 import logging
 import os
 
+import xarray as xr
+
 
 def get_absolute_path(cur_path: str, file_name) -> str:
     """
@@ -45,3 +47,5 @@ def get_logger(level=logging.INFO, file_name=f"{get_now_str()}.log"):
     logger.addHandler(file_handler)
 
     return logger
+
+

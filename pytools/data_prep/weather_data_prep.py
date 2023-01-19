@@ -21,7 +21,7 @@ def get_datetime_from_grib_file_name(
     filename, hour_offset, nptime=True, get_fst_hour=False
 ) -> Union[int, np.datetime64, dt.datetime]:
     """
-    Derive the datetime from the grib file name: hours ahead|np.datetime64|dt.datetime
+    Derive the datetime from a single grib file name: hours ahead|np.datetime64|dt.datetime
 
     Args:
         filename:
@@ -199,7 +199,7 @@ class WeatherDataPrep:
     jar_address = (
         '"/Users/limingzhou/zhoul/work/me/Scala-http/classes/artifacts/scalahttp_jar/*"'
     )
-    hrrr_paras = "pytools/resources/params/hrrr_paras_obsolete.txt"
+    hrrr_paras = "pytools/resources/params/hrrr_paras.txt"
     nam_paras = "pytools/resources/params/nam_paras.txt"
     earliest_time = dt.datetime.strptime("2016-12-01", "%Y-%m-%d")
     hrrr_fmt = "%Y_%m_%d_%H"

@@ -3,6 +3,7 @@ dill
 envtoml
 jsonargparse
 mlflow
+geopandas
 pandas
 # conda install -c conda-forge pygrib -- not used
 
@@ -12,11 +13,14 @@ psycopg2-binary
 pytorch-lightning
 read_env
 requests
+rioxarray
 scikit-learn
+shapely
 sqlalchemy
 toml
 torch==1.13 
 tqdm
+typer
 xarray
 
 pytest

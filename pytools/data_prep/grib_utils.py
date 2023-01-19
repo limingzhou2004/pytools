@@ -1,0 +1,269 @@
+
+from functools import partial
+import glob
+from itertools import chain
+import os
+from math import ceil, floor
+import shutil
+import sys
+import time
+from typing import List, Tuple, Union, Dict
+
+import pandas as pd
+import geopandas
+import requests
+import numpy as np
+from tqdm import tqdm
+import typer
+from shapely.geometry import Point
+import xarray as xr
+
+from pytools.data_prep.weather_data_prep import get_datetime_from_grib_file_name
+
+
+def print_grib2_info(fn:str):
+    ds = xr.open_dataset(fn, engine="pynio")
+    ds['gridlat_0'].data 
+    ds['gridlat_0'].Dx #Dy
+    ds['gridlon_0']
+    print(ds)
+    channels = ds.variables.mapping.keys()
+    print(channels)
+    for c in channels:
+        print(c+'\n')
+        print(ds[c].attrs)
+        print('------\n')
+
+
+def _find_nearest_index(val:float, arr:np.ndarray) -> Tuple[int,int]:
+    arr = np.abs(arr-val)
+    ind = np.argmin(arr)
+
+    return np.unravel_index(ind, np.array(arr).shape)
+
+
+def find_ind_fromlatlon(lon:float, lat:float, arr_lon:np.ndarray, arr_lat:np.ndarray) -> Tuple[int,int]:
+    x_ind = _find_nearest_index(lon, arr_lon)[1]
+    y_ind = _find_nearest_index(lat, arr_lat)[0]
+
+    return x_ind, y_ind
+
+
+def extract_data_from_grib2(fn:str, lon:float, lat:float, radius:Union[int,Tuple[int, int, int, int]], paras:List[str])->np.ndarray:
+    """
+    Extract a subset, based on a rectangle area. We assume all paras share the same grid. Both lat/lon are increasing in the grid. The hrrr data has a grid of 1799 by 1059
+
+    Args:
+        fn (str): file name of the grib2 file.
+        lon (float): longitude, as x
+        lat (float): latitutde, as y
+        radius (Union[int,Tuple[int, int, int, int]]): distance in kms from the center
+        paras (List[str]): the weather parameters
+
+    Returns:
+        np.ndarray: 3D tensor extracted np array, west->east:south->north:parameter
+    """
+    if fn.endswith('.grib2'):
+        ds = xr.load_dataset(fn, engine="pynio")
+    elif fn.endswith('.nc'):
+        ds = xr.load_dataset(fn, engine="scipy")
+    else:
+        raise Exception('only pynio and scipy are supported for engine')
+
+    delta_x = ds['gridlat_0'].Dx
+    delta_y = ds['gridlat_0'].Dy
+    if isinstance(radius, int):
+        east_dist = radius; west_dist = radius; north_dist = radius; south_dist=radius
+    else:
+        east_dist, west_dist, south_dist, north_dist = radius
+ 
+    arr_lat = ds['gridlat_0'].data 
+    arr_lon = ds['gridlon_0'].data 
+    center_x_ind, center_y_ind = find_ind_fromlatlon(lat=lat, lon=lon, arr_lon=arr_lon, arr_lat=arr_lat)
+    east_ind = ceil(center_x_ind+east_dist/delta_x)
+    west_ind = floor(center_x_ind-west_dist/delta_x)
+    south_ind = floor(center_y_ind-south_dist/delta_y)
+    north_ind = ceil(center_y_ind+north_dist/delta_y) 
+    arr_list = []
+    for p in paras:
+        x = ds[p].data[west_ind:east_ind+1, south_ind:north_ind+1]
+        arr_list.append(x)
+    return np.stack(arr_list, axis=2)
+
+
+def extract_a_file(fn:str, para_file:str, lon:float, lat:float, radius:Union[int, Tuple[int, int, int, int]]) -> np.ndarray:
+    """
+    Extract a grib2 file
+
+    Args:
+        fn (str): full file name
+        para_file (str): pamaremeter file
+        lon (float): center longitute
+        lat (float): center latitude
+        radius (Union[int, Tuple[int, int, int, int]]): distance from the center
+
+    Returns:
+        np.ndarray: dimension of x, y, channel
+    """
+    a = {}
+    with open(para_file) as f:
+        for line in f:
+            kv = line.strip().split(',')
+            k = kv[0]; v = kv[1]
+            if int(v) == 1:
+                a[k] = int(v)
+    data = extract_data_from_grib2(fn=fn, lon=lon, lat=lat, radius=radius, paras=a)
+    return data
+
+
+def read_utah_file_and_save_a_subset(fn:str, para_file:str, tgt_folder:str, rename_var:Dict={'APCP_P8_L1_GLC0_acc1h':'APCP_P8_L1_GLC0_acc'}):
+    a = []
+    with open(para_file) as f:
+        for line in f:
+            kv = line.strip().split(',')
+            k = kv[0]; v = kv[1]
+            # use 1h precipitation for Utah data
+            if k == 'APCP_P8_L1_GLC0_acc':
+                k = k + '_1h'
+            if int(v) == 1:
+                a.append(int(v))
+    ds = xr.load_dataset(fn, engine='pynio')
+    ds2 = ds[a]
+    ds2 = ds2.rename_vars(rename_var)
+    ds2.to_netcdf(path=os.path.join(tgt_folder, fn.replace('grib2', 'nc')), engine='scipy')
+
+
+def get_all_files(folders: Union[str, Tuple[str]], size_kb_fileter:int=2000) -> List[str]:
+    pfn = 'hrrrfiles.csv'
+    if os.path.exists(pfn):
+        x = pd.read_csv(pfn)
+
+        return [f for f in x['name'] ]
+    if isinstance(folders, str):
+        filenames = glob.glob(folders+ "/*.grib2")
+    else:
+        filenames = []
+        for f in folders:
+            filenames.extend(glob.glob(f+ "/*.grib2"))
+    
+    df = pd.DataFrame(filenames, columns = ['name'])
+    df.to_csv(pfn)
+
+    return filenames
+    #return [f for f in filenames if os.path.getsize(f)/1024 >= size_kb_fileter]
+
+
+def get_all_files_iter(folders: Union[str, Tuple[str]], size_kb_fileter:int=2000) -> List[str]:
+    file_iter = iter([])
+    if isinstance(folders, str):
+        file_iter = chain(file_iter, os.scandir(folders))
+    else:        
+        for f in folders:
+            file_iter = chain(file_iter, os.scandir(f))
+
+    for f in file_iter:
+        yield f
+        #if os.path.getsize(f)/1024 >= size_kb_fileter:
+          #  yield f
+           
+
+
+def find_missing_grib2(folders:Union[str, List[str]], tgt_folder:str='.', t0:str=None, t1:str=None)->List[str]:
+    """
+    Find missing hours of hrrr grib2 files
+
+    Args:
+        folders (Union[str, List[str]]): source data folders
+        tgt_folder (str, optional): target folder to write to. The default is .
+        t0 (str, optional): starting time, 'yyyy-mm-dd hh'. Defaults to None, to use the min time of all files.
+        t1 (str, optional): ending time, 'yyyy-mm-dd hh'. Defaults to None, to use the max time of all files.
+
+    Returns:
+        List[str]: a list of file names to download from Utah U's website.
+    """
+    # get the list all obs grib files
+    full_filenames = get_all_files(folders)
+    filenames = [os.path.basename(f.strip()) for f in list(full_filenames)]
+    cur_dates = list(map(partial(get_datetime_from_grib_file_name,hour_offset=0,nptime=True, get_fst_hour=False), filenames))
+   
+    # find the min and max
+    cur_dates = np.array(cur_dates)
+
+    def process_time(t, minmax='min'):  
+        if t:
+            return pd.DatetimeIndex([t])[0]
+        else:
+            if minmax == 'min':
+                return cur_dates.min()
+            else:
+                return cur_dates.max()
+
+    t0 = process_time(t0)
+    t1 = process_time(t1)
+
+    # find the missing hours
+    full_timestamp = np.arange(t0, t1, np.timedelta64(1, "h"))
+    set_diff = np.setdiff1d(full_timestamp, cur_dates)
+    # processing each missing hour
+    counter = 0
+    for t in tqdm(set_diff):
+        counter += 1
+        if counter%20 == 0:
+            print('wait 10 sec...')
+            time.sleep(10)
+        print(f'\nprocessing {t}...')
+        download_utah_file_extract(cur_date=t, fst_hour=0, tgt_folder=tgt_folder)
+
+
+
+def download_utah_file_extract(cur_date:np.datetime64, fst_hour:int, tgt_folder:str):
+    # convert to utah file name convention
+    time.sleep(3)
+    cur_d = pd.DatetimeIndex([cur_date])
+    yyyy = str(cur_d.year[0]).zfill(4)
+    mm = str(cur_d.month[0]).zfill(2)
+    dd = str(cur_d.day[0]).zfill(2)
+    hh = str(cur_d.hour[0]).zfill(2)
+    
+    fhh = str(fst_hour).zfill(2)
+    base_url = f'https://pando-rgw01.chpc.utah.edu/hrrr/sfc/{yyyy}{mm}{dd}/hrrr.t{hh}z.wrfsfcf{fhh}.grib2'
+
+    r = requests.get(base_url, stream=True)
+    print(base_url)
+    fn = f'{yyyy}{mm}{dd}.hrrr.t{hh}z.wrfsfcf{fhh}.grib2'
+    if r.status_code == 200:
+        print('succssful...')
+        with open(os.path.join(tgt_folder, fn), 'wb') as f:
+            r.raw.decode_content = True
+            shutil.copyfileobj(r.raw, f) 
+    else:
+        print('failure to retriee...')
+
+
+def get_stats(folders:Union[str, List[str]], utah_folders:Union[str, List[str]], t0:str, t1:str)->pd.DataFrame:
+    """
+    Stats of the grib files, number, start, end, missing. 
+    Summary files by year: summary_year.csv, source, missing, starting datetime, ending datetime
+    Spec file by hour: spec_hour.csv, date-hour, source/hrrr|utah, missing
+
+    Args:
+        folders (Union[str, List[str]]): dirctories
+        utah_folders (Union[str, List[str]]): utah downloaded files, with a different naming convention to extract datetime info
+        t0 (str): starting date yyyy-mm-dd hh:mm
+        t1 (str): ending date yyyy-mm-dd hh:mm
+
+    Returns:
+        pd.DataFrame: column of number, start time, end time, missing number
+    """
+
+
+    return
+
+
+def fillmissing(sourcefolder:str, targetfolder:str, t0:str=None, t1:str=None, hourfst:int=0):
+    find_missing_grib2(folders=sourcefolder.split(','), tgt_folder=targetfolder, t0=t0, t1=t1)
+    print('start...')
+    
+
+if __name__ == "__main__":
+    fillmissing(*sys.argv[1:])
