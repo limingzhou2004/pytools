@@ -66,3 +66,8 @@ def test_find_missing_grib2():
     tgt = '.'
     find_missing_grib2(folders=src, tgt_folder=tgt, t0='2019-12-31 22:00', t1='2020-01-05 15:00')
     assert 1==1
+
+
+def test_get_stats():
+    get_stats()
+    assert 1==1

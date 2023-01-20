@@ -9,12 +9,12 @@ import sys
 import time
 from typing import List, Tuple, Union, Dict
 
+from pytools.retry.api import retry
 import pandas as pd
 import geopandas
 import requests
 import numpy as np
 from tqdm import tqdm
-import typer
 from shapely.geometry import Point
 import xarray as xr
 
@@ -208,14 +208,14 @@ def find_missing_grib2(folders:Union[str, List[str]], tgt_folder:str='.', t0:str
     counter = 0
     for t in tqdm(set_diff):
         counter += 1
-        if counter%20 == 0:
-            print('wait 10 sec...')
-            time.sleep(10)
+        if counter%100 == 0:
+            print('wait 60 sec...')
+            time.sleep(60)
         print(f'\nprocessing {t}...')
         download_utah_file_extract(cur_date=t, fst_hour=0, tgt_folder=tgt_folder)
 
 
-
+@retry(tries=5, delay=20)
 def download_utah_file_extract(cur_date:np.datetime64, fst_hour:int, tgt_folder:str):
     # convert to utah file name convention
     time.sleep(3)
