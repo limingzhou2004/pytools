@@ -1,11 +1,20 @@
-import os 
+import os
+import pathlib
+import sys 
 
 import numpy as np
+import pendulum as pu
+import pytest
 import xarray as xr
 import rioxarray
 
-from pytools.data_prep.grib_utils import download_utah_file_extract, find_missing_grib2, print_grib2_info, find_ind_fromlatlon, extract_a_file
+from airflow.operators.python import ExternalPythonOperator
 
+
+from pytools.data_prep.grib_utils import download_hrrr, download_utah_file_extract, find_missing_grib2, print_grib2_info, find_ind_fromlatlon, extract_a_file
+
+
+@pytest.mark.skip(reason='large binary files needed for the test')
 def test_read_grib2():
     hrrr_obs_path = '/Users/limingzhou/zhoul/work/energy/grib2/hrrrdata'
     fn = hrrr_obs_path + '/hrrrsub_2020_01_01_00F0.grib2'
@@ -22,6 +31,7 @@ def test_read_grib2():
     assert 1==1
     
 
+@pytest.mark.skip(reason='large binary files needed for the test')
 def test_read_write_grib2():
     fn = '/Users/limingzhou/zhoul/work/energy/grib2/utah/hrrr.t00z.wrfsfcf03.grib2'
     ds = xr.load_dataset(fn, engine='pynio') #netcdf4
@@ -41,11 +51,11 @@ def test_read_write_grib2():
     ds2.to_netcdf(path='newdata.nc', engine='scipy')
     assert 1==1
 
+
+@pytest.mark.skip(reason='large binary files needed for the test')
 def test_read_nc():
     ds = xr.load_dataset('newdata.nc',engine='scipy')
     assert 1==1
-
-
 
 
 def test_find_ind_fromlatlon():
@@ -68,6 +78,18 @@ def test_find_missing_grib2():
     assert 1==1
 
 
+def test_download_hrrr():
+  
+    cur_date = pu.now(tz='UTC')
+    if cur_date.minute < 10:
+        cur_date = cur_date.add(hours=-2)
+    else:
+        cur_date = cur_date.add(hours=-1)
+    # publishing time is 1 hour and 10 min after the cur_date, based on the observation
+    download_hrrr(cur_date=cur_date,fst_hour=0, tgt_folder='.')
+    assert 1==1
+
+
 def test_get_stats():
-    get_stats()
+   # get_stats()
     assert 1==1

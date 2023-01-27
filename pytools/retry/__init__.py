@@ -2,6 +2,7 @@ __all__ = ['retry', 'retry_call']
 
 
 # https://pypi.org/project/retry2/
+# time unit is second
 
 import logging
 

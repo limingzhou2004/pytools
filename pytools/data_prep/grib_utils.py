@@ -11,6 +11,7 @@ from typing import List, Tuple, Union, Dict
 
 from pytools.retry.api import retry
 import pandas as pd
+import pendulum as pu
 import geopandas
 import requests
 import numpy as np
@@ -19,6 +20,10 @@ from shapely.geometry import Point
 import xarray as xr
 
 from pytools.data_prep.weather_data_prep import get_datetime_from_grib_file_name
+
+
+hrrr_url_str_template = 'http://nomads.ncep.noaa.gov/cgi-bin/filter_hrrr_2d.pl?file=hrrr.t{HH}z.wrfsfcf{FHH}.grib2&lev_10_m_above_ground=on&lev_2_m_above_ground=on&lev_surface=on&var_APCP=on&var_ASNOW=on&var_DPT=on&var_DSWRF=on&var_GUST=on&var_HPBL=on&var_PRES=on&var_RH=on&var_SNOD=on&var_SNOWC=on&var_SPFH=on&var_TCDC=on&var_TMP=on&var_UGRD=on&var_VBDSF=on&var_VDDSF=on&var_VGRD=on&var_VIS=on&var_WIND=on&leftlon=0&rightlon=360&toplat=90&bottomlat=-90&dir=%2Fhrrr.YYYYMMDD%2Fconus'
+
 
 
 def print_grib2_info(fn:str):
@@ -255,7 +260,7 @@ def get_stats(folders:Union[str, List[str]], utah_folders:Union[str, List[str]],
     Returns:
         pd.DataFrame: column of number, start time, end time, missing number
     """
-
+    # TODO
 
     return
 
@@ -264,6 +269,61 @@ def fillmissing(sourcefolder:str, targetfolder:str, t0:str=None, t1:str=None, ho
     find_missing_grib2(folders=sourcefolder.split(','), tgt_folder=targetfolder, t0=t0, t1=t1)
     print('start...')
     
+
+def extract_datetime_from_utah_files(fn:str) -> np.datetime64:
+    # TODO
+    # convert string to datetime with regex
+    
+    return
+
+#@retry(tries=1, delay=20, backoff=3)
+def download_hrrr(cur_date:pu.datetime, fst_hour:int, tgt_folder:str):
+    # from the now time {execution_date}, derive the latest obs time
+    cur_d = cur_date # pd.DatetimeIndex([cur_date])
+    yyyy = str(cur_d.year).zfill(4)
+    mm = str(cur_d.month).zfill(2)
+    dd = str(cur_d.day).zfill(2)
+    hh = str(cur_d.hour).zfill(2)
+    
+    fhh = str(fst_hour).zfill(2)
+    cur_url = hrrr_url_str_template.replace('YYYYMMDD', yyyy+mm+dd).replace('{HH}', hh). replace('{FHH}', fhh)
+    r = requests.get(cur_url, stream=True)
+    fn = f'hrrrsub_{hh}_{yyyy}_{mm}_{dd}_{hh}F{str(fst_hour)}.grib2' if fst_hour > 0 else f'hrrrsub_{yyyy}_{mm}_{dd}_{hh}F{str(fst_hour)}.grib2' 
+    if r.status_code == 200:
+        with open(os.path.join(tgt_folder, fn), 'wb') as f:
+            r.raw.decode_content = True
+            shutil.copyfileobj(r.raw, f) 
+    else:
+        print(f'{cur_url}--failure to retrieve the data...')
+        raise RuntimeError(f'{cur_url} data not found!')
+
+
+def download_hrrr_fst():
+    # TODO 
+
+    # from the now time, derive the fst time; if the 1st success, the remaining 48 should be available.
+
+    return
+
+
+    """
+import re 
+from datetime import datetime 
+  
+# Input string 
+string = '2020-07-17T14:30:00'
+  
+# Using regex expression to match the pattern 
+regex = r'(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})'
+  
+# Finding all the matches 
+matches = re.findall(regex, string) 
+  
+# Converting the string into datetime object 
+date_time_obj = datetime(*[int(i) for i in matches[0]]) 
+  
+# Printing the datetime object 
+print(date_time_obj)    """
 
 if __name__ == "__main__":
     fillmissing(*sys.argv[1:])

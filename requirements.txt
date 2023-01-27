@@ -5,6 +5,7 @@ jsonargparse
 mlflow
 geopandas
 pandas
+pendulum
 # conda install -c conda-forge pygrib -- not used
 
 psycopg2-binary
