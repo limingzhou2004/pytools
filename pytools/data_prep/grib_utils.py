@@ -278,6 +278,17 @@ def extract_datetime_from_utah_files(fn:str) -> np.datetime64:
 
 #@retry(tries=1, delay=20, backoff=3)
 def download_hrrr(cur_date:pu.datetime, fst_hour:int, tgt_folder:str):
+    """
+    Download hrrr data
+
+    Args:
+        cur_date (pu.datetime): The hour the forecast is made from
+        fst_hour (int): 0 for analysis, forecast so fare is 1-48
+        tgt_folder (str): target folder to save the grib2 file
+
+    Raises:
+        RuntimeError: If the file is not generated, or network error
+    """
     # from the now time {execution_date}, derive the latest obs time
     cur_d = cur_date # pd.DatetimeIndex([cur_date])
     yyyy = str(cur_d.year).zfill(4)
@@ -298,12 +309,16 @@ def download_hrrr(cur_date:pu.datetime, fst_hour:int, tgt_folder:str):
         raise RuntimeError(f'{cur_url} data not found!')
 
 
-def download_hrrr_fst():
-    # TODO 
+def download_hrrr_by_hour(exe_date:pu.datetime, fst_hour:int, tgt_folder):
 
     # from the now time, derive the fst time; if the 1st success, the remaining 48 should be available.
-
-    return
+    if exe_date.minute < 10:
+        exe_date = exe_date.add(hours=-2)
+    else:
+        exe_date = exe_date.add(hours=-1)
+    # publishing time is 1 hour and 10 min after the cur_date, based on the observation
+    download_hrrr(cur_date=exe_date,fst_hour=0, tgt_folder='.')
+    
 
 
     """

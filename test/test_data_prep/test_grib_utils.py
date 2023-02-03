@@ -78,6 +78,7 @@ def test_find_missing_grib2():
     assert 1==1
 
 
+@pytest.mark.skip(reason='download large files')
 def test_download_hrrr():
   
     cur_date = pu.now(tz='UTC')
