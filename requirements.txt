@@ -1,5 +1,6 @@
 dask
 dill
+duckdb
 envtoml
 jsonargparse
 mlflow
@@ -21,7 +22,7 @@ sqlalchemy
 toml
 torch==1.13 
 tqdm
-typer
+#typer
 xarray
 
 pytest

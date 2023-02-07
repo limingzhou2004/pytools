@@ -35,6 +35,10 @@ extract npy files for WeatherData
 ### weather data
 
 
+
+
+
+
 ------
 #### Calendar data and load data
 
@@ -69,3 +73,9 @@ token_max_load_time = "max_load_time"
 ### Modeling
 TODO
 ### 
+
+
+
+## Installation
+- create a conda yaml file, `conda env create -f environment.yml`
+- create the env from the file `conda env create --name energy --file=environments.yml`
