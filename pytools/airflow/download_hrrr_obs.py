@@ -47,7 +47,7 @@ with DAG(
         print(kwarg)
         download_hrrr_by_hour(**kwarg)
 
-    t1 = ExternalPythonOperator(python=py_path, retries=args['retries'], retry_delay=args['retry_delay'], task_id='download-hrrr-obs',python_callable=download_data,opexpect_airflow=True, expect_pendulum=True,dag=dag, op_kwargs={'tgt_folder':obs_dest_path})  
+    t1 = ExternalPythonOperator(python=py_path, retries=args['retries'], retry_delay=args['retry_delay'], task_id='download-hrrr-obs',python_callable=download_data,opexpect_airflow=True, expect_pendulum=True,dag=dag,provide_context=True, op_kwargs={'tgt_folder':obs_dest_path})  
 
     t0.set_downstream(t1)
     #op0>>task0
