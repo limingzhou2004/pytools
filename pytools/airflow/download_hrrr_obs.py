@@ -11,11 +11,11 @@ from airflow.models import Variable
 from airflow.models import Variable
 import pendulum as pu
 
-from pytools.data_prep.grib_utils import download_hrrr_by_hour
+
 
 
 args={
-    'owner' : 'Anti',
+    'owner' : 'liming',
     'time_out':timedelta(seconds=1800),
     'retries': 5,
     'retry_delay': timedelta(minutes=5),
@@ -25,30 +25,45 @@ args={
 with DAG(
     "hrrr_obs", start_date=pu.datetime(2023, 1, 1, tz="UTC"),
     dagrun_timeout=args['time_out'],
-    schedule="10 * * * *", catchup=False
+    schedule="10 * * * *", catchup=False, tags=['hrrr','liming']
 ) as dag:
     # airflow variables set [-h] [-j] [-v] key VALUE    
     py_path = Variable.get('py_path',default_var=None)
     if not py_path:
         py_path = '/Users/limingzhou/miniforge3/envs/energy_x86/bin/python'
-    #exe_date = Variable.get('execution_date')
     obs_dest_path = Variable.get('obs_dest_path', default_var=None)
     if not obs_dest_path:
         obs_dest_path = '.'
 
-    t0 = LatestOnlyOperator(task_id='latest-start')  
+    t0 = LatestOnlyOperator(task_id='latest-start', dag=dag)  
 
-    def download_data(execution_date, **context):
+    def download_data(tgt_folder, fst_hour,  execution_date_str):
+        from pytools.data_prep.grib_utils import download_hrrr_by_hour
+        import pendulum as pu  
+ 
         kwarg = {
-        'exe_date': execution_date, 
-        'fst_hour':0, 
-        'tgt_folder':obs_dest_path},
+        'exe_date': pu.parse(execution_date_str), 
+        'fst_hour':fst_hour, 
+        'tgt_folder':tgt_folder,
+        }
+        print(kwarg)
         download_hrrr_by_hour(**kwarg)
 
-    t1 = ExternalPythonOperator(python=py_path, retries=args['retries'], retry_delay=args['retry_delay'], task_id='download-hrrr-obs',python_callable=download_hrrr_by_hour, expect_airflow=True, expect_pendulum=True)  
+    t1 = ExternalPythonOperator(
+        python=py_path, 
+        op_kwargs={
+          'execution_date_str': '{{ execution_date }}', 'tgt_folder': obs_dest_path, 'fst_hour':0
+        },
+        retries=args['retries'], 
+        retry_delay=args['retry_delay'], 
+        task_id='download-hrrr-obs', 
+        python_callable=download_data, 
+        expect_airflow=True, 
+        expect_pendulum=True,
+        dag=dag,  
+       )  
 
     t0.set_downstream(t1)
-    #op0>>task0
 
 
 if __name__ == "__main__":
