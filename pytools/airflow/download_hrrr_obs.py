@@ -41,7 +41,7 @@ with DAG(
         from pytools.data_prep.grib_utils import download_hrrr_by_hour
 
         kwarg = {
-        'exe_date': execution_date_str, 
+        'exe_date': pu.parse(execution_date_str), 
         'fst_hour':0, 
         'tgt_folder':tgt_folder,
         }
