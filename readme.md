@@ -77,7 +77,7 @@ TODO
 
 
 ## Installation
-- create a conda yaml file, `conda env create -f environment.yml`
-- create the env from the file `conda env create --name energy --file=environments.yml`
-
-- add airflow_local_settings.py to $AIRFLOW_HOME/config
+- create a conda yaml file, `conda env export >  energy_conda.yaml`
+- create the env from the file `conda env create --name energy_x86 --file=energy_conda.yaml`
+- copy the dag file to airflow home
+- 
