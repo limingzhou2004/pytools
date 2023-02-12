@@ -49,16 +49,17 @@ with DAG(
 
     t1 = ExternalPythonOperator(
         python=py_path, 
+        op_kwargs={
+          'execution_date_str': '{{ execution_date }}', 'tgt_folder': obs_dest_path
+        },
         retries=args['retries'], 
         retry_delay=args['retry_delay'], 
         task_id='download-hrrr-obs', 
         python_callable=download_data, 
-        opexpect_airflow=True, 
+        expect_airflow=True, 
         expect_pendulum=True,
         dag=dag,  
-        op_kwargs={
-          'execution_date_str': '{{ execution_date }}', 'tgt_folder': obs_dest_path
-        })  
+       )  
 
     t0.set_downstream(t1)
 
