@@ -75,9 +75,13 @@ TODO
 ### 
 
 
+-----
+## Deployment
+### Airflow deployment
 
-## Installation
-- create a conda yaml file, `conda env create -f environment.yml`
-- create the env from the file `conda env create --name energy --file=environments.yml`
-
-- add airflow_local_settings.py to $AIRFLOW_HOME/config
+- create the env  `conda create -n energy_x86 python=3.9`
+- `conda activate energy_x86 && pip install -r requirements.txt && CONDA_SUBDIR=osx-64 conda install pynio `
+- install pytools `git checkout v0.01 && pip install -e .`
+- set up the variables in the [airflowo web console](http://192.168.1.9:8080/home), `py_path=/Users/limingzhou/miniconda/envs/energy_x86/bin/python`, and `obs_dest_path=/Users/limingzhou/energy/data/hrrr_obs`, `fst_dest_path=/Users/limingzhou/energy/data_fst`
+- copy the dag file to airflow home
+- test, `airflow test dag_id task_id 2023-02-13`

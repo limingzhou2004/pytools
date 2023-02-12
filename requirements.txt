@@ -7,11 +7,12 @@ mlflow
 geopandas
 pandas
 pendulum
-# conda install -c conda-forge pygrib -- not used
+# nda iconstall -c conda-forge pygrib -- not used
 
 psycopg2-binary
 #pynio -- need to use conda 
-#CONDA_SUBDIR=osx-64 conda install pynio
+#CONDA_SUBDIR=osx-64 conda install -y pynio
+# conda install -y -c conda-forge pynio
 pytorch-lightning
 read_env
 requests
