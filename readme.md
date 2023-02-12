@@ -77,7 +77,7 @@ TODO
 
 
 ## Installation
-- create a conda yaml file, `conda env export >  energy_conda.yaml`
+- create a conda yaml file, `conda env export | grep -v "^prefix: " >  energy_conda.yaml`
 - create the env from the file `conda env create --name energy_x86 --file=energy_conda.yaml`
 - copy the dag file to airflow home
 - 

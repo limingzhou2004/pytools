@@ -271,7 +271,7 @@ dependencies:
     - multidict==6.0.4
     - munch==2.5.0
     - numba==0.56.4
-    - numpy==1.23.5
+    - numpy==1.22.4
     - oauthlib==3.2.2
     - packaging==21.3
     - pandas==1.5.2
@@ -359,4 +359,3 @@ dependencies:
     - zipp==3.11.0
     - zope-event==4.6
     - zope-interface==5.5.2
-prefix: /Users/limingzhou/miniforge3/envs/energy_x86
