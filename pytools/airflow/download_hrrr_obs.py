@@ -15,7 +15,7 @@ import pendulum as pu
 
 
 args={
-    'owner' : 'Anti',
+    'owner' : 'liming',
     'time_out':timedelta(seconds=1800),
     'retries': 5,
     'retry_delay': timedelta(minutes=5),
@@ -37,20 +37,19 @@ with DAG(
 
     t0 = LatestOnlyOperator(task_id='latest-start', dag=dag)  
 
-    def download_data(tgt_folder, execution_date, **context):
+    def download_data(execution_date, **context):
         from pytools.data_prep.grib_utils import download_hrrr_by_hour
 
         kwarg = {
         'exe_date': execution_date, 
         'fst_hour':0, 
-        'tgt_folder':tgt_folder}
+        'tgt_folder':Variable.get('obs_dest_path')}
         print(kwarg)
         download_hrrr_by_hour(**kwarg)
 
-    t1 = ExternalPythonOperator(python=py_path, retries=args['retries'], retry_delay=args['retry_delay'], task_id='download-hrrr-obs',python_callable=download_data,opexpect_airflow=True, expect_pendulum=True,dag=dag,provide_context=True, op_kwargs={'tgt_folder':obs_dest_path})  
+    t1 = ExternalPythonOperator(python=py_path, retries=args['retries'], retry_delay=args['retry_delay'], task_id='download-hrrr-obs', python_callable=download_data, opexpect_airflow=True, expect_pendulum=True,dag=dag,provide_context=True)  
 
     t0.set_downstream(t1)
-    #op0>>task0
 
 
 if __name__ == "__main__":
