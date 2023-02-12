@@ -317,7 +317,8 @@ def download_hrrr_by_hour(exe_date:pu.datetime, fst_hour:int, tgt_folder):
     else:
         exe_date = exe_date.add(hours=-1)
     # publishing time is 1 hour and 10 min after the cur_date, based on the observation
-    download_hrrr(cur_date=exe_date,fst_hour=0, tgt_folder='.')
+    print('start downloading...')
+    download_hrrr(cur_date=exe_date,fst_hour=0, tgt_folder=tgt_folder)
     
 
 
