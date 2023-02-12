@@ -1,0 +1,13 @@
+0	19	0	0	1	0	255	0	Visibility
+0	2	22	0	1	0	255	0	Wind speed (gust)
+0	3	0	0	1	0	255	0	Pressure
+0	0	0	0	1	0	255	0	Temperature
+0	0	0	0	103	2	255	0	Temperature
+0	1	0	0	103	2	255	0	Specific humidity
+0	0	6	0	103	2	255	0	Dewpoint temperature
+0	1	1	0	103	2	255	0	Relative humidity
+0	2	2	0	103	10	255	0	u-component of wind
+0	2	3	0	103	10	255	0	v-component of wind
+0	4	7	0	1	0	255	0	Downward short-wave radiation flux
+0	3	18	0	1	0	255	0	Planetary boundary layer height
+0	1	8	0	1	0	255	0	Total precipitation

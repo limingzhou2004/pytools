@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List
+from typing import List, Tuple
 from collections import OrderedDict
 
 
@@ -37,7 +37,7 @@ class WeatherData:
 
     def query_timestamp_sorted_data(
         self, query_timestamp: pd.DataFrame
-    ) -> (np.array, np.array):
+    ) -> Tuple[np.array, np.array]:
         """
         Return an array of weather data sorted by query timestamp, and match both timestamps in weather and load
 

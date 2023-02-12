@@ -28,11 +28,18 @@ load pred data
 generate npy files from hrrr
 extract npy files for WeatherData
 
+---------------------
+
+## Usage
+
+### weather data
 
 
 
 
 
+
+------
 #### Calendar data and load data
 
 * category or table_name
@@ -66,3 +73,11 @@ token_max_load_time = "max_load_time"
 ### Modeling
 TODO
 ### 
+
+
+
+## Installation
+- create a conda yaml file, `conda env create -f environment.yml`
+- create the env from the file `conda env create --name energy --file=environments.yml`
+
+- add airflow_local_settings.py to $AIRFLOW_HOME/config
