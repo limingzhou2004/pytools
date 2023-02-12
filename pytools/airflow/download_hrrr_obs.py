@@ -43,7 +43,8 @@ with DAG(
         kwarg = {
         'exe_date': execution_date_str, 
         'fst_hour':0, 
-        'tgt_folder':Variable.get('obs_dest_path')}
+        'tgt_folder':tgt_folder,
+        }
         print(kwarg)
         download_hrrr_by_hour(**kwarg)
 
