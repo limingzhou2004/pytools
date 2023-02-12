@@ -87,3 +87,5 @@ TODO
 - test, `airflow test dag_id task_id 2023-02-13`
 
 - remove example dags by change the setting in airflow.cfg `load_examples = True`
+
+- check data, `ls -lth ../energy/data/hrrr_obs` and `ls -lth ../energy/data/hrrr_fst`
