@@ -37,17 +37,28 @@ with DAG(
 
     t0 = LatestOnlyOperator(task_id='latest-start', dag=dag)  
 
-    def download_data(execution_date, **context):
+    def download_data(tgt_folder, execution_date_str):
         from pytools.data_prep.grib_utils import download_hrrr_by_hour
 
         kwarg = {
-        'exe_date': execution_date, 
+        'exe_date': execution_date_str, 
         'fst_hour':0, 
         'tgt_folder':Variable.get('obs_dest_path')}
         print(kwarg)
         download_hrrr_by_hour(**kwarg)
 
-    t1 = ExternalPythonOperator(python=py_path, retries=args['retries'], retry_delay=args['retry_delay'], task_id='download-hrrr-obs', python_callable=download_data, opexpect_airflow=True, expect_pendulum=True,dag=dag,provide_context=True)  
+    t1 = ExternalPythonOperator(
+        python=py_path, 
+        retries=args['retries'], 
+        retry_delay=args['retry_delay'], 
+        task_id='download-hrrr-obs', 
+        python_callable=download_data, 
+        opexpect_airflow=True, 
+        expect_pendulum=True,
+        dag=dag,  
+        op_kwargs={
+          'execution_date_str': '{{ execution_date }}', 'tgt_folder': obs_dest_path
+        })  
 
     t0.set_downstream(t1)
 
