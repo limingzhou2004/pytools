@@ -11,7 +11,7 @@ from airflow.models import Variable
 from airflow.models import Variable
 import pendulum as pu
 
-from pytools.data_prep.grib_utils import download_hrrr_by_hour
+
 
 
 args={
@@ -31,7 +31,6 @@ with DAG(
     py_path = Variable.get('py_path',default_var=None)
     if not py_path:
         py_path = '/Users/limingzhou/miniforge3/envs/energy_x86/bin/python'
-    #exe_date = Variable.get('execution_date')
     obs_dest_path = Variable.get('obs_dest_path', default_var=None)
     if not obs_dest_path:
         obs_dest_path = '.'
@@ -39,13 +38,15 @@ with DAG(
     t0 = LatestOnlyOperator(task_id='latest-start')  
 
     def download_data(execution_date, **context):
+        from pytools.data_prep.grib_utils import download_hrrr_by_hour
+
         kwarg = {
         'exe_date': execution_date, 
         'fst_hour':0, 
         'tgt_folder':obs_dest_path},
         download_hrrr_by_hour(**kwarg)
 
-    t1 = ExternalPythonOperator(python=py_path, retries=args['retries'], retry_delay=args['retry_delay'], task_id='download-hrrr-obs',python_callable=download_hrrr_by_hour, expect_airflow=True, expect_pendulum=True)  
+    t1 = ExternalPythonOperator(python=py_path, retries=args['retries'], retry_delay=args['retry_delay'], task_id='download-hrrr-obs',python_callable=download_data, expect_airflow=True, expect_pendulum=True)  
 
     t0.set_downstream(t1)
     #op0>>task0

@@ -11,7 +11,8 @@ pendulum
 
 psycopg2-binary
 #pynio -- need to use conda 
-#CONDA_SUBDIR=osx-64 conda install pynio
+#CONDA_SUBDIR=osx-64 conda install -y pynio
+# conda install -y -c conda-forge pynio
 pytorch-lightning
 read_env
 requests
