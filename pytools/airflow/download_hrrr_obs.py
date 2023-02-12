@@ -35,7 +35,7 @@ with DAG(
     if not obs_dest_path:
         obs_dest_path = '.'
 
-    t0 = LatestOnlyOperator(task_id='latest-start')  
+    t0 = LatestOnlyOperator(task_id='latest-start', dag=dag)  
 
     def download_data(execution_date, **context):
         from pytools.data_prep.grib_utils import download_hrrr_by_hour
@@ -46,7 +46,7 @@ with DAG(
         'tgt_folder':obs_dest_path},
         download_hrrr_by_hour(**kwarg)
 
-    t1 = ExternalPythonOperator(python=py_path, retries=args['retries'], retry_delay=args['retry_delay'], task_id='download-hrrr-obs',python_callable=download_data, expect_airflow=True, expect_pendulum=True)  
+    t1 = ExternalPythonOperator(python=py_path, retries=args['retries'], retry_delay=args['retry_delay'], task_id='download-hrrr-obs',python_callable=download_data, expect_airflow=True, expect_pendulum=True,dag=dag)  
 
     t0.set_downstream(t1)
     #op0>>task0
