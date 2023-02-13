@@ -23,7 +23,7 @@ args={
 with DAG(
     "hrrr_fst", start_date=pu.datetime(2023, 1, 1, tz="UTC"),
     dagrun_timeout=args['time_out'],
-    schedule="20 0 * * *", catchup=False, tags=['hrrr','liming']
+    schedule="20 1 * * *", catchup=False, tags=['hrrr','liming'] # wait till 1 hour 20 min later; 1,7,13,19; 1 hour after 0,6,12,18
 ) as dag:
     # airflow variables set [-h] [-j] [-v] key VALUE    
     py_path = Variable.get('py_path',default_var=None)
