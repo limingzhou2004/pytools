@@ -56,7 +56,7 @@ with DAG(
 
     max_hours = Variable.get('max_fst_hours', default_var=3)
     t=[]
-    for i in range(max_hours):
+    for i in range(int(max_hours)):
 
         tu = ExternalPythonOperator(
         python=py_path, 
