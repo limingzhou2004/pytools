@@ -312,10 +312,10 @@ def download_hrrr(cur_date:pu.datetime, fst_hour:int, tgt_folder:str):
 def download_hrrr_by_hour(exe_date:pu.datetime, fst_hour:int, tgt_folder):
 
     # from the now time, derive the fst time; if the 1st success, the remaining 48 should be available.
-    if exe_date.minute < 10:
-        exe_date = exe_date.add(hours=-2)
-    else:
-        exe_date = exe_date.add(hours=-1)
+    # if exe_date.minute < 10:
+    #     exe_date = exe_date.add(hours=-1)
+    # else:
+    #     exe_date = exe_date.add(hours=-0)
     # publishing time is 1 hour and 10 min after the cur_date, based on the observation
     print('start downloading...')
     download_hrrr(cur_date=exe_date,fst_hour=fst_hour, tgt_folder=tgt_folder)
