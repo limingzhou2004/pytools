@@ -12,8 +12,6 @@ from airflow.models import Variable
 import pendulum as pu
 
 
-
-
 args={
     'owner' : 'liming',
     'time_out':timedelta(hours=48),
@@ -46,7 +44,7 @@ with DAG(
         exe_date = pu.parse(execution_date_str)
         hrs = exe_date.hour 
         hrs = hrs % 6
-        exe_date = exe_date.add_timedelta(timedelta(hours=-hrs))
+        exe_date = exe_date.add(hours=-hrs)
  
         kwarg = {
         'exe_date': exe_date,
@@ -56,7 +54,7 @@ with DAG(
         print(kwarg)
         download_hrrr_by_hour(**kwarg)
 
-    max_hours = Variable.get('max_hrs_hours', default_var=3)
+    max_hours = Variable.get('max_fst_hours', default_var=3)
     t=[]
     for i in range(max_hours):
 
