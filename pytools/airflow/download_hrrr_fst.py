@@ -16,7 +16,7 @@ import pendulum as pu
 
 args={
     'owner' : 'liming',
-    'time_out':timedelta(seconds=1800),
+    'time_out':timedelta(hours=48),
     'retries': 5,
     'retry_delay': timedelta(minutes=5),
     'start_date':pu.now(tz='UTC').add(hours=-3)# 1 means yesterday
