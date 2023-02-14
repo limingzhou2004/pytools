@@ -41,8 +41,9 @@ with DAG(
         import pendulum as pu  
 
         # round the hour to 0, 6, 12, 18
+        exe_date = pu.parse(execution_date_str).add(hours=-1) if '{{ dag_run.external_trigger }}' else pu.parse(execution_date_str).add(hours=5)
 
-        exe_date = pu.parse(execution_date_str).add(hours=-1)
+       # exe_date = pu.parse(execution_date_str).add(hours=-1)
         print(exe_date)
         hrs = exe_date.hour % 6
         print(f'hrs={hrs}')
@@ -60,11 +61,10 @@ with DAG(
     t=[]
     for i in range(int(max_hours)):
 
-        print(f'interval end {{ data_interval_end }}')
         tu = ExternalPythonOperator(
         python=py_path, 
         op_kwargs={
-        'execution_date_str': '{{ data_interval_end }}', 'tgt_folder': obs_dest_path, 'fst_hour':i+1
+        'execution_date_str': '{{ ts }}', 'tgt_folder': obs_dest_path, 'fst_hour':i+1
         },
         retries=args['retries'], 
         retry_delay=args['retry_delay'], 
