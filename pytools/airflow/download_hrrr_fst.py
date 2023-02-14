@@ -60,6 +60,7 @@ with DAG(
     t=[]
     for i in range(int(max_hours)):
 
+        print(f'interval end {{ data_interval_end }}')
         tu = ExternalPythonOperator(
         python=py_path, 
         op_kwargs={
