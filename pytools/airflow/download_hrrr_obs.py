@@ -35,13 +35,13 @@ with DAG(
 
     t0 = LatestOnlyOperator(task_id='latest-start', dag=dag)  
 
-    def download_data(tgt_folder, fst_hour,  execution_date_str):
+    def download_data(tgt_folder, fst_hour,  execution_date_str, external_trigger):
         from pytools.data_prep.grib_utils import download_hrrr_by_hour
         import pendulum as pu  
         print('trigger...')
-        external = '{{ dag_run.external_trigger }}'
-        print(external)
-        exe_date = pu.parse(execution_date_str).add(hours=-1) if external else pu.parse(execution_date_str).add(hours=1)
+        
+        print(external_trigger)
+        exe_date = pu.parse(execution_date_str).add(hours=-1) if external_trigger else pu.parse(execution_date_str).add(hours=1)
 
         kwarg = {
         'exe_date': exe_date, 
@@ -54,7 +54,10 @@ with DAG(
     t1 = ExternalPythonOperator(
         python=py_path, 
         op_kwargs={
-          'execution_date_str': '{{ ts }}', 'tgt_folder': obs_dest_path, 'fst_hour':0
+          'execution_date_str': '{{ ts }}', 
+          'tgt_folder': obs_dest_path, 
+          'fst_hour':0,
+          'external_trigger': '{{ dag_run.external_trigger}}'
         },
         retries=args['retries'], 
         retry_delay=args['retry_delay'], 
