@@ -39,8 +39,9 @@ with DAG(
         from pytools.data_prep.grib_utils import download_hrrr_by_hour
         import pendulum as pu  
         print('trigger...')
-        print('{{ dag_run.external_trigger }}')
-        exe_date = pu.parse(execution_date_str).add(hours=-1) if '{{ dag_run.external_trigger }}' else pu.parse(execution_date_str).add(hours=1)
+        external = '{{ dag_run.external_trigger }}'
+        print(external)
+        exe_date = pu.parse(execution_date_str).add(hours=-1) if external else pu.parse(execution_date_str).add(hours=1)
 
         kwarg = {
         'exe_date': exe_date, 
