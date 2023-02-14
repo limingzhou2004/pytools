@@ -20,10 +20,11 @@ args={
     'start_date':pu.now(tz='UTC').add(hours=-3)# 1 means yesterday
 }
 
+# for forecast of 48 hours, use 0,6,12,18
 with DAG(
     "hrrr_fst", start_date=pu.datetime(2023, 1, 1, tz="UTC"),
     dagrun_timeout=args['time_out'],
-    schedule="20 1 * * *", catchup=False, tags=['hrrr','liming'] # wait till 1 hour 20 min later; 1,7,13,19; 1 hour after 0,6,12,18
+    schedule="20 0 * * *", catchup=False, tags=['hrrr','liming'] 
 ) as dag:
     # airflow variables set [-h] [-j] [-v] key VALUE    
     py_path = Variable.get('py_path',default_var=None)
@@ -35,15 +36,17 @@ with DAG(
 
     t0 = LatestOnlyOperator(task_id='latest-start', dag=dag)  
 
-    def download_data(tgt_folder, fst_hour,  execution_date_str):
+    def download_data(tgt_folder, fst_hour,  execution_date_str, external_trigger):
         from pytools.data_prep.grib_utils import download_hrrr_by_hour
         import pendulum as pu  
 
         # round the hour to 0, 6, 12, 18
+        exe_date = pu.parse(execution_date_str).add(hours=-1) if external_trigger  else pu.parse(execution_date_str).add(hours=5)
 
-        exe_date = pu.parse(execution_date_str)
-        hrs = exe_date.hour 
-        hrs = hrs % 6
+       # exe_date = pu.parse(execution_date_str).add(hours=-1)
+        print(exe_date)
+        hrs = exe_date.hour % 6
+        print(f'hrs={hrs}')
         exe_date = exe_date.add(hours=-hrs)
  
         kwarg = {
@@ -61,7 +64,8 @@ with DAG(
         tu = ExternalPythonOperator(
         python=py_path, 
         op_kwargs={
-        'execution_date_str': '{{ execution_date }}', 'tgt_folder': obs_dest_path, 'fst_hour':i+1
+        'execution_date_str': '{{ ts }}', 'tgt_folder': obs_dest_path, 'fst_hour':i+1,
+        'external_trigger': '{{ dag_run.external_trigger }}',
         },
         retries=args['retries'], 
         retry_delay=args['retry_delay'], 

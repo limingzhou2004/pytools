@@ -276,7 +276,7 @@ def extract_datetime_from_utah_files(fn:str) -> np.datetime64:
     
     return
 
-#@retry(tries=1, delay=20, backoff=3)
+
 def download_hrrr(cur_date:pu.datetime, fst_hour:int, tgt_folder:str):
     """
     Download hrrr data
