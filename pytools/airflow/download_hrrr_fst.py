@@ -43,8 +43,9 @@ with DAG(
         # round the hour to 0, 6, 12, 18
 
         exe_date = pu.parse(execution_date_str).add(hours=-1)
-        hrs = exe_date.hour 
-        hrs = hrs % 6
+        print(exe_date)
+        hrs = exe_date.hour % 6
+        print(f'hrs={hrs}')
         exe_date = exe_date.add(hours=-hrs)
  
         kwarg = {
