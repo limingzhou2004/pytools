@@ -20,10 +20,11 @@ args={
     'start_date':pu.now(tz='UTC').add(hours=-3)# 1 means yesterday
 }
 
+# for forecast of 48 hours, use 0,6,12,18
 with DAG(
     "hrrr_fst", start_date=pu.datetime(2023, 1, 1, tz="UTC"),
     dagrun_timeout=args['time_out'],
-    schedule="20 1 * * *", catchup=False, tags=['hrrr','liming'] # wait till 1 hour 20 min later; 1,7,13,19; 1 hour after 0,6,12,18
+    schedule="20 0 * * *", catchup=False, tags=['hrrr','liming'] 
 ) as dag:
     # airflow variables set [-h] [-j] [-v] key VALUE    
     py_path = Variable.get('py_path',default_var=None)
@@ -41,10 +42,10 @@ with DAG(
 
         # round the hour to 0, 6, 12, 18
 
-        exe_date = pu.parse(execution_date_str)
+        exe_date = pu.parse(execution_date_str).add(hours=1)
         hrs = exe_date.hour 
         hrs = hrs % 6
-        exe_date = exe_date.add(hours=-hrs)
+        exe_date = exe_date.add(hours=hrs)
  
         kwarg = {
         'exe_date': exe_date,

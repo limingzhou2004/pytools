@@ -40,7 +40,7 @@ with DAG(
         import pendulum as pu  
  
         kwarg = {
-        'exe_date': pu.parse(execution_date_str), 
+        'exe_date': pu.parse(execution_date_str).add(hours=1), 
         'fst_hour':fst_hour, 
         'tgt_folder':tgt_folder,
         }
