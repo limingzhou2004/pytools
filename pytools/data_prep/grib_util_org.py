@@ -14,3 +14,5 @@ import pandas as pd
 import pendulum as pu
 
 
+# give a folder list all grib files, nc files greater than 1mb.
+
