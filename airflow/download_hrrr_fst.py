@@ -24,7 +24,7 @@ args={
 with DAG(
     "hrrr_fst", start_date=pu.datetime(2023, 1, 1, tz="UTC"),
     dagrun_timeout=args['time_out'],
-    schedule="20 0 * * *", catchup=False, tags=['hrrr','liming'] 
+    schedule="50 0 * * *", catchup=False, tags=['hrrr','liming'] 
 ) as dag:
     # airflow variables set [-h] [-j] [-v] key VALUE    
     py_path = Variable.get('py_path',default_var=None)
@@ -41,7 +41,7 @@ with DAG(
         import pendulum as pu  
 
         # round the hour to 0, 6, 12, 18
-        exe_date = pu.parse(execution_date_str) if external_trigger  else pu.parse(execution_date_str).add(hours=6)
+        exe_date = pu.parse(execution_date_str) if bool(external_trigger)  else pu.parse(execution_date_str).add(hours=6)
         if exe_date.minute < critical_time:
             exe_date = exe_date.add(hours=-1)
 

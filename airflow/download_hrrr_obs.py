@@ -23,11 +23,11 @@ args={
 with DAG(
     "hrrr_obs", start_date=pu.datetime(2023, 1, 1, tz="UTC"),
     dagrun_timeout=args['time_out'],
-    schedule="20 * * * *", catchup=False, tags=['hrrr','liming']
+    schedule="50 * * * *", catchup=False, tags=['hrrr','liming']
 ) as dag:
     # airflow variables set [-h] [-j] [-v] key VALUE    
     py_path = Variable.get('py_path',default_var=None)
-    critical_time = int(Variable.get('critical_time_mm', default_var=20))
+    critical_time = int(Variable.get('critical_time_mm', default_var=50))
 
     if not py_path:
         py_path = '/Users/limingzhou/miniforge3/envs/energy_x86/bin/python'
@@ -43,8 +43,8 @@ with DAG(
         print('trigger...')
         
         print(external_trigger)
-        exe_date = pu.parse(execution_date_str) if external_trigger else pu.parse(execution_date_str).add(hours=1)
-
+        exe_date = pu.parse(execution_date_str) if bool(external_trigger) else pu.parse(execution_date_str).add(hours=1)
+        # the hrrr data are found to be generated at 50 min past the starting hour
         if exe_date.minute < critical_time:
             exe_date = exe_date.add(hours=-1)
 
@@ -62,7 +62,7 @@ with DAG(
           'execution_date_str': '{{ ts }}', 
           'tgt_folder': obs_dest_path, 
           'fst_hour':0,
-          'external_trigger': '{{ dag_run.external_trigger}}',
+          'external_trigger': '{{ dag_run.external_trigger }}',
           'critical_time': critical_time,
         },
         retries=args['retries'], 
