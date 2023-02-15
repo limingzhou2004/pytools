@@ -59,7 +59,7 @@ with DAG(
         download_hrrr_by_hour(**kwarg)
 
     max_hours = Variable.get('max_fst_hours', default_var=3)
-    critical_time = Variable.get('critical_time_mm', default_var=20)
+    critical_time = int(Variable.get('critical_time_mm', default_var=20))
 
     t=[]
     for i in range(int(max_hours)):

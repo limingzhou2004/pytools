@@ -27,7 +27,7 @@ with DAG(
 ) as dag:
     # airflow variables set [-h] [-j] [-v] key VALUE    
     py_path = Variable.get('py_path',default_var=None)
-    critical_time = Variable.get('critical_time_mm', default_var=20)
+    critical_time = int(Variable.get('critical_time_mm', default_var=20))
 
     if not py_path:
         py_path = '/Users/limingzhou/miniforge3/envs/energy_x86/bin/python'
