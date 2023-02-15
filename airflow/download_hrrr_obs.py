@@ -23,7 +23,7 @@ args={
 with DAG(
     "hrrr_obs", start_date=pu.datetime(2023, 1, 1, tz="UTC"),
     dagrun_timeout=args['time_out'],
-    schedule="10 * * * *", catchup=False, tags=['hrrr','liming']
+    schedule="15 * * * *", catchup=False, tags=['hrrr','liming']
 ) as dag:
     # airflow variables set [-h] [-j] [-v] key VALUE    
     py_path = Variable.get('py_path',default_var=None)
@@ -40,14 +40,12 @@ with DAG(
     def download_data(tgt_folder, fst_hour,  execution_date_str, external_trigger, critical_time):
         from pytools.data_prep.grib_utils import download_hrrr_by_hour
         import pendulum as pu  
-        print('trigger...')
+        print(f'trigger... {external_trigger}')
         
-        print(type(external_trigger))
-        exe_date = pu.parse(execution_date_str) if bool(external_trigger) else pu.parse(execution_date_str).add(hours=1)
+        exe_date = pu.parse(execution_date_str) if external_trigger == 'True' else pu.parse(execution_date_str).add(hours=1)
         # the hrrr data are found to be generated at 50 min past the starting hour
         print(exe_date)
         if exe_date.minute < critical_time:
-           
             exe_date = exe_date.add(hours=-1)
             print(exe_date)
 
