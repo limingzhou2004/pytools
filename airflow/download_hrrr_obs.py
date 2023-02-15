@@ -45,7 +45,7 @@ with DAG(
         print(external_trigger)
         exe_date = pu.parse(execution_date_str) if external_trigger else pu.parse(execution_date_str).add(hours=1)
 
-        if exe_date.minutes < critical_time:
+        if exe_date.minute < critical_time:
             exe_date = exe_date.add(hours=-1)
 
         kwarg = {
