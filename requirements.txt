@@ -7,6 +7,7 @@ mlflow
 geopandas
 pandas
 pendulum
+# manual install pyiso from source code as v1.0
 # nda iconstall -c conda-forge pygrib -- not used
 
 psycopg2-binary
