@@ -27,6 +27,8 @@ with DAG(
 ) as dag:
     # airflow variables set [-h] [-j] [-v] key VALUE    
     py_path = Variable.get('py_path',default_var=None)
+    critical_time = Variable.get('critical_time_mm', default_var=20)
+
     if not py_path:
         py_path = '/Users/limingzhou/miniforge3/envs/energy_x86/bin/python'
     obs_dest_path = Variable.get('obs_dest_path', default_var=None)
@@ -35,7 +37,7 @@ with DAG(
 
     t0 = LatestOnlyOperator(task_id='latest-start', dag=dag)  
 
-    def download_data(tgt_folder, fst_hour,  execution_date_str, external_trigger):
+    def download_data(tgt_folder, fst_hour,  execution_date_str, external_trigger, critical_time):
         from pytools.data_prep.grib_utils import download_hrrr_by_hour
         import pendulum as pu  
         print('trigger...')
@@ -43,7 +45,6 @@ with DAG(
         print(external_trigger)
         exe_date = pu.parse(execution_date_str) if external_trigger else pu.parse(execution_date_str).add(hours=1)
 
-        critical_time = Variable.get('critical_time_mm', default_var=20)
         if exe_date.minutes < critical_time:
             exe_date = exe_date.add(hours=-1)
 
@@ -61,7 +62,8 @@ with DAG(
           'execution_date_str': '{{ ts }}', 
           'tgt_folder': obs_dest_path, 
           'fst_hour':0,
-          'external_trigger': '{{ dag_run.external_trigger}}'
+          'external_trigger': '{{ dag_run.external_trigger}}',
+          'critical_time': critical_time,
         },
         retries=args['retries'], 
         retry_delay=args['retry_delay'], 
