@@ -41,7 +41,7 @@ with DAG(
         import pendulum as pu  
 
         # round the hour to 0, 6, 12, 18
-        exe_date = pu.parse(execution_date_str) if bool(external_trigger)  else pu.parse(execution_date_str).add(hours=6)
+        exe_date = pu.parse(execution_date_str) if external_trigger == 'True'  else pu.parse(execution_date_str).add(hours=6)
         if exe_date.minute < critical_time:
             exe_date = exe_date.add(hours=-1)
 

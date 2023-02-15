@@ -40,13 +40,14 @@ with DAG(
     def download_data(tgt_folder, fst_hour,  execution_date_str, external_trigger, critical_time):
         from pytools.data_prep.grib_utils import download_hrrr_by_hour
         import pendulum as pu  
-        print('trigger...')
+        print(f'trigger... {external_trigger}')
         
-        print(external_trigger)
-        exe_date = pu.parse(execution_date_str) if bool(external_trigger) else pu.parse(execution_date_str).add(hours=1)
+        exe_date = pu.parse(execution_date_str) if external_trigger == 'True' else pu.parse(execution_date_str).add(hours=1)
         # the hrrr data are found to be generated at 50 min past the starting hour
+        print(exe_date)
         if exe_date.minute < critical_time:
             exe_date = exe_date.add(hours=-1)
+            print(exe_date)
 
         kwarg = {
         'exe_date': exe_date, 
