@@ -23,7 +23,7 @@ args={
 with DAG(
     "hrrr_obs", start_date=pu.datetime(2023, 1, 1, tz="UTC"),
     dagrun_timeout=args['time_out'],
-    schedule="51 * * * *", catchup=False, tags=['hrrr','liming']
+    schedule="56 * * * *", catchup=False, tags=['hrrr','liming']
 ) as dag:
     # airflow variables set [-h] [-j] [-v] key VALUE    
     py_path = Variable.get('py_path',default_var=None)
@@ -45,9 +45,9 @@ with DAG(
         exe_date = pu.parse(execution_date_str) if external_trigger == 'True' else pu.parse(execution_date_str).add(hours=1)
         # the hrrr data are found to be generated at 50 min past the starting hour
         print(exe_date)
-        if exe_date.minute < critical_time:
-            exe_date = exe_date.add(hours=-1)
-            print(exe_date)
+        exe_date = exe_date.add(minutes=-critical_time)
+
+        print(exe_date)
 
         kwarg = {
         'exe_date': exe_date, 

@@ -42,8 +42,7 @@ with DAG(
 
         # round the hour to 0, 6, 12, 18
         exe_date = pu.parse(execution_date_str) if external_trigger == 'True'  else pu.parse(execution_date_str).add(hours=6)
-        if exe_date.minute < critical_time:
-            exe_date = exe_date.add(hours=-1)
+        exe_date = exe_date.add(minutes=-critical_time)
 
         print(exe_date)
         hrs = exe_date.hour % 6
