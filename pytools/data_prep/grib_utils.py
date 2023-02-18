@@ -138,7 +138,7 @@ def read_utah_file_and_save_a_subset(fn:str, para_file:str, tgt_folder:str, rena
     ds2.to_netcdf(path=os.path.join(tgt_folder, fn.replace('grib2', 'nc')), engine='scipy')
 
 
-def get_all_files(folders: Union[str, Tuple[str]], size_kb_fileter:int=2000) -> List[str]:
+def get_all_files(folders: Union[str, Tuple[str]],size_kb_fileter=1024) -> List[str]:
     pfn = 'hrrrfiles.csv'
     if os.path.exists(pfn):
         x = pd.read_csv(pfn)
@@ -158,7 +158,7 @@ def get_all_files(folders: Union[str, Tuple[str]], size_kb_fileter:int=2000) -> 
     #return [f for f in filenames if os.path.getsize(f)/1024 >= size_kb_fileter]
 
 
-def get_all_files_iter(folders: Union[str, Tuple[str]], size_kb_fileter:int=2000) -> List[str]:
+def get_all_files_iter(folders: Union[str, Tuple[str]],size_kb_fileter=1024) -> List[str]:
     file_iter = iter([])
     if isinstance(folders, str):
         file_iter = chain(file_iter, os.scandir(folders))

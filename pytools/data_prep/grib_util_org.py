@@ -13,20 +13,32 @@ import sys
 import time
 from typing import List, Tuple, Union, Dict
 
-import duckdb
 import pandas as pd
 import pendulum as pu
 
-from pytools.retry.api import retry
+from pytools.data_prep.grib_utils import get_all_files
+
 
 folder_table_name = 'hrrr_folder_info'
-folder_info_file = 'data/hrrr_obs_folder.txt'
+cur_path = os.path.dirname(os.path.realpath(__file__)), 
+folder_info_file = os.path.join(cur_path, '../data/hrrr_obs_folder.txt')
 
 
-def build_folder_info_table(batch_no=0, insert=False):
-    df = pd.read_csv(folder_info_file)
-    duckdb.sql(f"CREATE TABLE my_table AS SELECT * FROM my_df")
-    return
+def load_files(batch_no=0):
+    df = pd.read_csv(folder_info_file, dtype={'folder':str, 'batch':int})
+    df = df[df['batch'] ==0]
+    ds = []
+    for f in df['folder']:
+        df0 = pd.DataFrame(data={'filename':get_all_files(f)})
+        df0['folder'] = f
+        ds.append(df0)
+        
+    os.path.splitext(
+
+    fo = pd.concat(ds)
+    fo.to_pickle(f'{os.join(cur_path}../data/grib2_folder_{batch}.pkl')
+
+    
 
 
 def main():
@@ -34,4 +46,5 @@ def main():
 
 
 if __name__ == '__main__':
+    load_files(0)
     main()
