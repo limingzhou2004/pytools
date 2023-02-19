@@ -11,7 +11,7 @@ import rioxarray
 from airflow.operators.python import ExternalPythonOperator
 
 
-from pytools.data_prep.grib_utils import download_hrrr, download_utah_file_extract, find_missing_grib2, print_grib2_info, find_ind_fromlatlon, extract_a_file
+from pytools.data_prep.grib_utils import download_hrrr, download_utah_file_extract, find_missing_grib2, print_grib2_info, find_ind_fromlatlon, extract_a_file, decide_grib_type
 
 
 @pytest.mark.skip(reason='large binary files needed for the test')
@@ -89,6 +89,17 @@ def test_download_hrrr():
     # publishing time is 1 hour and 10 min after the cur_date, based on the observation
     download_hrrr(cur_date=cur_date,fst_hour=0, tgt_folder='.')
     assert 1==1
+
+
+def test_decide_grib_type():
+    hrrr_obs = 'hrrrsub_2020_01_01_00F0.grib2'
+    hrrr_fst = 'hrrrsub_12_2020_01_01_18F1.grib2'
+    utah_grib = '20200105.hrrr.t14z.wrfsfcf00.grib2'
+
+    assert decide_grib_type(hrrr_obs) == 'hrrr_obs'
+    assert decide_grib_type(hrrr_fst) == 'hrrr_fst'
+    assert decide_grib_type(utah_grib) == 'utah_grib'
+    assert decide_grib_type('Nosense') == None
 
 
 def test_get_stats():

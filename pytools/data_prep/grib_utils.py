@@ -151,10 +151,12 @@ def get_all_files(folders: Union[str, Tuple[str]],size_kb_fileter=1024) -> List[
         for f in folders:
             filenames.extend(glob.glob(f+ "/*.grib2"))
     
-    df = pd.DataFrame(filenames, columns = ['name'])
+
+    df = pd.DataFrame(filenames, columns=['name'])
     df.to_csv(pfn)
 
     return filenames
+    # use Linux command to remove files less than a certain size.
     #return [f for f in filenames if os.path.getsize(f)/1024 >= size_kb_fileter]
 
 
@@ -168,10 +170,7 @@ def get_all_files_iter(folders: Union[str, Tuple[str]],size_kb_fileter=1024) -> 
 
     for f in file_iter:
         yield f
-        #if os.path.getsize(f)/1024 >= size_kb_fileter:
-          #  yield f
-           
-
+          
 
 def find_missing_grib2(folders:Union[str, List[str]], tgt_folder:str='.', t0:str=None, t1:str=None)->List[str]:
     """
@@ -269,6 +268,31 @@ def fillmissing(sourcefolder:str, targetfolder:str, t0:str=None, t1:str=None, ho
     find_missing_grib2(folders=sourcefolder.split(','), tgt_folder=targetfolder, t0=t0, t1=t1)
     print('start...')
     
+
+def decide_grib_type(fn:str): 
+    """
+    #     hrrr_obs = 'hrrrsub_2020_01_01_00F0.grib2'
+    #     hrrr_fst = 'hrrrsub_12_2020_01_01_18F1.grib2'
+    #     utah_grib = '20200105.hrrr.t14z.wrfsfcf00.grib2'
+   
+    Args:
+        fn (str): grib filename
+
+    Returns:
+        str: hrrr_obs|hrrr_fst|utah_grib|utah_nc
+    """
+    import re
+    p = re.compile('hrrrsub_\d\d\d\d_\d\d_\d\d_\d\dF\w*.grib2')
+    if p.match(fn): 
+        return 'hrrr_obs'
+    p = re.compile('hrrrsub_\d\d_\d\d\d\d_\d\d_\d\d_\d\d\w*.grib2')
+    if p.match(fn): 
+        return 'hrrr_fst'
+    p = re.compile('\d\d\d\d\d\d\d\d.hrrr.\w*.\w*.grib2')
+    if p.match(fn): 
+        return 'utah_grib'
+    
+
 
 def extract_datetime_from_utah_files(fn:str) -> np.datetime64:
     # TODO
