@@ -138,7 +138,7 @@ def read_utah_file_and_save_a_subset(fn:str, para_file:str, tgt_folder:str, rena
     ds2.to_netcdf(path=os.path.join(tgt_folder, fn.replace('grib2', 'nc')), engine='scipy')
 
 
-def get_all_files(folders: Union[str, Tuple[str]],size_kb_fileter=1024) -> List[str]:
+def get_all_files(folders: Union[str, Tuple[str]], exclude_small_files=False, size_kb_fileter=1024) -> List[str]:
     pfn = 'hrrrfiles.csv'
     if os.path.exists(pfn):
         x = pd.read_csv(pfn)
@@ -151,16 +151,16 @@ def get_all_files(folders: Union[str, Tuple[str]],size_kb_fileter=1024) -> List[
         for f in folders:
             filenames.extend(glob.glob(f+ "/*.grib2"))
     
-
+    # It's better to use Linux command to remove files less than a certain size.
+    if exclude_small_files: 
+        filenames = [f for f in filenames if os.path.getsize(f)/1024 >= size_kb_fileter]
     df = pd.DataFrame(filenames, columns=['name'])
     df.to_csv(pfn)
 
     return filenames
-    # use Linux command to remove files less than a certain size.
-    #return [f for f in filenames if os.path.getsize(f)/1024 >= size_kb_fileter]
 
 
-def get_all_files_iter(folders: Union[str, Tuple[str]],size_kb_fileter=1024) -> List[str]:
+def get_all_files_iter(folders: Union[str, Tuple[str]], exclude_small_files=False, size_kb_fileter=1024) -> List[str]:
     file_iter = iter([])
     if isinstance(folders, str):
         file_iter = chain(file_iter, os.scandir(folders))
@@ -169,7 +169,11 @@ def get_all_files_iter(folders: Union[str, Tuple[str]],size_kb_fileter=1024) -> 
             file_iter = chain(file_iter, os.scandir(f))
 
     for f in file_iter:
-        yield f
+        if exclude_small_files:
+            if os.path.getsize(f)/1024 >=size_kb_fileter:
+                yield f
+        else:
+            yield f
           
 
 def find_missing_grib2(folders:Union[str, List[str]], tgt_folder:str='.', t0:str=None, t1:str=None)->List[str]:
@@ -203,7 +207,7 @@ def find_missing_grib2(folders:Union[str, List[str]], tgt_folder:str='.', t0:str
                 return cur_dates.max()
 
     t0 = process_time(t0)
-    t1 = process_time(t1)
+    t1 = process_time(t1, 'max')
 
     # find the missing hours
     full_timestamp = np.arange(t0, t1, np.timedelta64(1, "h"))
@@ -218,6 +222,12 @@ def find_missing_grib2(folders:Union[str, List[str]], tgt_folder:str='.', t0:str
         print(f'\nprocessing {t}...')
         download_utah_file_extract(cur_date=t, fst_hour=0, tgt_folder=tgt_folder)
 
+
+def produce_full_timestamp(cur_dates):
+    t0 = cur_dates.min()
+    t1 = cur_dates.max()
+    # find the missing hours
+    return np.arange(t0, t1+np.timedelta64(1, "h"), np.timedelta64(1, "h"),)
 
 @retry(tries=5, delay=20)
 def download_utah_file_extract(cur_date:np.datetime64, fst_hour:int, tgt_folder:str):
@@ -282,17 +292,17 @@ def decide_grib_type(fn:str):
         str: hrrr_obs|hrrr_fst|utah_grib|utah_nc
     """
     import re
-    p = re.compile('hrrrsub_\d\d\d\d_\d\d_\d\d_\d\dF\w*.grib2')
+    p = re.compile('hrrrsub_\d\d\d\d_\d\d_\d\d_\d\dF\w*')
     if p.match(fn): 
         return 'hrrr_obs'
-    p = re.compile('hrrrsub_\d\d_\d\d\d\d_\d\d_\d\d_\d\d\w*.grib2')
+    p = re.compile('hrrrsub_\d\d_\d\d\d\d_\d\d_\d\d_\d\d\w*')
     if p.match(fn): 
         return 'hrrr_fst'
-    p = re.compile('\d\d\d\d\d\d\d\d.hrrr.\w*.\w*.grib2')
+    p = re.compile('\d\d\d\d\d\d\d\d.hrrr.\w*.\w*')
     if p.match(fn): 
         return 'utah_grib'
+    raise ValueError(f'{fn} unrecognized!')
     
-
 
 def extract_datetime_from_utah_files(fn:str) -> np.datetime64:
     # TODO

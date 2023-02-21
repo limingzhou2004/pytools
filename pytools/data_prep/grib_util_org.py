@@ -16,13 +16,14 @@ from typing import List, Tuple, Union, Dict
 import pandas as pd
 import pendulum as pu
 import polars as pl
+from tqdm import tqdm
 
-from pytools.data_prep.grib_utils import decide_grib_type, get_all_files_iter
-from pytools.data_prep.weather_data_prep import get_datetime_from_grib_file_name
+from pytools.data_prep.grib_utils import decide_grib_type, get_all_files_iter, produce_full_timestamp
+from pytools.data_prep.weather_data_prep import get_datetime_from_grib_file_name, get_datetime_from_utah_file_name
 
 
 folder_table_name = 'hrrr_folder_info'
-cur_path = os.path.dirname(os.path.realpath(__file__)), 
+cur_path = os.path.dirname(os.path.realpath(__file__))
 folder_info_file = os.path.join(cur_path, '../data/hrrr_obs_folder.txt')
 
 col_folder = 'folder'
@@ -35,44 +36,43 @@ col_complete_timestamp = 'cplt_timestamp'
 
 def load_files(batch_no=0):
 
-    df = pd.read_csv(folder_info_file, dtype={'folder':str, 'batch':int})
-    df = df[df[col_batch] ==0]
+    df = pd.read_csv(folder_info_file, dtype={'folder':str, 'batch_no':int})
+    df = df[df[col_batch] ==batch_no]
     ds = []
 
-    def get_timestamp(fn:str):
+    def get_timestamp(fn:str, grib_type:str):
         # automatically decide wheter it is hrrr-obs, hrrr-fst, or nc-obs
-        grib_type = decide_grib_type(fn)
+        # grib_type = decide_grib_type(fn)
         if grib_type.startswith('hrrr'):
             return get_datetime_from_grib_file_name(hour_offset=0, filename=fn,nptime=True)
         else:
-            
-            return
-
-
-
-
+            return get_datetime_from_utah_file_name(filename=fn)
+    
+    tqdm.pandas()
     for f in df['folder']:
-        df0 = pd.DataFrame(data={col_filename:get_all_files_iter(f)})
+        df0 = pd.DataFrame(data={col_filename:[v.name for v in get_all_files_iter(f, exclude_small_files=True)]})
         df0[col_folder] = f
-        df0[col_type] = df0[col_folder].apply(lambda fn: os.path.splitext(fn)[1])
+        df0[col_type] = df0[col_filename].apply(decide_grib_type)
         # generate timestamp from filename
-        df0[col_timestamp] 
-        df0
-
-        # generate the complete timestamp and join
-
+        print(f'processing {f}...')
+        df0[col_timestamp] = df0.progress_apply(lambda x: get_timestamp(x[col_filename], x[col_type]), axis=1)
         ds.append(df0)
 
     fo = pd.concat(ds)
-    fo.to_pickle(os.join(cur_path, f'../data/grib2_folder_{batch_no}.pkl'))
+    # generate the complete timestamp and join
+    full_timestamp = produce_full_timestamp(fo[col_timestamp].values)
+    full_timestamp = pd.DataFrame(data=full_timestamp, columns=[col_complete_timestamp])
+    fo = pd.merge(left=fo, right=full_timestamp, how='left', left_on=col_timestamp, right_on=col_complete_timestamp) 
+    fo = fo.sort_values(by=col_complete_timestamp)
+
+    fo.to_pickle(os.path.join(cur_path, f'../data/grib2_folder_{batch_no}.pkl'))
 
     
-
-
 def main():
     return
 
 
 if __name__ == '__main__':
-    load_files(batch_no=0)
-    main()
+# usage, python -m  pytools.data_prep.grib_util_org 0
+    load_files(batch_no=int(sys.argv[1]))
+    # main()
