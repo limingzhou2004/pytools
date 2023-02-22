@@ -7,6 +7,8 @@ from functools import partial
 import glob
 from itertools import chain
 import os
+from os.path import exists
+
 from math import ceil, floor
 import shutil
 import sys
@@ -32,6 +34,26 @@ col_batch = 'batch'
 col_filename = 'filename'
 col_timestamp = 'timestamp'
 col_complete_timestamp = 'cplt_timestamp'
+
+
+def make_stats(fn='hrrr_stats_summary.csv'):
+    #load all pickle files for batch no from 0
+    dfs = []
+    for i in range(100):
+        pkl_path = os.path.join(os.path.dirname(__file__), f'../data/grib2_folder_{i}.pkl')
+        if exists(pkl_path):
+            dfs.append(pd.read_pickle(pkl_path))
+        else:
+            break
+    df = pd.concat(dfs)
+    df['year'] = df[col_complete_timestamp].apply(lambda t: t.year)
+    df['month'] = df[col_complete_timestamp].apply(lambda t: t.month)
+    dfg = df[df[col_timestamp].isna()==False].groupby(by=['year','month'])[col_complete_timestamp].count()
+    dfg2 = df[df[col_timestamp].isna()].groupby(['year', 'month'])[col_complete_timestamp].count()
+    dfg = pd.merge(dfg, dfg2, on=['year', 'month'], how='left')
+    dfg.columns = ['count', 'missing']
+    dfg.to_csv(fn)
+    
 
 
 def load_files(batch_no=0):
@@ -62,7 +84,7 @@ def load_files(batch_no=0):
     # generate the complete timestamp and join
     full_timestamp = produce_full_timestamp(fo[col_timestamp].values)
     full_timestamp = pd.DataFrame(data=full_timestamp, columns=[col_complete_timestamp])
-    fo = pd.merge(left=fo, right=full_timestamp, how='left', left_on=col_timestamp, right_on=col_complete_timestamp) 
+    fo = pd.merge(left=fo, right=full_timestamp, how='right', left_on=col_timestamp, right_on=col_complete_timestamp) 
     fo = fo.sort_values(by=col_complete_timestamp)
 
     fo.to_pickle(os.path.join(cur_path, f'../data/grib2_folder_{batch_no}.pkl'))

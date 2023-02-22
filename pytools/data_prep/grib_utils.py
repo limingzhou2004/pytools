@@ -254,26 +254,6 @@ def download_utah_file_extract(cur_date:np.datetime64, fst_hour:int, tgt_folder:
         print('failure to retriee...')
 
 
-def get_stats(folders:Union[str, List[str]], utah_folders:Union[str, List[str]], t0:str, t1:str)->pd.DataFrame:
-    """
-    Stats of the grib files, number, start, end, missing. 
-    Summary files by year: summary_year.csv, source, missing, starting datetime, ending datetime
-    Spec file by hour: spec_hour.csv, date-hour, source/hrrr|utah, missing
-
-    Args:
-        folders (Union[str, List[str]]): dirctories
-        utah_folders (Union[str, List[str]]): utah downloaded files, with a different naming convention to extract datetime info
-        t0 (str): starting date yyyy-mm-dd hh:mm
-        t1 (str): ending date yyyy-mm-dd hh:mm
-
-    Returns:
-        pd.DataFrame: column of number, start time, end time, missing number
-    """
-    # TODO
-
-    return
-
-
 def fillmissing(sourcefolder:str, targetfolder:str, t0:str=None, t1:str=None, hourfst:int=0):
     find_missing_grib2(folders=sourcefolder.split(','), tgt_folder=targetfolder, t0=t0, t1=t1)
     print('start...')
