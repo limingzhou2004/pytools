@@ -223,6 +223,25 @@ def find_missing_grib2(folders:Union[str, List[str]], tgt_folder:str='.', t0:str
         download_utah_file_extract(cur_date=t, fst_hour=0, tgt_folder=tgt_folder)
 
 
+def fillmissing_from_pickle(batch_no, tgt_folder:str):
+    """
+    The batch no indicates the latest pickle file, to include previous batches
+
+    Args:
+        batch_no (int): start from 0. 
+        tgt_folder (str): target folder
+    """
+    forecast_hour = 0
+    fn = os.path.join(os.path.dirname(__file__), f'../data/grib2_folder_{batch_no}.pkl')
+    df = pd.read_pickle(fn)
+    df = df[df['timestamp'].isna()]
+    print('start processing...\n')
+    for t in tqdm(df['cplt_timestamp']):
+        if t.to_datetime64()<np.datetime64('2020-01-01'):
+            continue
+        download_utah_file_extract(cur_date=t, fst_hour=forecast_hour, tgt_folder=tgt_folder)
+
+
 def produce_full_timestamp(cur_dates):
     t0 = cur_dates.min()
     t1 = cur_dates.max()
@@ -356,4 +375,8 @@ date_time_obj = datetime(*[int(i) for i in matches[0]])
 print(date_time_obj)    """
 
 if __name__ == "__main__":
-    fillmissing(*sys.argv[1:])
+    # fillmissing(*sys.argv[1:])
+    # python -m pytools.data_prep.grib_utils 
+    tgt_folder = "/Users/limingzhou/zhoul/work/energy/utah_2"
+
+    fillmissing_from_pickle(batch_no=0, tgt_folder=tgt_folder) #sys.argv[1])

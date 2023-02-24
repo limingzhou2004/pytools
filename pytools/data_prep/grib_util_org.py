@@ -57,6 +57,15 @@ def make_stats(fn='hrrr_stats_summary.csv'):
 
 
 def load_files(batch_no=0):
+    """
+    create the pickle file for each hour for missing hour labeling.
+
+    Args:
+        batch_no (int, optional): The batch no to match the hrrr_obs_folder.txt file. Defaults to 0.
+
+    Returns:
+        None
+    """
 
     df = pd.read_csv(folder_info_file, dtype={'folder':str, 'batch_no':int})
     df = df[df[col_batch] ==batch_no]
@@ -96,5 +105,7 @@ def main():
 
 if __name__ == '__main__':
 # usage, python -m  pytools.data_prep.grib_util_org 0
-    load_files(batch_no=int(sys.argv[1]))
-    # main()
+    if len(sys.argv) > 1:
+        load_files(batch_no=int(sys.argv[1]))
+    else:
+        make_stats()

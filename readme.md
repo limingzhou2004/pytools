@@ -94,3 +94,9 @@ TODO
 
 
 - start, stop the scheduler, `airflow scheduler >~/airflow/airflow_scheduler.log 2>&1 < /dev/null &`,  `ps aux | grep scheduler`, `kill $(cat ~/airflow/airflow-scheduler.pid)`
+
+
+### Fill missing hrrr data
+1. Create the pickle file, `python -m  pytools.data_prep.grib_util_org 0`.
+2. Run the report, `python -m  pytools.data_prep.grib_util_org`
+3. Run the Utah downloading to fill missing hours, `python -m pytools.data_prep.grib_utils /Users/limingzhou/zhoul/work/energy/utah_2`
