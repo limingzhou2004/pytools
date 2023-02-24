@@ -138,7 +138,7 @@ def read_utah_file_and_save_a_subset(fn:str, para_file:str, tgt_folder:str, rena
     ds2.to_netcdf(path=os.path.join(tgt_folder, fn.replace('grib2', 'nc')), engine='scipy')
 
 
-def get_all_files(folders: Union[str, Tuple[str]], size_kb_fileter:int=2000) -> List[str]:
+def get_all_files(folders: Union[str, Tuple[str]], exclude_small_files=False, size_kb_fileter=1024) -> List[str]:
     pfn = 'hrrrfiles.csv'
     if os.path.exists(pfn):
         x = pd.read_csv(pfn)
@@ -151,14 +151,16 @@ def get_all_files(folders: Union[str, Tuple[str]], size_kb_fileter:int=2000) -> 
         for f in folders:
             filenames.extend(glob.glob(f+ "/*.grib2"))
     
-    df = pd.DataFrame(filenames, columns = ['name'])
+    # It's better to use Linux command to remove files less than a certain size.
+    if exclude_small_files: 
+        filenames = [f for f in filenames if os.path.getsize(f)/1024 >= size_kb_fileter]
+    df = pd.DataFrame(filenames, columns=['name'])
     df.to_csv(pfn)
 
     return filenames
-    #return [f for f in filenames if os.path.getsize(f)/1024 >= size_kb_fileter]
 
 
-def get_all_files_iter(folders: Union[str, Tuple[str]], size_kb_fileter:int=2000) -> List[str]:
+def get_all_files_iter(folders: Union[str, Tuple[str]], exclude_small_files=False, size_kb_fileter=1024) -> List[str]:
     file_iter = iter([])
     if isinstance(folders, str):
         file_iter = chain(file_iter, os.scandir(folders))
@@ -167,11 +169,12 @@ def get_all_files_iter(folders: Union[str, Tuple[str]], size_kb_fileter:int=2000
             file_iter = chain(file_iter, os.scandir(f))
 
     for f in file_iter:
-        yield f
-        #if os.path.getsize(f)/1024 >= size_kb_fileter:
-          #  yield f
-           
-
+        if exclude_small_files:
+            if os.path.getsize(f)/1024 >=size_kb_fileter:
+                yield f
+        else:
+            yield f
+          
 
 def find_missing_grib2(folders:Union[str, List[str]], tgt_folder:str='.', t0:str=None, t1:str=None)->List[str]:
     """
@@ -204,7 +207,7 @@ def find_missing_grib2(folders:Union[str, List[str]], tgt_folder:str='.', t0:str
                 return cur_dates.max()
 
     t0 = process_time(t0)
-    t1 = process_time(t1)
+    t1 = process_time(t1, 'max')
 
     # find the missing hours
     full_timestamp = np.arange(t0, t1, np.timedelta64(1, "h"))
@@ -219,6 +222,31 @@ def find_missing_grib2(folders:Union[str, List[str]], tgt_folder:str='.', t0:str
         print(f'\nprocessing {t}...')
         download_utah_file_extract(cur_date=t, fst_hour=0, tgt_folder=tgt_folder)
 
+
+def fillmissing_from_pickle(batch_no, tgt_folder:str):
+    """
+    The batch no indicates the latest pickle file, to include previous batches
+
+    Args:
+        batch_no (int): start from 0. 
+        tgt_folder (str): target folder
+    """
+    forecast_hour = 0
+    fn = os.path.join(os.path.dirname(__file__), f'../data/grib2_folder_{batch_no}.pkl')
+    df = pd.read_pickle(fn)
+    df = df[df['timestamp'].isna()]
+    print('start processing...\n')
+    for t in tqdm(df['cplt_timestamp']):
+        if t.to_datetime64()<np.datetime64('2020-01-01'):
+            continue
+        download_utah_file_extract(cur_date=t, fst_hour=forecast_hour, tgt_folder=tgt_folder)
+
+
+def produce_full_timestamp(cur_dates):
+    t0 = cur_dates.min()
+    t1 = cur_dates.max()
+    # find the missing hours
+    return np.arange(t0, t1+np.timedelta64(1, "h"), np.timedelta64(1, "h"),)
 
 @retry(tries=5, delay=20)
 def download_utah_file_extract(cur_date:np.datetime64, fst_hour:int, tgt_folder:str):
@@ -245,29 +273,34 @@ def download_utah_file_extract(cur_date:np.datetime64, fst_hour:int, tgt_folder:
         print('failure to retriee...')
 
 
-def get_stats(folders:Union[str, List[str]], utah_folders:Union[str, List[str]], t0:str, t1:str)->pd.DataFrame:
-    """
-    Stats of the grib files, number, start, end, missing. 
-    Summary files by year: summary_year.csv, source, missing, starting datetime, ending datetime
-    Spec file by hour: spec_hour.csv, date-hour, source/hrrr|utah, missing
-
-    Args:
-        folders (Union[str, List[str]]): dirctories
-        utah_folders (Union[str, List[str]]): utah downloaded files, with a different naming convention to extract datetime info
-        t0 (str): starting date yyyy-mm-dd hh:mm
-        t1 (str): ending date yyyy-mm-dd hh:mm
-
-    Returns:
-        pd.DataFrame: column of number, start time, end time, missing number
-    """
-    # TODO
-
-    return
-
-
 def fillmissing(sourcefolder:str, targetfolder:str, t0:str=None, t1:str=None, hourfst:int=0):
     find_missing_grib2(folders=sourcefolder.split(','), tgt_folder=targetfolder, t0=t0, t1=t1)
     print('start...')
+    
+
+def decide_grib_type(fn:str): 
+    """
+    #     hrrr_obs = 'hrrrsub_2020_01_01_00F0.grib2'
+    #     hrrr_fst = 'hrrrsub_12_2020_01_01_18F1.grib2'
+    #     utah_grib = '20200105.hrrr.t14z.wrfsfcf00.grib2'
+   
+    Args:
+        fn (str): grib filename
+
+    Returns:
+        str: hrrr_obs|hrrr_fst|utah_grib|utah_nc
+    """
+    import re
+    p = re.compile('hrrrsub_\d\d\d\d_\d\d_\d\d_\d\dF\w*')
+    if p.match(fn): 
+        return 'hrrr_obs'
+    p = re.compile('hrrrsub_\d\d_\d\d\d\d_\d\d_\d\d_\d\d\w*')
+    if p.match(fn): 
+        return 'hrrr_fst'
+    p = re.compile('\d\d\d\d\d\d\d\d.hrrr.\w*.\w*')
+    if p.match(fn): 
+        return 'utah_grib'
+    raise ValueError(f'{fn} unrecognized!')
     
 
 def extract_datetime_from_utah_files(fn:str) -> np.datetime64:
@@ -342,4 +375,8 @@ date_time_obj = datetime(*[int(i) for i in matches[0]])
 print(date_time_obj)    """
 
 if __name__ == "__main__":
-    fillmissing(*sys.argv[1:])
+    # fillmissing(*sys.argv[1:])
+    # python -m pytools.data_prep.grib_utils 
+    tgt_folder = "/Users/limingzhou/zhoul/work/energy/utah_2"
+
+    fillmissing_from_pickle(batch_no=0, tgt_folder=tgt_folder) #sys.argv[1])

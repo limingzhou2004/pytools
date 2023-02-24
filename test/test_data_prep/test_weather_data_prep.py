@@ -6,6 +6,16 @@ from pytools.config import Config
 
 
 class TestWeatherDataPrep:
+
+
+    def test_get_datetime_from_utah_file_name(self):
+        fn = '20200105.hrrr.t14z.wrfsfcf00.grib2'
+
+        t, fhour = wp.get_datetime_from_utah_file_name(filename=fn,get_fst_hour=True)
+
+        assert t==np.datetime64('2020-01-05T14:00')
+        assert fhour==0
+
     def test_get_datetime_from_grib_file_name(self):
         fn = "nam_12_2019_02_03_14F1.grib2"
         fn_generate = wp.get_datetime_from_grib_file_name(fn, hour_offset=-5)

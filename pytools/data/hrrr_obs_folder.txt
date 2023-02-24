@@ -1,0 +1,8 @@
+"folder",batch
+"/Users/limingzhou/zhoul/work/energy/grib2/hrrrdata",-1
+"/Users/limingzhou/zhoul/work/energy/grib2/utah",-1
+"/Users/limingzhou/zhoul/work/energy/grib2/hrrr_fst",-1
+"/Volumes/T7 Blue/grib2_2018",0
+"/Volumes/T7 Blue/grib2_2018b",0
+"/Volumes/T7/utah",0
+"/Volumes/T7/utah1",0
