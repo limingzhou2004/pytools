@@ -1,3 +1,4 @@
 *.pyc
 *.nc
 pytools.egg-info/*
+.DS_Store

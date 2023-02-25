@@ -85,7 +85,7 @@ TODO
 - `conda activate energy_x86 && pip install -r requirements.txt && CONDA_SUBDIR=osx-64 conda install pynio `
 - install pytools `git checkout v0.01 && pip install -e .`
 - set up the variables in the [airflowo web console](http://192.168.1.9:8080/home), `py_path=/Users/limingzhou/miniconda/envs/energy_x86/bin/python`, and `obs_dest_path=/Users/limingzhou/energy/data/hrrr_obs`, `fst_dest_path=/Users/limingzhou/energy/data_fst`
-- copy the dag file to airflow home `cp airflow/download*.py ~/airflow/dags/`
+- copy the dag file to airflow home `cp airflow/*.py ~/airflow/dags/`
 - test, `airflow test dag_id task_id 2023-02-13`
 
 - remove example dags by change the setting in airflow.cfg `load_examples = True`

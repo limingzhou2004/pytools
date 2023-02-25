@@ -341,7 +341,7 @@ def download_hrrr(cur_date:pu.datetime, fst_hour:int, tgt_folder:str):
         print(f'{cur_url}--failure to retrieve the data...')
         raise RuntimeError(f'{cur_url} data not found!')
 
-
+@retry(tries=5, delay=20)
 def download_hrrr_by_hour(exe_date:pu.datetime, fst_hour:int, tgt_folder):
 
     # from the now time, derive the fst time; if the 1st success, the remaining 48 should be available.
