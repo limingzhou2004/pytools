@@ -1,4 +1,5 @@
 from datetime import timedelta
+import logging
 from textwrap import dedent 
 
 from airflow import DAG
@@ -49,13 +50,14 @@ with DAG(
         print(f'hrs={hrs}')
         exe_date = exe_date.add(hours=-hrs)
 
-        for i in range(max_fst_hour+1): 
+        for i in range(max_fst_hour): 
             kwarg = {
             'exe_date': exe_date,
             'fst_hour':i, 
             'tgt_folder':tgt_folder,
             }
-            print(kwarg)
+            #print(kwarg)
+            logging.info(f'{kwarg}')
             download_hrrr_by_hour(**kwarg)
 
     max_hours = Variable.get('max_fst_hours', default_var=3)
@@ -70,7 +72,7 @@ with DAG(
     },
     retries=args['retries'], 
     retry_delay=args['retry_delay'], 
-    task_id=f'download-hrrr-fst-hour-{int(max_hours)+1}', 
+    task_id=f'download-hrrr-fst-hour-{int(max_hours)}', 
     python_callable=download_data, 
     expect_airflow=True, 
     expect_pendulum=True,
