@@ -17,7 +17,7 @@ args={
     'time_out':timedelta(hours=48),
     'retries': 5,
     'retry_delay': timedelta(minutes=5),
-    'start_date':pu.now(tz='UTC').add(hours=-3)# 1 means yesterday
+    'start_date':pu.now(tz='UTC').add(hours=-3)
 }
 
 # for forecast of 48 hours, use 0,6,12,18
@@ -83,8 +83,6 @@ with DAG(
             t0.set_downstream(t[0])
         else:
             t[i-1].set_downstream(t[i])
-
-
 
 
 if __name__ == "__main__":
