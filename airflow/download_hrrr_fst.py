@@ -36,7 +36,7 @@ with DAG(
 
     t0 = LatestOnlyOperator(task_id='latest-start', dag=dag)  
 
-    def download_data(tgt_folder, fst_hour,  execution_date_str, external_trigger, critical_time):
+    def download_data(tgt_folder, max_fst_hour,  execution_date_str, external_trigger, critical_time):
         from pytools.data_prep.grib_utils import download_hrrr_by_hour
         import pendulum as pu  
 
@@ -48,41 +48,35 @@ with DAG(
         hrs = exe_date.hour % 6
         print(f'hrs={hrs}')
         exe_date = exe_date.add(hours=-hrs)
- 
-        kwarg = {
-        'exe_date': exe_date,
-        'fst_hour':fst_hour, 
-        'tgt_folder':tgt_folder,
-        }
-        print(kwarg)
-        download_hrrr_by_hour(**kwarg)
+
+        for i in range(max_fst_hour+1): 
+            kwarg = {
+            'exe_date': exe_date,
+            'fst_hour':i, 
+            'tgt_folder':tgt_folder,
+            }
+            print(kwarg)
+            download_hrrr_by_hour(**kwarg)
 
     max_hours = Variable.get('max_fst_hours', default_var=3)
     critical_time = int(Variable.get('critical_time_mm', default_var=20))
 
-    t=[]
-    for i in range(int(max_hours)):
-
-        tu = ExternalPythonOperator(
-        python=py_path, 
-        op_kwargs={
-        'execution_date_str': '{{ ts }}', 'tgt_folder': obs_dest_path, 'fst_hour':i+1,
-        'external_trigger': '{{ dag_run.external_trigger }}',
-        'critical_time': critical_time,
-        },
-        retries=args['retries'], 
-        retry_delay=args['retry_delay'], 
-        task_id=f'download-hrrr-fst-hour-{i+1}', 
-        python_callable=download_data, 
-        expect_airflow=True, 
-        expect_pendulum=True,
-        dag=dag,  
-        ) 
-        t.append(tu)
-        if i==0: 
-            t0.set_downstream(t[0])
-        else:
-            t[i-1].set_downstream(t[i])
+    tu = ExternalPythonOperator(
+    python=py_path, 
+    op_kwargs={
+    'execution_date_str': '{{ ts }}', 'tgt_folder': obs_dest_path, 'fst_hour':int(max_hours)+1,
+    'external_trigger': '{{ dag_run.external_trigger }}',
+    'critical_time': critical_time,
+    },
+    retries=args['retries'], 
+    retry_delay=args['retry_delay'], 
+    task_id=f'download-hrrr-fst-hour-{int(max_hours)+1}', 
+    python_callable=download_data, 
+    expect_airflow=True, 
+    expect_pendulum=True,
+    dag=dag,  
+    ) 
+    t0.set_downstream(tu)
 
 
 if __name__ == "__main__":
