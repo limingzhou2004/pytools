@@ -64,7 +64,7 @@ with DAG(
     tu = ExternalPythonOperator(
     python=py_path, 
     op_kwargs={
-    'execution_date_str': '{{ ts }}', 'tgt_folder': obs_dest_path, 'fst_hour':int(max_hours)+1,
+    'execution_date_str': '{{ ts }}', 'tgt_folder': obs_dest_path, 'max_fst_hour':int(max_hours)+1,
     'external_trigger': '{{ dag_run.external_trigger }}',
     'critical_time': critical_time,
     },
