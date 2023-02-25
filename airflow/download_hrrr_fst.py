@@ -48,7 +48,7 @@ with DAG(
 
         print(exe_date)
         hrs = exe_date.hour % 6
-        print(f'hrs={hrs}')
+        print(f'hours into (hrs)={hrs}')
         exe_date = exe_date.add(hours=-hrs)
 
         for i in range(max_fst_hour): 
@@ -57,8 +57,9 @@ with DAG(
             'fst_hour':i, 
             'tgt_folder':tgt_folder,
             }
-            #print(kwarg)
-            logging.info(f'{kwarg}')
+            print(kwarg)
+            
+            #logging.info(f'{kwarg}')
             download_hrrr_by_hour(**kwarg)
 
     max_hours = Variable.get('max_fst_hours', default_var=3)
