@@ -40,7 +40,8 @@ with DAG(
     def download_data(tgt_folder, max_fst_hour,  execution_date_str, external_trigger, critical_time):
         from pytools.data_prep.grib_utils import download_hrrr_by_hour
         import pendulum as pu  
-
+        import logging
+         
         # round the hour to 0, 6, 12, 18
         exe_date = pu.parse(execution_date_str) if external_trigger == 'True'  else pu.parse(execution_date_str).add(hours=6*4) # need to match the schedule
         exe_date = exe_date.add(minutes=-critical_time)
