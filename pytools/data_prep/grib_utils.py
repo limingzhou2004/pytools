@@ -54,7 +54,7 @@ def find_ind_fromlatlon(lon:float, lat:float, arr_lon:np.ndarray, arr_lat:np.nda
     return x_ind, y_ind
 
 
-def extract_data_from_grib2(fn:str, lon:float, lat:float, radius:Union[int,Tuple[int, int, int, int]], paras:List[str])->np.ndarray:
+def extract_data_from_grib2(fn:str, lon:float, lat:float, radius:Union[int,Tuple[int, int, int, int]], paras:List[str], return_latlon:bool=False)->np.ndarray:
     """
     Extract a subset, based on a rectangle area. We assume all paras share the same grid. Both lat/lon are increasing in the grid. The hrrr data has a grid of 1799 by 1059
 
@@ -64,6 +64,7 @@ def extract_data_from_grib2(fn:str, lon:float, lat:float, radius:Union[int,Tuple
         lat (float): latitutde, as y
         radius (Union[int,Tuple[int, int, int, int]]): distance in kms from the center
         paras (List[str]): the weather parameters
+        return_latlon (bool): wheter to return lat lon as the second item
 
     Returns:
         np.ndarray: 3D tensor extracted np array, west->east:south->north:parameter
@@ -93,7 +94,13 @@ def extract_data_from_grib2(fn:str, lon:float, lat:float, radius:Union[int,Tuple
     for p in paras:
         x = ds[p].data[west_ind:east_ind+1, south_ind:north_ind+1]
         arr_list.append(x)
-    return np.stack(arr_list, axis=2)
+
+    if return_latlon:
+        return (np.stack(arr_list, axis=2), 
+                ds['gridlon_0'][west_ind:east_ind+1, south_ind:north_ind+1], 
+                ds['gridlat_0'][west_ind:east_ind+1, south_ind:north_ind+1])
+    else:
+        return np.stack(arr_list, axis=2)
 
 
 def extract_a_file(fn:str, para_file:str, lon:float, lat:float, radius:Union[int, Tuple[int, int, int, int]]) -> np.ndarray:
@@ -303,11 +310,11 @@ def decide_grib_type(fn:str):
     raise ValueError(f'{fn} unrecognized!')
     
 
-def extract_datetime_from_utah_files(fn:str) -> np.datetime64:
-    # TODO
-    # convert string to datetime with regex
+# def extract_datetime_from_utah_files(fn:str) -> np.datetime64:
+#     # TODO
+#     # convert string to datetime with regex
     
-    return
+#     return
 
 
 def download_hrrr(cur_date:pu.datetime, fst_hour:int, tgt_folder:str):

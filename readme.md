@@ -80,6 +80,7 @@ TODO
 -----
 ## Deployment
 ### Airflow deployment
+- Copy the launch job xml file to System `cp airflow/airflow.xml  /System/Library/LaunchAgents/`
 
 - create the env  `conda create -n energy_x86 python=3.9`
 - `conda activate energy_x86 && pip install -r requirements.txt && CONDA_SUBDIR=osx-64 conda install pynio `
