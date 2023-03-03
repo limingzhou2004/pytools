@@ -21,9 +21,9 @@ args={
 }
 
 with DAG(
-    "hrrr_obs_2", start_date=args['start_date'],
+    "hrrr_obs_3", start_date=args['start_date'],
     dagrun_timeout=args['time_out'],
-    schedule="5 * * * *", catchup=False, tags=['hrrr','liming']
+    schedule="5 * * * *", catchup=True, tags=['hrrr','liming']
 ) as dag:
     # airflow variables set [-h] [-j] [-v] key VALUE    
     py_path = Variable.get('py_path',default_var=None)
