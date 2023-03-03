@@ -17,11 +17,11 @@ args={
     'time_out':timedelta(hours=48),
     'retries': 5,
     'retry_delay': timedelta(minutes=5),
-    'start_date':pu.now(tz='UTC').add(hours=-3)# 1 means yesterday
+    'start_date':pu.now(tz='UTC').add(days=-2)# 1 means yesterday
 }
 
 with DAG(
-    "hrrr_obs", start_date=pu.now('UTC').add(days=-2),
+    "hrrr_obs_2", start_date=args['start_date'],
     dagrun_timeout=args['time_out'],
     schedule="5 * * * *", catchup=False, tags=['hrrr','liming']
 ) as dag:
