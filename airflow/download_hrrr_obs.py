@@ -21,7 +21,7 @@ args={
 }
 
 with DAG(
-    "hrrr_obs", start_date=pu.datetime(2023, 1, 1, tz="UTC"),
+    "hrrr_obs", start_date=pu.now('UTC').add(days=-2),
     dagrun_timeout=args['time_out'],
     schedule="5 * * * *", catchup=False, tags=['hrrr','liming']
 ) as dag:
@@ -35,7 +35,7 @@ with DAG(
     if not obs_dest_path:
         obs_dest_path = '.'
 
-    t0 = LatestOnlyOperator(task_id='latest-start', dag=dag)  
+    #t0 = LatestOnlyOperator(task_id='latest-start', dag=dag)  
 
     def download_data(tgt_folder, fst_hour,  execution_date_str, external_trigger, critical_time):
         from pytools.data_prep.grib_utils import download_hrrr_by_hour
@@ -75,7 +75,7 @@ with DAG(
         dag=dag,  
        )  
 
-    t0.set_downstream(t1)
+    #t0.set_downstream(t1)
 
 
 if __name__ == "__main__":
