@@ -1,8 +1,42 @@
 
 import datetime as dt
-
+import os
 from typing import Callable, List
+import asyncio
+
+import numpy as np
+import pandas as pd
+
 from pytools.data_prep.weather_data_prep import GribType, HistFst, WeatherDataPrep
+from pytools.data_prep.grib_util_org import col_folder, col_batch, col_complete_timestamp,col_filename,col_timestamp,col_type
+from pytools.utilities import parallelize_dataframe
+
+default_pickle_file = os.path.join(os.path.dirname(__file__), '../data/grib2_folder_0.pkl')
+
+def create_weather_data(pickle_file:str=default_pickle_file, fout:str='0', parallel=False, t0:str=None, t1:str=None, lon:float=0, lat:float=0, radius=0, paras=[]) -> np.ndarray:
+    """
+    Read the grib files and extract the npy array
+
+    Args:
+        pickle_file (str): pickle file name
+        fout (str): '0' for historical data
+        parallel (bool): True for multi process
+        t0 (str): starting time
+        t1 (str): ending time
+
+    Returns:
+        np.ndarray: np array, sample * x * y * channels
+    """
+
+    df = pd.read_pickle(pickle_file)
+
+
+    parallelize_dataframe()
+
+    return
+
+
+
 
 
 class WeatherDataPrepPynio(WeatherDataPrep):
@@ -32,7 +66,7 @@ class WeatherDataPrepPynio(WeatherDataPrep):
         self,
         center: str,
         rect: str,
-        weather_df: str = None,
+        weather_df: pd.DataFrame = None,
         folder_out: str = None,
         parallel: bool = True,
         grib_name_filter: Callable = None,

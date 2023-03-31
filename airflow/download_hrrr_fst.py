@@ -17,7 +17,7 @@ args={
     'owner' : 'liming',
     'time_out':timedelta(hours=48),
     'retries': 5,
-    'retry_delay': timedelta(minutes=5),
+    'retry_delay': timedelta(minutes=10),
     'start_date':pu.now(tz='UTC').add(hours=-3)
 }
 
