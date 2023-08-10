@@ -75,8 +75,8 @@ class WeatherDataPrepPynio(WeatherDataPrep):
         Create npy data from a given pickle file of dataframe.
 
         Args:
-            center:
-            rect:
+            center: str format, (lon,lat)
+            rect: str format, ()
             weather_df: dataframe from a pickle file
             folder_out: for non default npy output folder
             last_time: only get files after the last_time, yyyy-mm-dd hh:mm
@@ -86,7 +86,61 @@ class WeatherDataPrepPynio(WeatherDataPrep):
         Returns: npy file, sample * x * y * para
 
         """
+        prefix = self.prefix
+        if weather_folder is None:
+            weather_folder = self.weather_folder
+        if folder_out is not None:
+            pj.set_folder_out(folder_out)
 
+        def make_npy(a_folder):
+            # file name length has to be greater than 20
+            valid_fn = os.listdir(a_folder)
+            if grib_name_filter is not None:
+                if "grib_filter_func" in str(grib_name_filter.func):
+                    valid_fn = grib_name_filter(valid_fn)
+                else:
+                    valid_fn = list(filter(grib_name_filter, valid_fn))
+            if last_time is None:
+                exclude = []
+            else:
+                exclude = [
+                    i
+                    for i in valid_fn
+                    if (
+                        self.extract_datetime_from_grib_filename(i, nptime=False)
+                        < last_time
+                    )
+                ]
+            if self.check_grib_name_filter is not None:
+                additional_exclude = [
+                    self.check_grib_name_filter(
+                        self.extract_datetime_from_grib_filename(i, get_fst_hour=True)
+                    )
+                    for i in valid_fn
+                ]
+                exclude.extend(additional_exclude)
+            pj.set_folder_in(a_folder)
+            pj.process_folders(
+                out_prefix=prefix,
+                out_suffix=".npy",
+                exclude=exclude,
+                include_files=None if grib_name_filter is None else valid_fn,
+                parallel=parallel,
+            )
+            return len(valid_fn)
+
+        if isinstance(weather_folder, list):
+            row_count = 0
+            for f in weather_folder:
+                row_count += make_npy(f)
+            return row_count
+        else:
+            return make_npy(weather_folder)
 
 
         return
+
+    @classmethod
+    def build_hrrr():
+
+        return     

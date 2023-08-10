@@ -8,9 +8,8 @@ import pandas as pd
 from dateutil import parser
 
 
-from pytools.data_prep.data_prep_manager_builder import (
-    DataPrepManagerBuilder as dpmb,
-)
+from pytools.data_prep.data_prep_manager_builder import DataPrepManagerBuilder as dpmb
+
 from pytools.data_prep import data_prep_manager as dm
 
 # from pytools.pytools.data_prep import weather_data_prep as wp

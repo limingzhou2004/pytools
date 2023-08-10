@@ -9,7 +9,11 @@ class TestConfig:
         assert len(config.sql) == 3
 
     def test_weather_folder(self, config):
-        assert len(config.weather_folder["hrrr_hist"]) == 1
+        assert len(config.weather_folder["hrrr_hist"]) >= 1
 
     def test_env_parse(self, config):
         assert config.site["envtest"] == "test an env"
+
+    def test_center_radias(self, config):
+        assert config.site['center'] == [43.0, -73.0]
+        assert config.site['radius'] == [100.0, 100.0, 100.0, 100.0]

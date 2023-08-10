@@ -9,8 +9,9 @@ import dill
 
 from pytools.data_prep import data_prep_manager as dm
 from pytools.data_prep.data_prep_manager import save
+import pytools.data_prep.get_datetime_from_grib_file_name
 from pytools.data_prep.load_data_prep import LoadData
-from pytools.data_prep.weather_data_prep import get_datetime_from_grib_file_name
+from pytools.data_prep.get_datetime_from_grib_file_name import get_datetime_from_grib_file_name
 from pytools import get_logger
 from pytools.data_prep import weather_data_prep as wp
 
@@ -34,7 +35,7 @@ class TestDataManager:
 
     def test_get_datetime_from_grib_file_name(self):
         fn = "nam_12_2019_02_03_14F1.grib2"
-        wp.get_datetime_from_grib_file_name(fn, hour_offset=-5)
+        pytools.data_prep.get_datetime_from_grib_file_name.get_datetime_from_grib_file_name(fn, hour_offset=-5)
 
     def test_training_data_save(self):
         table_name = "nyiso_hist_load"

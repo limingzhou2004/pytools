@@ -36,7 +36,7 @@ from pytools.data_prep.data_prep_manager_builder import (
     DataPrepManagerBuilder as Dpmb,
 )
 from pytools.data_prep import load_data_prep as ldp
-from pytools.data_prep.weather_data_prep import get_datetime_from_grib_file_name
+from pytools.data_prep.get_datetime_from_grib_file_name import get_datetime_from_grib_file_name
 from pytools.data_prep import weather_data_prep as wp
 from pytools.config import Config
 

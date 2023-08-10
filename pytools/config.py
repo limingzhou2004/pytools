@@ -1,5 +1,5 @@
 import os
-from typing import Dict, List
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -16,7 +16,7 @@ class Config:
             base_folder if base_folder.endswith("/") else base_folder + "/"
         )
         self._add_base_folder(self.toml_dict["site"], "hrrr_paras_file")
-        self._add_base_folder(self.toml_dict["site"], "nam_paras_file")
+        
         # jar and weather folder are processed separately as properties
 
     def _add_base_folder(self, dict_to_update, key):
@@ -131,3 +131,12 @@ class Config:
     def weather_folder(self) -> Dict:
         path_dict = self.get("weather_folder")
         return {k: self._join(self._base_folder, path_dict[k]) for k in path_dict}
+    
+    @property
+    def center(self) -> Tuple[int, int]:
+
+        return self.toml_dict['site']['center']
+    
+    @property
+    def radius(self) -> Union[int,Tuple[int, int, int, int]]:
+        return self.toml_dict['site']['radius']
