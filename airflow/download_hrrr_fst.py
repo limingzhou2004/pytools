@@ -17,13 +17,13 @@ args={
     'owner' : 'liming',
     'time_out':timedelta(hours=48),
     'retries': 5,
-    'retry_delay': timedelta(minutes=5),
+    'retry_delay': timedelta(minutes=10),
     'start_date':pu.now(tz='UTC').add(hours=-3)
 }
 
 # for forecast of 48 hours, use 0,6,12,18
 with DAG(
-    "hrrr_fst", start_date=pu.datetime(2023, 1, 1, tz="UTC"),
+    "hrrr_fst", start_date=pu.now('UTC').add(days=-2),
     dagrun_timeout=args['time_out'],
     schedule="56 6 * * *", catchup=False, tags=['hrrr','liming'] 
 ) as dag:

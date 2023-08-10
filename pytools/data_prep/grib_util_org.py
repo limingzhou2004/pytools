@@ -19,9 +19,10 @@ import pandas as pd
 import pendulum as pu
 import polars as pl
 from tqdm import tqdm
+from pytools.data_prep.get_datetime_from_utah_file_name import get_datetime_from_utah_file_name
 
 from pytools.data_prep.grib_utils import decide_grib_type, get_all_files_iter, produce_full_timestamp
-from pytools.data_prep.weather_data_prep import get_datetime_from_grib_file_name, get_datetime_from_utah_file_name
+from pytools.data_prep.get_datetime_from_grib_file_name import get_datetime_from_grib_file_name
 
 
 folder_table_name = 'hrrr_folder_info'

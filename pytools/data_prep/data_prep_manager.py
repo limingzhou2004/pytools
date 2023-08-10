@@ -142,7 +142,7 @@ class DataPrepManager:
 
     def process_load_data(
         self, load_data: ldp.LoadData, max_lag_start=None
-    ) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
+    ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
         Process the LoadData to generate lag load, calendar, and target load
 
@@ -416,7 +416,7 @@ class DataPrepManager:
 
     def reconcile(
         self, load_df: pd.DataFrame, date_column: str, w_data: wd.WeatherData
-    ) -> (pd.DataFrame, np.array):
+    ) -> tuple[pd.DataFrame, np.array]:
         """
         Reconcile load data with weather data based on timestamps; consider the timezone difference
 

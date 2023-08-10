@@ -6,3 +6,4 @@
 "/Volumes/T7 Blue/grib2_2018b",0
 "/Volumes/T7/utah",0
 "/Volumes/T7/utah1",0
+"/Users/limingzhou/zhoul/work/energy/utah_2",0

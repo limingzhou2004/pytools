@@ -9,7 +9,7 @@ from airflow.models import Variable
 from airflow.operators.python import ExternalPythonOperator
 import pendulum as pu
 import pytest
-from pytools.data_prep.weather_data_prep import get_datetime_from_grib_file_name
+from pytools.data_prep.get_datetime_from_grib_file_name import get_datetime_from_grib_file_name
 
 from airflow import DAG
 from airflow.utils.state import DagRunState, TaskInstanceState

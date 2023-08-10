@@ -1,8 +1,11 @@
 import logging
+from multiprocessing import Pool
 import os
 
-import xarray as xr
 
+import xarray as xr
+import numpy as np
+import pandas as pd
 
 def get_absolute_path(cur_path: str, file_name) -> str:
     """
@@ -49,3 +52,11 @@ def get_logger(level=logging.INFO, file_name=f"{get_now_str()}.log"):
     return logger
 
 
+def parallelize_dataframe(df, func, n_cores=7):
+    # usage train = parallelize_dataframe(train_df, add_features)
+    df_split = np.array_split(df, n_cores)
+    pool = Pool(n_cores)
+    df = pd.concat(pool.map(func, df_split))
+    pool.close()
+    pool.join()
+    return df

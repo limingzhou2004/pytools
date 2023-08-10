@@ -44,18 +44,13 @@ def center(config):
 
 
 @pytest.fixture(scope="session")
-def rect(config):
-    return config.site["rect"]
+def radius(config):
+    return config.site["radius"]
 
 
 @pytest.fixture(scope="session")
 def hrrr_paras_file(config):
     return config.site["hrrr_paras_file"]
-
-
-@pytest.fixture(scope="session")
-def nam_paras_file(config):
-    return config.site["nam_paras_file"]
 
 
 @pytest.fixture(scope="session")
@@ -98,7 +93,7 @@ def suffix_nam():
     return "albany_nam.pickle"
 
 
-@pytest.fixture(scope="session", params=["hrrr", "nam"])
+@pytest.fixture(scope="session", params=["hrrr"])
 def weather_type(request):
     return request.param
 

@@ -14,6 +14,10 @@ from airflow.operators.python import ExternalPythonOperator
 from pytools.data_prep.grib_utils import download_hrrr, download_utah_file_extract, find_missing_grib2, print_grib2_info, find_ind_fromlatlon, extract_a_file, decide_grib_type
 
 
+def test_extract_a_file():
+
+    assert 1==1
+
 @pytest.mark.skip(reason='large binary files needed for the test')
 def test_read_grib2():
     hrrr_obs_path = '/Users/limingzhou/zhoul/work/energy/grib2/hrrrdata'
@@ -31,9 +35,9 @@ def test_read_grib2():
     assert 1==1
     
 
-@pytest.mark.skip(reason='large binary files needed for the test')
+#@pytest.mark.skip(reason='large binary files needed for the test')
 def test_read_write_grib2():
-    fn = '/Users/limingzhou/zhoul/work/energy/grib2/utah/hrrr.t00z.wrfsfcf03.grib2'
+    fn = '/Users/limingzhou/zhoul/work/energy/grib2/utah/20200105.hrrr.t14z.wrfsfcf00.grib2'
     ds = xr.load_dataset(fn, engine='pynio') #netcdf4
     para_file = '/Users/limingzhou/zhoul/work/energy/pytools/pytools/data_prep/hrrr_paras_pynio.txt'
     a = []
@@ -90,7 +94,7 @@ def test_download_hrrr():
     download_hrrr(cur_date=cur_date,fst_hour=0, tgt_folder='.')
     assert 1==1
 
-
+@pytest.mark.skip(reason='no grib2 files in code repo')
 def test_decide_grib_type():
     hrrr_obs = 'hrrrsub_2020_01_01_00F0.grib2'
     hrrr_fst = 'hrrrsub_12_2020_01_01_18F1.grib2'

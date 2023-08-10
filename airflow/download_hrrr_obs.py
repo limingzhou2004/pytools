@@ -17,13 +17,13 @@ args={
     'time_out':timedelta(hours=48),
     'retries': 5,
     'retry_delay': timedelta(minutes=5),
-    'start_date':pu.now(tz='UTC').add(hours=-3)# 1 means yesterday
+    'start_date':pu.now(tz='UTC').add(days=-2)# 1 means yesterday
 }
 
 with DAG(
-    "hrrr_obs", start_date=pu.datetime(2023, 1, 1, tz="UTC"),
+    "hrrr_obs_3", start_date=args['start_date'],
     dagrun_timeout=args['time_out'],
-    schedule="5 * * * *", catchup=False, tags=['hrrr','liming']
+    schedule="5 * * * *", catchup=True, tags=['hrrr','liming']
 ) as dag:
     # airflow variables set [-h] [-j] [-v] key VALUE    
     py_path = Variable.get('py_path',default_var=None)
@@ -35,7 +35,7 @@ with DAG(
     if not obs_dest_path:
         obs_dest_path = '.'
 
-    t0 = LatestOnlyOperator(task_id='latest-start', dag=dag)  
+    #t0 = LatestOnlyOperator(task_id='latest-start', dag=dag)  
 
     def download_data(tgt_folder, fst_hour,  execution_date_str, external_trigger, critical_time):
         from pytools.data_prep.grib_utils import download_hrrr_by_hour
@@ -75,7 +75,7 @@ with DAG(
         dag=dag,  
        )  
 
-    t0.set_downstream(t1)
+    #t0.set_downstream(t1)
 
 
 if __name__ == "__main__":

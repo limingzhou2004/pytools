@@ -19,7 +19,7 @@ from tqdm import tqdm
 from shapely.geometry import Point
 import xarray as xr
 
-from pytools.data_prep.weather_data_prep import get_datetime_from_grib_file_name
+from pytools.data_prep.get_datetime_from_grib_file_name import get_datetime_from_grib_file_name
 
 
 hrrr_url_str_template = 'http://nomads.ncep.noaa.gov/cgi-bin/filter_hrrr_2d.pl?file=hrrr.t{HH}z.wrfsfcf{FHH}.grib2&lev_10_m_above_ground=on&lev_2_m_above_ground=on&lev_surface=on&var_APCP=on&var_ASNOW=on&var_DPT=on&var_DSWRF=on&var_GUST=on&var_HPBL=on&var_PRES=on&var_RH=on&var_SNOD=on&var_SNOWC=on&var_SPFH=on&var_TCDC=on&var_TMP=on&var_UGRD=on&var_VBDSF=on&var_VDDSF=on&var_VGRD=on&var_VIS=on&var_WIND=on&leftlon=0&rightlon=360&toplat=90&bottomlat=-90&dir=%2Fhrrr.YYYYMMDD%2Fconus'
@@ -48,22 +48,23 @@ def _find_nearest_index(val:float, arr:np.ndarray) -> Tuple[int,int]:
 
 
 def find_ind_fromlatlon(lon:float, lat:float, arr_lon:np.ndarray, arr_lat:np.ndarray) -> Tuple[int,int]:
-    x_ind = _find_nearest_index(lon, arr_lon)[1]
-    y_ind = _find_nearest_index(lat, arr_lat)[0]
+    x_ind = _find_nearest_index(lon, arr_lon)[0]
+    y_ind = _find_nearest_index(lat, arr_lat)[1]
 
     return x_ind, y_ind
 
 
-def extract_data_from_grib2(fn:str, lon:float, lat:float, radius:Union[int,Tuple[int, int, int, int]], paras:List[str])->np.ndarray:
+def extract_data_from_grib2(fn:str, lon:float, lat:float, radius:Union[int,Tuple[int, int, int, int]], paras:List[str], return_latlon:bool=False, is_utah=False)->np.ndarray:
     """
     Extract a subset, based on a rectangle area. We assume all paras share the same grid. Both lat/lon are increasing in the grid. The hrrr data has a grid of 1799 by 1059
-
+    The order of the paras is decided by the paras file. 
     Args:
         fn (str): file name of the grib2 file.
         lon (float): longitude, as x
         lat (float): latitutde, as y
         radius (Union[int,Tuple[int, int, int, int]]): distance in kms from the center
         paras (List[str]): the weather parameters
+        return_latlon (bool): wheter to return lat lon as the second item
 
     Returns:
         np.ndarray: 3D tensor extracted np array, west->east:south->north:parameter
@@ -90,13 +91,42 @@ def extract_data_from_grib2(fn:str, lon:float, lat:float, radius:Union[int,Tuple
     south_ind = floor(center_y_ind-south_dist/delta_y)
     north_ind = ceil(center_y_ind+north_dist/delta_y) 
     arr_list = []
+    # for u, v wind, the 3 dim, dim 0 for 10 and 80 m
+    ground_2m_dim=0
+  
     for p in paras:
-        x = ds[p].data[west_ind:east_ind+1, south_ind:north_ind+1]
+        x = ds[p].data[west_ind:(east_ind+1), south_ind:(north_ind+1)]
+        if len(x.shape)>2:
+            x = ds[p].data[ground_2m_dim, west_ind:(east_ind+1), south_ind:(north_ind+1)]
+            
         arr_list.append(x)
-    return np.stack(arr_list, axis=2)
+
+    if return_latlon:
+        return (np.stack(arr_list, axis=2), 
+                ds['gridlon_0'][west_ind:east_ind+1, south_ind:north_ind+1], 
+                ds['gridlat_0'][west_ind:east_ind+1, south_ind:north_ind+1])
+    else:
+        return np.stack(arr_list, axis=2)
+
+def get_paras_from_pynio_file(para_file:str, is_utah=False):
+    a = {}
+    # use file size to decide whether it is a utah file, >100 mb
+
+    with open(para_file) as f:
+        for line in f:
+            kv = line.strip().split(',')
+            k = kv[0].strip(); v = kv[1].strip()
+            # use 1h precipitation for Utah data
+            if is_utah:
+                if k == 'APCP_P8_L1_GLC0_acc':
+                    k = k + '_1h'
+            if int(v) == 1:
+                a[k] = int(v)
+
+    return a
 
 
-def extract_a_file(fn:str, para_file:str, lon:float, lat:float, radius:Union[int, Tuple[int, int, int, int]]) -> np.ndarray:
+def extract_a_file(fn:str, para_file:str, lon:float, lat:float, radius:Union[int, Tuple[int, int, int, int]], min_utah_size_mb=100) -> np.ndarray:
     """
     Extract a grib2 file
 
@@ -106,32 +136,34 @@ def extract_a_file(fn:str, para_file:str, lon:float, lat:float, radius:Union[int
         lon (float): center longitute
         lat (float): center latitude
         radius (Union[int, Tuple[int, int, int, int]]): distance from the center
+        min_utah_file_size: a utah file is larger than this size in mb
 
     Returns:
         np.ndarray: dimension of x, y, channel
     """
-    a = {}
-    with open(para_file) as f:
-        for line in f:
-            kv = line.strip().split(',')
-            k = kv[0]; v = kv[1]
-            if int(v) == 1:
-                a[k] = int(v)
-    data = extract_data_from_grib2(fn=fn, lon=lon, lat=lat, radius=radius, paras=a)
+
+    # get the size of the file
+    file_size_mb=os.path.getsize(fn)/1e6
+    is_utah=True if file_size_mb>min_utah_size_mb else False
+    para_list = get_paras_from_pynio_file(fn, is_utah=is_utah)
+    data = extract_data_from_grib2(fn=fn, lon=lon, lat=lat, radius=radius, paras=para_list, is_utah=is_utah)
     return data
 
 
-def read_utah_file_and_save_a_subset(fn:str, para_file:str, tgt_folder:str, rename_var:Dict={'APCP_P8_L1_GLC0_acc1h':'APCP_P8_L1_GLC0_acc'}):
-    a = []
-    with open(para_file) as f:
-        for line in f:
-            kv = line.strip().split(',')
-            k = kv[0]; v = kv[1]
-            # use 1h precipitation for Utah data
-            if k == 'APCP_P8_L1_GLC0_acc':
-                k = k + '_1h'
-            if int(v) == 1:
-                a.append(int(v))
+def read_utah_file_and_save_a_subset(fn:str, para_file:str, tgt_folder:str,
+ rename_var:Dict={'APCP_P8_L1_GLC0_acc_1h':'APCP_P8_L1_GLC0_acc'}
+ ):
+    # a = []
+    # with open(para_file) as f:
+    #     for line in f:
+    #         kv = line.strip().split(',')
+    #         k = kv[0]; v = kv[1]
+    #         # use 1h precipitation for Utah data
+    #         if k == 'APCP_P8_L1_GLC0_acc':
+    #             k = k + '_1h'
+    #         if int(v) == 1:
+    #             a.append(int(v))
+    a = get_paras_from_pynio_file(is_utah=True)
     ds = xr.load_dataset(fn, engine='pynio')
     ds2 = ds[a]
     ds2 = ds2.rename_vars(rename_var)
@@ -291,23 +323,23 @@ def decide_grib_type(fn:str):
         str: hrrr_obs|hrrr_fst|utah_grib|utah_nc
     """
     import re
-    p = re.compile('hrrrsub_\d\d\d\d_\d\d_\d\d_\d\dF\w*')
+    p = re.compile(r'hrrrsub_\d\d\d\d_\d\d_\d\d_\d\dF\w*')
     if p.match(fn): 
         return 'hrrr_obs'
-    p = re.compile('hrrrsub_\d\d_\d\d\d\d_\d\d_\d\d_\d\d\w*')
+    p = re.compile(r'hrrrsub_\d\d_\d\d\d\d_\d\d_\d\d_\d\d\w*')
     if p.match(fn): 
         return 'hrrr_fst'
-    p = re.compile('\d\d\d\d\d\d\d\d.hrrr.\w*.\w*')
+    p = re.compile(r'\d\d\d\d\d\d\d\d.hrrr.\w*.\w*')
     if p.match(fn): 
         return 'utah_grib'
     raise ValueError(f'{fn} unrecognized!')
     
 
-def extract_datetime_from_utah_files(fn:str) -> np.datetime64:
-    # TODO
-    # convert string to datetime with regex
+# def extract_datetime_from_utah_files(fn:str) -> np.datetime64:
+#     # TODO
+#     # convert string to datetime with regex
     
-    return
+#     return
 
 
 def download_hrrr(cur_date:pu.datetime, fst_hour:int, tgt_folder:str):

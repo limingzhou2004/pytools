@@ -10,11 +10,14 @@ from functools import partial
 
 import dask.bag as bag
 
+from pytools.data_prep.grib_utils import extract_a_file, extract_data_from_grib2, get_paras_from_pynio_file
+import numpy as np
+
 """
 --extract-npy --fIn ../testdata/hrrrsub_2018_10_06_00F0
 --fOut ../testdata/output/hrrr2.npy --parasFile hrrr_paras_obsolete.txt --center "(43,-73)" --rect "(100,100)"
 """
-
+ 
 
 class PyJar:
     """
@@ -28,7 +31,7 @@ class PyJar:
         paras_file: Union[str, List[str]],
         center: str,  # = '"(43.0,-73.0)"',  # no space after the comma, or double quote
         rect: str,  # = '"(100.0,100.0)"',  # no space after the comma, or double quote
-        jar_address: str,  # ="/Users/limingzhou/zhoul/work/me/Scala-http/classes/artifacts/scalahttp_jar/*",
+        #jar_address: str,  # ="/Users/limingzhou/zhoul/work/me/Scala-http/classes/artifacts/scalahttp_jar/*",
     ):
         """
         Constructor
@@ -41,15 +44,17 @@ class PyJar:
             rect: rect str "(height, width)"
             jar_address:
         """
-        self.jar_address = jar_address
+        #self.jar_address = jar_address
         if isinstance(folder_in, str):
             self.folder_in = [folder_in]
         else:
             self.folder_in: str = folder_in
         self.folder_out: str = folder_out
         self.paras_file = paras_file
+        self.paras = get_paras_from_pynio_file(paras_file)
         self.center = center
         self.rect = rect
+        os.makedirs(self.folder_out, exist_ok=True)
 
     def create_output_filename(self, fin, out_folder=None, prefix="", suffix=".npy"):
         if not out_folder:
@@ -118,7 +123,7 @@ class PyJar:
                 files, prefix=out_prefix, suffix=out_suffix, parallel=parallel
             )
 
-    def process_a_grib(self, f_in, f_out):
+    def process_a_grib_jar(self, f_in, f_out):
         args = [
             "java",
             "-cp",
@@ -147,6 +152,20 @@ class PyJar:
             messages, error = proc.communicate()
             print(messages.decode("utf8"))
             print(error.decode("utf8"))
+
+
+    def process_a_grib(self, f_in, f_out):
+        # use py grib package to extract 
+        data = extract_data_from_grib2(
+                fn=f_in,
+                paras=self.paras,
+                lon=self.center[0],
+                lat=self.center[1],
+                radius=self.rect
+                )
+        # save the npy file
+        np.save(file=f_out, arr=data)
+        return data
 
     def set_folder_in(self, folder_in: Union[str, List[str]]):
         """
