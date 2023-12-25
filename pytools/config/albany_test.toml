@@ -24,6 +24,7 @@
  envtest = "$ENV_TEST"
 
 [load]
+ schema = "iso"
  table = "nyiso_hist_load"
  unit = "mwh"
  datetime_column = "timestamp"

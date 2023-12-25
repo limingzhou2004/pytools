@@ -5,22 +5,23 @@ from sqlalchemy import create_engine
 import uuid
 import yaml
 import os
+import os.path as osp
 # …
 
 
-def get_pg_conn(port=5432, db='daf'):
-    with open('sql/sql_config.yaml', 'r') as f:
+def get_pg_conn(port=5432, db='daf', schema='iso'):
+    with open(osp.join(osp.dirname(osp.abspath(__file__)),'../sql/sql_config.yaml'), 'r') as f:
         db_config = yaml.safe_load(f)
         server = os.getenv(db_config['server'])
         user = os.getenv(db_config['user'])
         pwd = os.getenv(db_config['password'])
 
-    engine = create_engine(f"postgresql+psycopg2://{user}:{pwd}@{server}:{port}/{db}")
+    engine = create_engine(f"postgresql+psycopg2://{user}:{pwd}@{server}:{port}/{db}", connect_args={'options': '-csearch_path={}'.format(schema)})
 
     return engine
 
 
-def upsert_df(df: pd.DataFrame, table_name: str, engine: sqlalchemy.engine.Engine):
+def upsert_df(df: pd.DataFrame, table_name: str, engine: sqlalchemy.engine.Engine, schema):
     """Implements the equivalent of pd.DataFrame.to_sql(..., if_exists='update')
     (which does not exist). Creates or updates the db records based on the
     dataframe records.
@@ -35,7 +36,7 @@ def upsert_df(df: pd.DataFrame, table_name: str, engine: sqlalchemy.engine.Engin
     if not engine.execute(
         f"""SELECT EXISTS (
             SELECT FROM information_schema.tables 
-            WHERE  table_schema = 'public'
+            WHERE  table_schema = '{schema}'
             AND    table_name   = '{table_name}');
             """
     ).first()[0]:

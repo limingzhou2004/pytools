@@ -7,7 +7,7 @@ from pyiso import client_factory
 
 from pytools.data_prep.nyiso.download_nyiso_load import read_a_hist_zip_folder
 from pytools.data_prep.nyiso.download_nyiso_load import nyiso_cols
-from pytools.data_prep.pg_utils import upsert_df
+from pytools.data_prep.pg_utils import get_pg_conn, upsert_df
 
 
 zip_folder = "/Users/limingzhou/zhoul/work/energy/iso-load/nyiso-load"
@@ -22,11 +22,16 @@ def test_populate_nyiso_load_compare():
     assert set(df_zip.columns) == set(df.columns) 
 
 
-def test_populate_api_call_data():
+def test_populate_api_call_data(config):
     c = client_factory('NYISO')
-    data = c.get_load(latest=True, yesterday=True, integrated_1h=True, freq='hourly')
+    data = c.get_load(latest=True, yesterday=False, integrated_1h=True, freq='hourly')
     df = pd.DataFrame(data)[nyiso_cols]
-    upsert_df(df,table_name=, engine=)
+    eng = get_pg_conn()
+    schema = config.load['schema']
+    table = config.load['table']
+    df = df.set_index(['timestamp', 'Name'])
+    res = upsert_df(df,table_name=f'{table}', engine=eng, schema=schema)
+    assert res
 
 
 
