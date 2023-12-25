@@ -1,0 +1,112 @@
+import sqlalchemy as sa
+import pandas as pd
+import sqlalchemy
+from sqlalchemy import create_engine
+import uuid
+import yaml
+import os
+# …
+
+
+def get_pg_conn(port=5432, db='daf'):
+    with open('sql/sql_config.yaml', 'r') as f:
+        db_config = yaml.safe_load(f)
+        server = os.getenv(db_config['server'])
+        user = os.getenv(db_config['user'])
+        pwd = os.getenv(db_config['password'])
+
+    engine = create_engine(f"postgresql+psycopg2://{user}:{pwd}@{server}:{port}/{db}")
+
+    return engine
+
+
+def upsert_df(df: pd.DataFrame, table_name: str, engine: sqlalchemy.engine.Engine):
+    """Implements the equivalent of pd.DataFrame.to_sql(..., if_exists='update')
+    (which does not exist). Creates or updates the db records based on the
+    dataframe records.
+    Conflicts to determine update are based on the dataframes index.
+    This will set unique keys constraint on the table equal to the index names
+    1. Create a temp table from the dataframe
+    2. Insert/update from temp table into table_name
+    Returns: True if successful
+    """
+
+    # If the table does not exist, we should just use to_sql to create it
+    if not engine.execute(
+        f"""SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE  table_schema = 'public'
+            AND    table_name   = '{table_name}');
+            """
+    ).first()[0]:
+        df.to_sql(table_name, engine)
+        return True
+
+    # If it already exists...
+    temp_table_name = f"temp_{uuid.uuid4().hex[:6]}"
+    df.to_sql(temp_table_name, engine, index=True)
+
+    index = list(df.index.names)
+    index_sql_txt = ", ".join([f'"{i}"' for i in index])
+    columns = list(df.columns)
+    headers = index + columns
+    headers_sql_txt = ", ".join(
+        [f'"{i}"' for i in headers]
+    )  # index1, index2, ..., column 1, col2, ...
+
+    # col1 = exluded.col1, col2=excluded.col2
+    update_column_stmt = ", ".join([f'"{col}" = EXCLUDED."{col}"' for col in columns])
+
+    # For the ON CONFLICT clause, postgres requires that the columns have unique constraint
+    query_pk = f"""
+    ALTER TABLE "{table_name}" DROP CONSTRAINT IF EXISTS unique_constraint_for_upsert;
+    ALTER TABLE "{table_name}" ADD CONSTRAINT unique_constraint_for_upsert UNIQUE ({index_sql_txt});
+    """
+    engine.execute(query_pk)
+
+    # Compose and execute upsert query
+    query_upsert = f"""
+    INSERT INTO "{table_name}" ({headers_sql_txt}) 
+    SELECT {headers_sql_txt} FROM "{temp_table_name}"
+    ON CONFLICT ({index_sql_txt}) DO UPDATE 
+    SET {update_column_stmt};
+    """
+    engine.execute(query_upsert)
+    engine.execute(f"DROP TABLE {temp_table_name}")
+
+    return True
+
+
+
+def upload_pg_sample():
+    engine = sa.create_engine()
+
+    with engine.begin() as conn:
+        # step 0.0 - create test environment
+        conn.exec_driver_sql("DROP TABLE IF EXISTS main_table")
+        conn.exec_driver_sql(
+            "CREATE TABLE main_table (id int primary key, txt varchar(50))"
+        )
+        conn.exec_driver_sql(
+            "INSERT INTO main_table (id, txt) VALUES (1, 'row 1 old text')"
+        )
+        # step 0.1 - create DataFrame to UPSERT
+        df = pd.DataFrame(
+            [(2, "new row 2 text"), (1, "row 1 new text")], columns=["id", "txt"]
+        )
+        
+        # step 1 - create temporary table and upload DataFrame
+        conn.exec_driver_sql(
+            "CREATE TEMPORARY TABLE temp_table AS SELECT * FROM main_table WHERE false"
+        )
+        df.to_sql("temp_table", conn, index=False, if_exists="append")
+
+        # step 2 - merge temp_table into main_table
+        conn.exec_driver_sql(
+            """\
+            INSERT INTO main_table (id, txt) 
+            SELECT id, txt FROM temp_table
+            ON CONFLICT (id) DO
+                UPDATE SET txt = EXCLUDED.txt
+            """
+        )

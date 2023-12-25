@@ -1,4 +1,6 @@
 *.pyc
 *.nc
+*.grib2
+*.npy
 pytools.egg-info/*
 .DS_Store
