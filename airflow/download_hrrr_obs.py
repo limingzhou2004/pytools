@@ -6,7 +6,6 @@ from airflow import DAG
 from airflow.operators.python import ExternalPythonOperator
 # from airflow.operators.empty import EmptyOperator
 from airflow.operators.latest_only import LatestOnlyOperator
-from airflow.models import Variable
 #from airflow.decorators import dag, task
 from airflow.models import Variable
 import pendulum as pu

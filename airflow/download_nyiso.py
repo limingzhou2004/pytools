@@ -6,12 +6,16 @@ from airflow import DAG
 from airflow.operators.python import ExternalPythonOperator
 # from airflow.operators.empty import EmptyOperator
 from airflow.operators.latest_only import LatestOnlyOperator
-from airflow.models import Variable
 #from airflow.decorators import dag, task
 from airflow.models import Variable
 import pendulum as pu
 
+from pyiso import client_factory
+import pandas as pd 
 
+from pytools.data_prep.nyiso.download_nyiso_load import read_a_hist_zip_folder
+from pytools.data_prep.nyiso.download_nyiso_load import nyiso_cols
+from pytools.data_prep.pg_utils import get_pg_conn, upsert_df
 
 
 args={
@@ -29,10 +33,48 @@ with DAG(
 ) as dag:
     # airflow variables set [-h] [-j] [-v] key VALUE    
     py_path = Variable.get('py_path',default_var=None)
+    nyiso_schema = Variable.get('nyiso_schema',default_var='nyiso')
+    nyiso_hist_load_table = Variable.get('nyiso_hist_load_table',default_var='nyiso_hist_load')
+    nyiso_fst_load_table = Variable.get('nyiso_fst_load_table',default_var='nyiso_fst_load')
+
     critical_time = int(Variable.get('critical_time_mm', default_var=50))
 
     if not py_path:
         py_path = '/Users/limingzhou/miniforge3/envs/energy_x86/bin/python'
 
+
+    def download_nyiso_data(tgt_folder, fst_hour,  execution_date_str, external_trigger, critical_time, schema, table):
+        from pytools.data_prep.grib_utils import download_hrrr_by_hour
+        import pendulum as pu 
+
+
+        c = client_factory('NYISO')
+        data = c.get_load(latest=True, yesterday=False, integrated_1h=True, freq='hourly')
+        df = pd.DataFrame(data)[nyiso_cols]
+        eng = get_pg_conn() 
+
+        df = df.set_index(['timestamp', 'Name'])
+        res = upsert_df(df,table_name=f'{table}', engine=eng, schema=schema) 
+
+
+
+
+    t1 = ExternalPythonOperator(
+        python=py_path, 
+        op_kwargs={
+          'execution_date_str': '{{ ts }}', 
+          'tgt_folder': obs_dest_path, 
+          'fst_hour':0,
+          'external_trigger': '{{ dag_run.external_trigger }}',
+          'critical_time': critical_time,
+        },
+        retries=args['retries'], 
+        retry_delay=args['retry_delay'], 
+        task_id='download-hrrr-obs', 
+        python_callable=download_data, 
+        expect_airflow=True, 
+        expect_pendulum=True,
+        dag=dag,  
+       )  
 
     

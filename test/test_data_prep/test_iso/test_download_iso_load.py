@@ -34,6 +34,13 @@ def test_populate_api_call_data(config):
     assert res
 
 
+def test_populate_api_forecast(config):
+    c = client_factory('NYISO')
+    df = c.get_load(latest=True, yesterday=True, forecast=True)
+    assert df.shape[0] > 1
+    
+
+
 
 
 def test_read_a_hist_zip_folder():
