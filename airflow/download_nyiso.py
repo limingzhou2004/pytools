@@ -14,8 +14,8 @@ from pyiso import client_factory
 import pandas as pd 
 
 from pytools.data_prep.nyiso.download_nyiso_load import read_a_hist_zip_folder
-from pytools.data_prep.nyiso.download_nyiso_load import nyiso_cols
 from pytools.data_prep.pg_utils import get_pg_conn, upsert_df
+from pytools.data_prep.nyiso.download_nyiso_load import nyiso_cols, nyiso_index, nyiso_fst_cols,nyiso_fst_index
 
 
 args={
@@ -48,16 +48,18 @@ with DAG(
         import pendulum as pu 
 
         c = client_factory('NYISO')
-        data = c.get_load(latest=True, yesterday=False, integrated_1h=True, freq='hourly')
-        df = pd.DataFrame(data)[nyiso_cols]
-        eng = get_pg_conn() 
+        eng = get_pg_conn()
 
-        df = df.set_index(['timestamp', 'Name'])
-        res = upsert_df(df,table_name=f'{hist_table}', engine=eng, schema=schema) 
+        data = c.get_load(latest=True, yesterday=True, integrated_1h=True, freq='hourly')
+        df = pd.DataFrame(data)[nyiso_cols] 
+        df = df.set_index(nyiso_index)
+        res = upsert_df(df,table_name=f'{hist_table}', engine=eng, schema=schema)
 
-
-
-
+        data = c.get_load(latest=True, forecast=True, freq='hourly')
+        df2 = pd.DataFrame(data)[nyiso_fst_cols]
+        df2['timestamp_spot'] = pd.Timestamp.now()
+        df2.set_index(nyiso_fst_index, inplace=True)
+        res = upsert_df(df2,table_name=f'{fst_table}', engine=eng, schema=schema)
 
 
     t1 = ExternalPythonOperator(
@@ -73,7 +75,7 @@ with DAG(
         retries=args['retries'], 
         retry_delay=args['retry_delay'], 
         task_id='download-nyiso-hist-load', 
-        python_callable=download_nyiso_data, 
+        python_callable=download_nyiso_load_data, 
         expect_airflow=True, 
         expect_pendulum=True,
         dag=dag,  
