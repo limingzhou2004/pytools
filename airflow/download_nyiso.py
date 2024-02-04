@@ -37,13 +37,17 @@ with DAG(
     nyiso_hist_load_table = Variable.get('nyiso_hist_load_table',default_var='nyiso_hist_load')
     nyiso_fst_load_table = Variable.get('nyiso_fst_load_table',default_var='nyiso_fst_load')
 
+    pg_server=Variable.get('pg_server')
+    pg_user=Variable.get('pg_user')
+    pg_pwd=Variable.get('pg_pwd')
+
     critical_time = int(Variable.get('critical_time_mm', default_var=50))
 
     if not py_path:
         py_path = '/Users/limingzhou/miniforge3/envs/energy_x86/bin/python'
 
 
-    def download_nyiso_load_data(schema, hist_table, fst_table):
+    def download_nyiso_load_data(schema, hist_table, fst_table, pg_dict):
        # from pytools.data_prep.grib_utils import download_hrrr_by_hour
         import pendulum as pu 
         from pyiso import client_factory
@@ -84,6 +88,7 @@ with DAG(
         expect_airflow=True, 
         expect_pendulum=True,
         dag=dag,  
+        pg_dict={'pg_server':pg_server,'pg_user':pg_user, 'pg_pwd':pg_pwd}
        )  
 
     
