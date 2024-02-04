@@ -36,6 +36,7 @@ def test_populate_api_call_data(config):
 
     data = c.get_load(latest=True, forecast=True, freq='hourly')
     df2 = pd.DataFrame(data)[nyiso_fst_cols]
+    df2['timestamp_spot'] = pd.Timestamp.now()
     df2.set_index(nyiso_fst_index, inplace=True)
     res = upsert_df(df2,table_name=f'{fst_table}', engine=eng, schema=schema)
 

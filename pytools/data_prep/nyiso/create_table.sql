@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS iso.nyiso_hist_load
 
 create table if not exists iso.nyiso_fst_load(
 timestamp_utc timestamp with time zone,
+timestamp_spot timestamp with time zone,
 	"Capitl" float,
 	"Centrl" float,
 	"Dunwod" float,
@@ -25,5 +26,5 @@ timestamp_utc timestamp with time zone,
 	"North" float,
 	"West" float,
 	"NYISO" float,
-	primary key(timestamp_utc)
+	primary key(timestamp_utc, timestamp_spot)
 )
