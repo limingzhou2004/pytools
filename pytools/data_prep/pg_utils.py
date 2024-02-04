@@ -9,12 +9,18 @@ import os.path as osp
 # …
 
 
-def get_pg_conn(port=5432, db='daf', schema='iso'):
-    with open(osp.join(osp.dirname(osp.abspath(__file__)),'../sql/sql_config.yaml'), 'r') as f:
-        db_config = yaml.safe_load(f)
-        server = os.getenv(db_config['server'])
-        user = os.getenv(db_config['user'])
-        pwd = os.getenv(db_config['password'])
+def get_pg_conn(port=5432, db='daf', schema='iso', para_airflow=False):
+    if not para_airflow:
+        with open(osp.join(osp.dirname(osp.abspath(__file__)),'../sql/sql_config.yaml'), 'r') as f:
+            db_config = yaml.safe_load(f)
+            server = os.getenv(db_config['server'])
+            user = os.getenv(db_config['user'])
+            pwd = os.getenv(db_config['password'])
+    else:
+        server=para_airflow['pg_server']
+        user=para_airflow['pg_user']
+        pwd=para_airflow['pg_pwd']
+
 
     engine = create_engine(f"postgresql+psycopg2://{user}:{pwd}@{server}:{port}/{db}", connect_args={'options': '-csearch_path={}'.format(schema)})
 
