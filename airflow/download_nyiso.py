@@ -10,7 +10,8 @@ from airflow.operators.latest_only import LatestOnlyOperator
 from airflow.models import Variable
 import pendulum as pu
 
-from pyiso import client_factory
+# won't work in the airflow env as pyiso not installed there
+#from pyiso import client_factory
 import pandas as pd 
 
 from pytools.data_prep.nyiso.download_nyiso_load import read_a_hist_zip_folder
@@ -46,6 +47,8 @@ with DAG(
     def download_nyiso_load_data(schema, hist_table, fst_table):
        # from pytools.data_prep.grib_utils import download_hrrr_by_hour
         import pendulum as pu 
+        from pyiso import client_factory
+
 
         from pytools.data_prep.pg_utils import get_pg_conn, upsert_df
         from pytools.data_prep.nyiso.download_nyiso_load import nyiso_cols, nyiso_index, nyiso_fst_cols,nyiso_fst_index
