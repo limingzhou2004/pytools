@@ -12,11 +12,10 @@ import pendulum as pu
 
 # won't work in the airflow env as pyiso not installed there
 #from pyiso import client_factory
-import pandas as pd 
 
-from pytools.data_prep.nyiso.download_nyiso_load import read_a_hist_zip_folder
-from pytools.data_prep.pg_utils import get_pg_conn, upsert_df
-from pytools.data_prep.nyiso.download_nyiso_load import nyiso_cols, nyiso_index, nyiso_fst_cols,nyiso_fst_index
+# from pytools.data_prep.nyiso.download_nyiso_load import read_a_hist_zip_folder
+# from pytools.data_prep.pg_utils import get_pg_conn, upsert_df
+# from pytools.data_prep.nyiso.download_nyiso_load import nyiso_cols, nyiso_index, nyiso_fst_cols,nyiso_fst_index
 
 
 args={
@@ -48,7 +47,7 @@ with DAG(
        # from pytools.data_prep.grib_utils import download_hrrr_by_hour
         import pendulum as pu 
         from pyiso import client_factory
-
+        import pandas as pd 
 
         from pytools.data_prep.pg_utils import get_pg_conn, upsert_df
         from pytools.data_prep.nyiso.download_nyiso_load import nyiso_cols, nyiso_index, nyiso_fst_cols,nyiso_fst_index
