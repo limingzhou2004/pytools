@@ -33,7 +33,7 @@ with DAG(
 ) as dag:
     # airflow variables set [-h] [-j] [-v] key VALUE    
     py_path = Variable.get('py_path',default_var=None)
-    nyiso_schema = Variable.get('nyiso_schema',default_var='nyiso')
+    iso_schema = Variable.get('iso_schema',default_var='nyiso')
     nyiso_hist_load_table = Variable.get('nyiso_hist_load_table',default_var='nyiso_hist_load')
     nyiso_fst_load_table = Variable.get('nyiso_fst_load_table',default_var='nyiso_fst_load')
 
@@ -44,8 +44,11 @@ with DAG(
 
 
     def download_nyiso_load_data(schema, hist_table, fst_table):
-        from pytools.data_prep.grib_utils import download_hrrr_by_hour
+       # from pytools.data_prep.grib_utils import download_hrrr_by_hour
         import pendulum as pu 
+
+        from pytools.data_prep.pg_utils import get_pg_conn, upsert_df
+        from pytools.data_prep.nyiso.download_nyiso_load import nyiso_cols, nyiso_index, nyiso_fst_cols,nyiso_fst_index
 
         c = client_factory('NYISO')
         eng = get_pg_conn()
@@ -65,7 +68,7 @@ with DAG(
     t1 = ExternalPythonOperator(
         python=py_path, 
         op_kwargs={
-            'schema':nyiso_schema,
+            'schema':iso_schema,
             'hist_table': nyiso_hist_load_table,
             'fst_table':nyiso_fst_load_table,
           'execution_date_str': '{{ ts }}',      
