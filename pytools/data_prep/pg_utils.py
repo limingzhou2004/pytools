@@ -60,8 +60,8 @@ def upsert_df(df: pd.DataFrame, table_name: str, engine: sqlalchemy.engine.Engin
 
     # For the ON CONFLICT clause, postgres requires that the columns have unique constraint
     query_pk = f"""
-    ALTER TABLE "{table_name}" DROP CONSTRAINT IF EXISTS unique_constraint_for_upsert;
-    ALTER TABLE "{table_name}" ADD CONSTRAINT unique_constraint_for_upsert UNIQUE ({index_sql_txt});
+    ALTER TABLE "{table_name}" DROP CONSTRAINT IF EXISTS unique_constraint_for_upsert_{table_name};
+    ALTER TABLE "{table_name}" ADD CONSTRAINT unique_constraint_for_upsert_{table_name} UNIQUE ({index_sql_txt});
     """
     engine.execute(query_pk)
 

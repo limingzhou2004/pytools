@@ -43,10 +43,9 @@ with DAG(
         py_path = '/Users/limingzhou/miniforge3/envs/energy_x86/bin/python'
 
 
-    def download_nyiso_data(tgt_folder, fst_hour,  execution_date_str, external_trigger, critical_time, schema, table):
+    def download_nyiso_load_data(schema, hist_table, fst_table):
         from pytools.data_prep.grib_utils import download_hrrr_by_hour
         import pendulum as pu 
-
 
         c = client_factory('NYISO')
         data = c.get_load(latest=True, yesterday=False, integrated_1h=True, freq='hourly')
@@ -54,7 +53,9 @@ with DAG(
         eng = get_pg_conn() 
 
         df = df.set_index(['timestamp', 'Name'])
-        res = upsert_df(df,table_name=f'{table}', engine=eng, schema=schema) 
+        res = upsert_df(df,table_name=f'{hist_table}', engine=eng, schema=schema) 
+
+
 
 
 
@@ -62,16 +63,17 @@ with DAG(
     t1 = ExternalPythonOperator(
         python=py_path, 
         op_kwargs={
-          'execution_date_str': '{{ ts }}', 
-          'tgt_folder': obs_dest_path, 
-          'fst_hour':0,
+            'schema':nyiso_schema,
+            'hist_table': nyiso_hist_load_table,
+            'fst_table':nyiso_fst_load_table,
+          'execution_date_str': '{{ ts }}',      
           'external_trigger': '{{ dag_run.external_trigger }}',
           'critical_time': critical_time,
         },
         retries=args['retries'], 
         retry_delay=args['retry_delay'], 
-        task_id='download-hrrr-obs', 
-        python_callable=download_data, 
+        task_id='download-nyiso-hist-load', 
+        python_callable=download_nyiso_data, 
         expect_airflow=True, 
         expect_pendulum=True,
         dag=dag,  

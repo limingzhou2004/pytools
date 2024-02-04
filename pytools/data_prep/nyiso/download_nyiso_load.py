@@ -10,6 +10,20 @@ from pytools.utilities import get_files_from_a_folder
 
 nyiso_cols = ['Time Zone', 'Name', 'Integrated Load', 'timestamp']
 nyiso_index =  ['Time Zone', 'Name', 'timestamp']
+nyiso_fst_cols=['timestamp_utc', "Capitl",
+	'Centrl',
+	'Dunwod',
+	'Genese',
+	"Hud Vl",
+	'Longil',
+	"Mhk Vl",
+	"Millwd",
+	"N.Y.C.",
+	'North',
+	'West',
+	'NYISO',]
+nyiso_fst_index = ['timestamp_utc']
+
 
 def read_a_hist_zip_file(fn):
     zip_file = ZipFile(fn)

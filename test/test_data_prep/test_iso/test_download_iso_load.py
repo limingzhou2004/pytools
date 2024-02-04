@@ -6,7 +6,7 @@ import pytz
 from pyiso import client_factory
 
 from pytools.data_prep.nyiso.download_nyiso_load import read_a_hist_zip_folder
-from pytools.data_prep.nyiso.download_nyiso_load import nyiso_cols
+from pytools.data_prep.nyiso.download_nyiso_load import nyiso_cols, nyiso_index, nyiso_fst_cols,nyiso_fst_index
 from pytools.data_prep.pg_utils import get_pg_conn, upsert_df
 
 
@@ -24,19 +24,27 @@ def test_populate_nyiso_load_compare():
 
 def test_populate_api_call_data(config):
     c = client_factory('NYISO')
-    data = c.get_load(latest=True, yesterday=False, integrated_1h=True, freq='hourly')
-    df = pd.DataFrame(data)[nyiso_cols]
     eng = get_pg_conn()
     schema = config.load['schema']
     table = config.load['table']
-    df = df.set_index(['timestamp', 'Name'])
+    fst_table= config.load['table_iso_fst']
+
+    data = c.get_load(latest=True, yesterday=True, integrated_1h=True, freq='hourly')
+    df = pd.DataFrame(data)[nyiso_cols] 
+    df = df.set_index(nyiso_index)
     res = upsert_df(df,table_name=f'{table}', engine=eng, schema=schema)
+
+    data = c.get_load(latest=True, forecast=True, freq='hourly')
+    df2 = pd.DataFrame(data)[nyiso_fst_cols]
+    df2.set_index(nyiso_fst_index, inplace=True)
+    res = upsert_df(df2,table_name=f'{fst_table}', engine=eng, schema=schema)
+
     assert res
 
 
 def test_populate_api_forecast(config):
     c = client_factory('NYISO')
-    df = c.get_load(latest=True, yesterday=True, forecast=True)
+    df = c.get_load(latest=True, yesterday=True, forecast=True, freq='hourly')
     assert df.shape[0] > 1
     
 
@@ -68,6 +76,13 @@ def test_get_nyiso_load():
     assert(df.shape[0]>0)
 
     #http://mis.nyiso.com/public/csv/palIntegrated/20230802palIntegrated.csv
+
+
+def test_get_nyiso_fst_load():
+    c = client_factory('NYISO')
+    data = c.get_load(latest=True, forecast=True, freq='hourly')
+    df = pd.DataFrame(data)
+    assert df.shape[0] >1
 
     
 
