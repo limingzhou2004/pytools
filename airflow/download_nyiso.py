@@ -27,7 +27,7 @@ args={
 }
 
 with DAG(
-    "nyiso2", start_date=args['start_date'],
+    "nyiso", start_date=args['start_date'],
     dagrun_timeout=args['time_out'],
     schedule="15 * * * *", catchup=True, tags=['nyiso','liming']
 ) as dag:
