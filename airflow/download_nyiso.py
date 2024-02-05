@@ -57,7 +57,7 @@ with DAG(
         from pytools.data_prep.nyiso.download_nyiso_load import nyiso_cols, nyiso_index, nyiso_fst_cols,nyiso_fst_index
 
         c = client_factory('NYISO')
-        eng = get_pg_conn()
+        eng = get_pg_conn(para_airflow=pg_dict)
 
         data = c.get_load(latest=True, yesterday=True, integrated_1h=True, freq='hourly')
         df = pd.DataFrame(data)[nyiso_cols] 
@@ -88,7 +88,7 @@ with DAG(
         expect_airflow=True, 
         expect_pendulum=True,
         dag=dag,  
-        para_airflow={'pg_server':pg_server,'pg_user':pg_user, 'pg_pwd':pg_pwd}
+        pg_dict={'pg_server':pg_server,'pg_user':pg_user, 'pg_pwd':pg_pwd}
        )  
 
     
