@@ -117,3 +117,24 @@ def upload_pg_sample():
                 UPDATE SET txt = EXCLUDED.txt
             """
         )
+
+def get_table_names_by_prefix(schema, prefix):
+
+    qstr=f"""SELECT table_name  FROM information_schema.tables 
+        WHERE  table_schema = '{schema}'
+        AND    table_name like '{prefix}%%'"""
+    engine = get_pg_conn()
+    with engine.begin() as conn:
+        dft=pd.read_sql_query(qstr, conn)
+    return dft
+
+def clean_tmp_tables(schema):
+    tmps = get_table_names_by_prefix(schema, 'temp_')['table_name'].to_dict()
+    engine = get_pg_conn()
+
+    with engine.begin() as conn:
+        for id, t in enumerate(tmps):
+            qstr=f"drop table if exists {schema}.{tmps[t]}"
+            conn.exec_driver_sql(qstr)
+
+    
