@@ -80,6 +80,7 @@ with DAG(
           'execution_date_str': '{{ ts }}',      
           'external_trigger': '{{ dag_run.external_trigger }}',
           'critical_time': critical_time,
+          'pg_dict':{'pg_server':pg_server,'pg_user':pg_user, 'pg_pwd':pg_pwd}
         },
         retries=args['retries'], 
         retry_delay=args['retry_delay'], 
@@ -88,7 +89,7 @@ with DAG(
         expect_airflow=True, 
         expect_pendulum=True,
         dag=dag,  
-        pg_dict={'pg_server':pg_server,'pg_user':pg_user, 'pg_pwd':pg_pwd}
+      
        )  
 
     
