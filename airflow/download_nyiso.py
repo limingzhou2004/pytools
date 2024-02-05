@@ -59,15 +59,10 @@ with DAG(
         c = client_factory('NYISO')
         eng = get_pg_conn(para_airflow=pg_dict)
 
-        data = c.get_load(latest=True, yesterday=False, integrated_1h=True, freq='hourly')
+        data = c.get_load(latest=True, integrated_1h=True, freq='hourly')
         df = pd.DataFrame(data)[nyiso_cols] 
         df = df.set_index(nyiso_index)
-        res = upsert_df(df,table_name=f'{hist_table}', engine=eng, schema=schema)
-
-        data = c.get_load(yesterday=True, integrated_1h=True, freq='hourly')
-        df = pd.DataFrame(data)[nyiso_cols] 
-        df = df.set_index(nyiso_index)
-        res = upsert_df(df,table_name=f'{hist_table}', engine=eng, schema=schema)
+        res = upsert_df(df,table_name=f'{hist_table}', engine=eng, schema=schema)   
 
         data = c.get_load(latest=True, forecast=True, freq='hourly')
         df2 = pd.DataFrame(data)[nyiso_fst_cols]

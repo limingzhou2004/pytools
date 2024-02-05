@@ -29,7 +29,7 @@ def test_populate_api_call_data(config):
     table = config.load['table']
     fst_table= config.load['table_iso_fst']
 
-    data = c.get_load(latest=True, yesterday=True, integrated_1h=True, freq='hourly')
+    data = c.get_load(latest=True,integrated_1h=True, freq='hourly')
     df = pd.DataFrame(data)[nyiso_cols] 
     df = df.set_index(nyiso_index)
     res = upsert_df(df,table_name=f'{table}', engine=eng, schema=schema)
