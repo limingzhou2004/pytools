@@ -88,7 +88,7 @@ with DAG(
         expect_airflow=True, 
         expect_pendulum=True,
         dag=dag,  
-        pg_dict={'pg_server':pg_server,'pg_user':pg_user, 'pg_pwd':pg_pwd}
+        pg_airflow={'pg_server':pg_server,'pg_user':pg_user, 'pg_pwd':pg_pwd}
        )  
 
     

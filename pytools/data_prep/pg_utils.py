@@ -9,7 +9,7 @@ import os.path as osp
 # …
 
 
-def get_pg_conn(port=5432, db='daf', schema='iso', para_airflow=False):
+def get_pg_conn(port=5432, db='daf', schema='iso', para_airflow=None):
     if not para_airflow:
         with open(osp.join(osp.dirname(osp.abspath(__file__)),'../sql/sql_config.yaml'), 'r') as f:
             db_config = yaml.safe_load(f)
