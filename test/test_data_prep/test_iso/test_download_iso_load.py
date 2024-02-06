@@ -55,9 +55,6 @@ def test_populate_api_forecast(config):
     assert df.shape[0] > 1
     
 
-
-
-
 def test_read_a_hist_zip_folder(config):
     df = read_a_hist_zip_folder(zip_folder)
     eng = get_pg_conn()
@@ -73,9 +70,7 @@ def test_get_hist_load():
     today = now.astimezone(pytz.timezone(c.TZ_NAME)).date()
     content_list = c.fetch_csvs(today, 'isolf')
     assert(len(content_list)==1)
-  #  assert(content_list[0].split('\n')[0] ==
-    #                    '"Time Stamp","Time Zone","Name","PTID","Load"')
-    
+  
 
 def test_get_nyiso_load():
     c = client_factory('NYISO')

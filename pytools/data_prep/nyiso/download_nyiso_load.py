@@ -52,13 +52,8 @@ def read_a_hist_zip_folder(fd: str):
             dfs = dfs + [read_a_hist_zip_file(f)]
     # rename to match the timestamp name from API calls
     df_all = pd.concat(dfs).rename(columns={'Time Stamp':'timestamp'})[nyiso_cols]
-
-    
-
     
     return df_all.set_index(nyiso_index)
-
-
 
 
 def get_forecast_load(client, t0, cur_time):

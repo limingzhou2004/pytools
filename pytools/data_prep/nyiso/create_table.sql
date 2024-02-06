@@ -10,7 +10,6 @@ CREATE TABLE IF NOT EXISTS iso.nyiso_hist_load
 )
 
 
-
 create table if not exists iso.nyiso_fst_load(
 timestamp_utc timestamp with time zone,
 timestamp_spot timestamp with time zone,
