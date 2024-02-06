@@ -84,9 +84,9 @@ def upsert_df(df: pd.DataFrame, table_name: str, engine: sqlalchemy.engine.Engin
     return True
 
 
-
+@DeprecationWarning
 def upload_pg_sample():
-    engine = sa.create_engine()
+    engine = get_pg_conn
 
     with engine.begin() as conn:
         # step 0.0 - create test environment

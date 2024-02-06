@@ -13,6 +13,12 @@ from pytools.data_prep.pg_utils import get_pg_conn, upsert_df
 zip_folder = "/Users/limingzhou/zhoul/work/energy/iso-load/nyiso-load"
 
 
+def test_read_a_hist_zip_folder():
+    df = read_a_hist_zip_folder()
+
+
+    assert 1
+
 def test_populate_nyiso_load_compare():
     df_zip = read_a_hist_zip_folder(zip_folder)
     c = client_factory('NYISO')
@@ -52,9 +58,13 @@ def test_populate_api_forecast(config):
 
 
 
-def test_read_a_hist_zip_folder():
+def test_read_a_hist_zip_folder(config):
     df = read_a_hist_zip_folder(zip_folder)
-    assert df.shape[1] == 5
+    eng = get_pg_conn()
+    schema = config.load['schema']
+    table = config.load['table']
+    upsert_df(df=df, table_name=table,engine=eng,schema=schema)
+    assert df.shape[1] == 1
 
 def test_get_hist_load():
     c = client_factory('NYISO')

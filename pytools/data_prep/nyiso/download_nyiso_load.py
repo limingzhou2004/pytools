@@ -5,6 +5,7 @@ from zipfile import ZipFile
 import pandas as pd
 from pyiso import client_factory
 
+
 from pytools.utilities import get_files_from_a_folder
 
 
@@ -30,8 +31,11 @@ def read_a_hist_zip_file(fn):
     dfs = [pd.read_csv(zip_file.open(text_file.filename))
         for text_file in zip_file.infolist()
         if text_file.filename.endswith('.csv')]
-    return dfs
-
+    if dfs:
+        rdf = pd.concat(dfs)
+        tz = rdf['Time Zone'].apply(lambda x: '-0500' if x=='EST' else '-0400')
+        rdf['Time Stamp'] = pd.to_datetime(rdf['Time Stamp'] +' '+tz, utc=True)
+        return  rdf
 
 def read_a_hist_zip_folder(fd: str):
     """
@@ -42,10 +46,19 @@ def read_a_hist_zip_folder(fd: str):
     """
     files = get_files_from_a_folder(fd)
     dfs = []
+    c = client_factory('NYISO')
     for f in files:
-        dfs.extend( read_a_hist_zip_file(f) )
+        if f:
+            dfs = dfs + [read_a_hist_zip_file(f)]
     # rename to match the timestamp name from API calls
-    return pd.concat(dfs).rename(columns={'Time Stamp':'timestamp'})[nyiso_cols]
+    df_all = pd.concat(dfs).rename(columns={'Time Stamp':'timestamp'})[nyiso_cols]
+
+    
+
+    
+    return df_all.set_index(nyiso_index)
+
+
 
 
 def get_forecast_load(client, t0, cur_time):
