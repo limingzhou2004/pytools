@@ -24,7 +24,10 @@
  envtest = "$ENV_TEST"
 
 [load]
+ schema = "iso"
  table = "nyiso_hist_load"
+ table_iso_fst = "nyiso_fst_load"
+ table_our_fst = "nyiso_fst_load_ours"
  unit = "mwh"
  datetime_column = "timestamp"
  daylightsaving_col = "daylightsaving"

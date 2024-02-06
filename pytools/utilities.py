@@ -21,6 +21,13 @@ def get_absolute_path(cur_path: str, file_name) -> str:
     return os.path.join(os.path.dirname(cur_path), file_name)
 
 
+def get_files_from_a_folder(fd:str):
+    from os import listdir
+    from os.path import isfile, join
+    onlyfiles = [join(fd, f) for f in listdir(fd) if isfile(join(fd, f))]
+    return onlyfiles
+
+
 def get_now_str():
     from datetime import datetime
 
