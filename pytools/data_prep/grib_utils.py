@@ -409,6 +409,14 @@ print(date_time_obj)    """
 if __name__ == "__main__":
     # fillmissing(*sys.argv[1:])
     # python -m pytools.data_prep.grib_utils 
-    tgt_folder = "/Users/limingzhou/zhoul/work/energy/utah_2"
+    if len(sys.argv)<3:
+        tgt_folder = "/Users/limingzhou/zhoul/work/energy/utah_2"
+    else:
+        tgt_folder = sys.argv[2]
+    
+    if len(sys.argv) <2:
+        batch_no=0
+    else:
+        batch_no=int(sys.argv[1])
 
-    fillmissing_from_pickle(batch_no=0, tgt_folder=tgt_folder) #sys.argv[1])
+    fillmissing_from_pickle(batch_no=batch_no, tgt_folder=tgt_folder) 

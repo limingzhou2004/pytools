@@ -37,7 +37,7 @@ col_timestamp = 'timestamp'
 col_complete_timestamp = 'cplt_timestamp'
 
 
-def make_stats(fn='hrrr_stats_summary.csv'):
+def make_stats(fn='../data/hrrr_stats_summary.csv'):
     #load all pickle files for batch no from 0
     dfs = []
     for i in range(100):
