@@ -9,13 +9,14 @@ from itertools import chain
 import os
 from os.path import exists
 
-from math import ceil, floor
+from math import ceil, floor, isnan
 import shutil
 import sys
 import time
 from typing import List, Tuple, Union, Dict
 
 import pandas as pd
+import numpy as np
 import pendulum as pu
 import polars as pl
 from tqdm import tqdm
@@ -37,7 +38,9 @@ col_timestamp = 'timestamp'
 col_complete_timestamp = 'cplt_timestamp'
 
 
-def make_stats(fn='../data/hrrr_stats_summary.csv'):
+def make_stats(fn=None):
+    if not fn:
+        fn = os.path.join(os.path.dirname(__file__),'../data/hrrr_stats_summary.csv')
     #load all pickle files for batch no from 0
     dfs = []
     for i in range(100):
@@ -53,6 +56,8 @@ def make_stats(fn='../data/hrrr_stats_summary.csv'):
     dfg2 = df[df[col_timestamp].isna()].groupby(['year', 'month'])[col_complete_timestamp].count()
     dfg = pd.merge(dfg, dfg2, on=['year', 'month'], how='left')
     dfg.columns = ['count', 'missing']
+    dfg['missing'] = dfg['missing'].apply(lambda x: x if isnan(x) else int(x))
+
     dfg.to_csv(fn)
     
 
