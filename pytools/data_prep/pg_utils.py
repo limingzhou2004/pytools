@@ -95,7 +95,7 @@ def get_table_names_by_prefix(schema, prefix, engine):
 
 
 def clean_tmp_tables(schema, engine):
-    tmps = get_table_names_by_prefix(schema, 'temp_')['table_name'].to_dict()
+    tmps = get_table_names_by_prefix(schema, 'temp_', engine)['table_name'].to_dict()
 
     with engine.begin() as conn:
         for _, t in enumerate(tmps):
