@@ -71,7 +71,7 @@ with DAG(
         df2['timestamp_spot'] = pd.Timestamp.now()
         df2.set_index(nyiso_fst_index, inplace=True)
         res = upsert_df(df2,table_name=f'{fst_table}', engine=eng, schema=schema)
-        tb=clean_tmp_tables('iso')
+        clean_tmp_tables('iso')
 
 
 
