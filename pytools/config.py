@@ -3,8 +3,37 @@ from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
+from pydantic import BaseModel, FilePath
 import toml
 import envtoml
+
+
+class Site(BaseModel):
+    name:str
+    base_folder: str
+    center: Tuple[float, float]
+    radius: Tuple[float, float, float, float]
+    hrrr_paras_file: FilePath
+    sql_location: str 
+    site_folder: str 
+    description: str 
+
+
+class Load(BaseModel):
+    schema:str
+    table:str #for hist
+    table_iso_fst: str
+    table_our_fst: str
+    unit:str
+    datetime_column:str 
+    daylightsaving_col:str 
+    load_column:str 
+    sql_template_file: str
+    limit: Tuple[float,float]
+    lag_hours:int
+    utc_to_local_hours:int 
+    load_lag_start:int
+
 
 
 class Config:
@@ -15,7 +44,12 @@ class Config:
         self._base_folder = (
             base_folder if base_folder.endswith("/") else base_folder + "/"
         )
+        # validate the settings via pydantic
         self._add_base_folder(self.toml_dict["site"], "hrrr_paras_file")
+        # use pydantic to validate the config
+        self.site_pdt = Site(**self.toml_dict['site'])
+        self.load_pdt = Load(**self.toml_dict['load'])
+
         
         # jar and weather folder are processed separately as properties
 
@@ -133,7 +167,7 @@ class Config:
         return {k: self._join(self._base_folder, path_dict[k]) for k in path_dict}
     
     @property
-    def center(self) -> Tuple[int, int]:
+    def center(self) -> Tuple[float, float]:
 
         return self.toml_dict['site']['center']
     

@@ -10,6 +10,8 @@ from airflow.operators.latest_only import LatestOnlyOperator
 from airflow.models import Variable
 import pendulum as pu
 
+from pytools.data_prep.pg_utils import clean_tmp_tables, get_table_names_by_prefix
+
 # won't work in the airflow env as pyiso not installed there
 #from pyiso import client_factory
 
@@ -69,6 +71,9 @@ with DAG(
         df2['timestamp_spot'] = pd.Timestamp.now()
         df2.set_index(nyiso_fst_index, inplace=True)
         res = upsert_df(df2,table_name=f'{fst_table}', engine=eng, schema=schema)
+        tb=clean_tmp_tables('iso')
+
+
 
 
     t1 = ExternalPythonOperator(

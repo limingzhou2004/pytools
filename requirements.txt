@@ -2,6 +2,7 @@ dask
 dill
 duckdb
 envtoml
+icecream
 jsonargparse
 mlflow
 geopandas
@@ -15,6 +16,7 @@ psycopg2-binary
 #pynio -- need to use conda 
 #CONDA_SUBDIR=osx-64 conda install -y pynio
 # conda install -y -c conda-forge pynio
+pydantic
 pytorch-lightning
 read_env
 requests

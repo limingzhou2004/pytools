@@ -13,10 +13,11 @@ from pytools.data_prep.weather_task import (
     train_model,
 )
 import pytools.data_prep.weather_data_prep as wp
+from pytools.utilities import get_absolute_path
 
 
 class TestWeatherTask:
-    config_file = "../../pytools/config/albany_prod_test0.toml"
+    config_file = get_absolute_path(__file__, "../../pytools/config/albany_test.toml")
 
     def test_hist_load(self, train_t0, train_t1, monkeypatch):
         monkeypatch.setattr(LoadData, "query_train_data", mock_train_load)

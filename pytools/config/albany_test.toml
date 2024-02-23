@@ -21,7 +21,7 @@
  description = "Zone Capital of NYISO"
  comments = """name is used for database query and must match what the database use; while alias is used for setting up
   the folder structure"""
- envtest = "$ENV_TEST"
+ #envtest = "$ENV_TEST"
 
 [load]
  schema = "iso"
