@@ -94,11 +94,11 @@ def get_table_names_by_prefix(schema, prefix, engine):
     return dft
 
 
-def clean_tmp_tables(schema, conn, engine):
+def clean_tmp_tables(schema, engine):
     tmps = get_table_names_by_prefix(schema, 'temp_')['table_name'].to_dict()
 
     with engine.begin() as conn:
-        for id, t in enumerate(tmps):
+        for _, t in enumerate(tmps):
             qstr=f"drop table if exists {schema}.{tmps[t]}"
             conn.exec_driver_sql(qstr)
 
