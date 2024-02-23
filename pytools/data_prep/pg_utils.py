@@ -84,53 +84,18 @@ def upsert_df(df: pd.DataFrame, table_name: str, engine: sqlalchemy.engine.Engin
     return True
 
 
-@DeprecationWarning
-def upload_pg_sample():
-    engine = get_pg_conn
-
-    with engine.begin() as conn:
-        # step 0.0 - create test environment
-        conn.exec_driver_sql("DROP TABLE IF EXISTS main_table")
-        conn.exec_driver_sql(
-            "CREATE TABLE main_table (id int primary key, txt varchar(50))"
-        )
-        conn.exec_driver_sql(
-            "INSERT INTO main_table (id, txt) VALUES (1, 'row 1 old text')"
-        )
-        # step 0.1 - create DataFrame to UPSERT
-        df = pd.DataFrame(
-            [(2, "new row 2 text"), (1, "row 1 new text")], columns=["id", "txt"]
-        )
-        
-        # step 1 - create temporary table and upload DataFrame
-        conn.exec_driver_sql(
-            "CREATE TEMPORARY TABLE temp_table AS SELECT * FROM main_table WHERE false"
-        )
-        df.to_sql("temp_table", conn, index=False, if_exists="append")
-
-        # step 2 - merge temp_table into main_table
-        conn.exec_driver_sql(
-            """\
-            INSERT INTO main_table (id, txt) 
-            SELECT id, txt FROM temp_table
-            ON CONFLICT (id) DO
-                UPDATE SET txt = EXCLUDED.txt
-            """
-        )
-
-def get_table_names_by_prefix(schema, prefix):
+def get_table_names_by_prefix(schema, prefix, engine):
 
     qstr=f"""SELECT table_name  FROM information_schema.tables 
         WHERE  table_schema = '{schema}'
         AND    table_name like '{prefix}%%'"""
-    engine = get_pg_conn()
     with engine.begin() as conn:
         dft=pd.read_sql_query(qstr, conn)
     return dft
 
-def clean_tmp_tables(schema):
+
+def clean_tmp_tables(schema, conn, engine):
     tmps = get_table_names_by_prefix(schema, 'temp_')['table_name'].to_dict()
-    engine = get_pg_conn()
 
     with engine.begin() as conn:
         for id, t in enumerate(tmps):
