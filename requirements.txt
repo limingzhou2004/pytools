@@ -2,6 +2,7 @@ dask
 dill
 duckdb
 envtoml
+holidays
 icecream
 jsonargparse
 mlflow

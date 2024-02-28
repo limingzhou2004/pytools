@@ -9,6 +9,8 @@
   in the path"""
 
 [site]
+ timezone = "US/Eastern"
+ state = "NY"
  base_folder = "/Users/limingzhou/zhoul/work/energy/pytools/resources/albany-test"
  name = "Albany-NY"
  alias = "albany-test"

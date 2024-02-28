@@ -1,8 +1,9 @@
 import datetime as dt
-import os
 
+import holidays
 import numpy as np
 import pandas as pd
+import pytz
 
 from pytools.pandas_pgsql import PandasSql as Ps
 from pytools.pgsql_adapter import PGSqlQuery as Mq
@@ -31,22 +32,26 @@ class CalendarData:
 
     def __init__(
         self,
-        holiday_file=os.path.join(
-            get_file_folder(__file__),
-            "../../resources/calendar/meta data - calendar.csv",
-        ),
-        daylightsaving_file=os.path.join(
-            get_file_folder(__file__),
-            "../../resources/calendar/daylightsaving time.csv",
-        ),
+        t0, t1, timezone, state
+        # holiday_file=os.path.join(
+        #     get_file_folder(__file__),
+        #     "../../resources/calendar/meta data - calendar.csv",
+        # ),
+        # daylightsaving_file=os.path.join(
+        #     get_file_folder(__file__),
+        #     "../../resources/calendar/daylightsaving time.csv",
+        # ),
     ):
-        self.holiday_file = holiday_file
-        self.holiday_calendar = pd.read_csv(holiday_file, parse_dates=["date"])
-        self.cal_date = {}
-        self.daylightsaving_file = daylightsaving_file
-        self.daylightsaving_data = pd.read_csv(
-            self.daylightsaving_file, parse_dates=["start", "end"], index_col=0
-        )
+        # self.holiday_file = holiday_file
+        # self.holiday_calendar = pd.read_csv(holiday_file, parse_dates=["date"])
+        # self.cal_date = {}
+        # self.daylightsaving_file = daylightsaving_file
+        # self.daylightsaving_data = pd.read_csv(
+        #     self.daylightsaving_file, parse_dates=["start", "end"], index_col=0
+        # )
+        self.timezone=timezone
+        self.state=state
+        self.construct_calendar_data(t0, t1)
 
     def construct_calendar_data(
         self,
@@ -58,6 +63,8 @@ class CalendarData:
         # timestamp = {"timestamp": [start_time + dt.timedelta(hours=t) for t in range(int(delta_time))]}
         timestamp = pd.date_range(start=start_time, end=end_time, freq="H")
 
+
+
         # match yyyy-MM-DD only for holidays
         cdate = pd.DataFrame(timestamp, columns=["timestamp"])
         cdate["date"] = pd.to_datetime(timestamp.date)
@@ -68,13 +75,26 @@ class CalendarData:
         cal_date.rename(columns={"date": "holiday_date"}, inplace=True)
         self.cal_date = cal_date
         return self.cal_date
+    
+    def _is_us_holiday(dt, state='NY', year=2022):
+        h =  holidays.US(subdiv=state, years=year)
+        return dt in h
+    
+    def _is_daylightsaving(dt, tz):
+            # Checks if a given date is in daylight saving time.
+        # Returns True if the date is in daylight saving time, False otherwise.
+        timezone = pytz.timezone(tz)
+        date = timezone.localize(dt)
+        return date.dst() != dt.timedelta(0)
 
+    @DeprecationWarning
     def load_daylightsaving_to_db(self, schema, table):
         daylightsaving_data = pd.read_csv(
             self.daylightsaving_file, parse_dates=["start", "end"], index_col=0
         )
         self.load_to_db(schema=schema, table=table, df=daylightsaving_data)
 
+    @DeprecationWarning
     def load_to_db(self, schema: str, table: str, df=None):
         """
         manually create a unique index on timestamp, and upload dataframe to database
@@ -93,6 +113,7 @@ class CalendarData:
             df = self.cal_date
         Ps.df_to_sql(df, eng, schema=schema, tbl_name=table)
 
+    @DeprecationWarning
     def is_daylightsaving(self, t: np.datetime64):
         year = pd.to_datetime(t).year
         tt = self.daylightsaving_data.loc[year]
@@ -101,6 +122,7 @@ class CalendarData:
         else:
             return False
 
+    @DeprecationWarning
     def get_daylightsaving_data(self):
         return self.daylightsaving_data
 
@@ -127,11 +149,12 @@ class CalendarData:
         return list(dfr), dfr
 
 
+@DeprecationWarning
 def main_load_daylightsaving_time(schema):
     cd = CalendarData()
     cd.load_daylightsaving_to_db(schema=schema, table="calendar")
 
-
+@DeprecationWarning
 def make_data():
     holiday_file = "../../resources/calendar/meta data - calendar.csv"
     dls_file = "../../resources/calendar/daylightsaving time.csv"
@@ -157,7 +180,7 @@ def make_data():
     del df["year"]
     df.to_pickle("calendar.pkl")
 
-
+@DeprecationWarning
 def upload_calendar_data(schema="nyiso", table="calendar"):
     df = pd.read_pickle("../calendar.pkl")
     cd = CalendarData()

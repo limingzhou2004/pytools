@@ -3,12 +3,80 @@ from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from pydantic import BaseModel, FilePath
+from pydantic import BaseModel, FilePath, validator
 import toml
 import envtoml
 
+US_state_abbvs=['AL',
+'AK',
+'AZ',
+'AR',
+'CA',
+'CO',
+'CT',
+'DE',
+'DC',
+'FL',
+'GA',
+'HI',
+'ID',
+'IL',
+'IN',
+'IA',
+'KS',
+'KY',
+'LA',
+'ME',
+'MD',
+'MA',
+'MI',
+'MN',
+'MS',
+'MO',
+'MT',
+'NE',
+'NV',
+'NH',
+'NJ',
+'NM',
+'NY',
+'NC',
+'ND',
+'OH',
+'OK',
+'OR',
+'PA',
+'RI',
+'SC',
+'SD',
+'TN',
+'TX',
+'UT',
+'VT',
+'VA',
+'WA',
+'WV',
+'WI',
+'WY',
+]
+
+US_timezones=['US/Alaska',
+ 'US/Aleutian',
+ 'US/Arizona',
+ 'US/Central',
+ 'US/East-Indiana',
+ 'US/Eastern',
+ 'US/Hawaii',
+ 'US/Indiana-Starke',
+ 'US/Michigan',
+ 'US/Mountain',
+ 'US/Pacific',
+ 'US/Samoa']
+
 
 class Site(BaseModel):
+    timezone:str
+    state:str
     name:str
     base_folder: str
     center: Tuple[float, float]
@@ -17,6 +85,16 @@ class Site(BaseModel):
     sql_location: str 
     site_folder: str 
     description: str 
+
+    @validator('state must be abbrevs')
+    def state_must_be_abbrevs(cls, state):
+        if state not in US_state_abbvs:
+            raise ValueError(f'{state} is not in the two letter abbvs for states, in {US_state_abbvs}')
+        
+    @validator('Timezone must be in the list')
+    def timezone_must_be_in_list(cls, timezone):
+        if timezone not in US_timezones:
+            raise ValueError(f'{timezone} not in the list {US_timezones}')
 
 
 class Load(BaseModel):
