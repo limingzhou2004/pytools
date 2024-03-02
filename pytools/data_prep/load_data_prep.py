@@ -29,6 +29,8 @@ class LoadData:
 
     def __init__(
         self,
+        timezone:str,
+        state:str,
         table_name: str,
         site_name: str,
         date_col: str,
@@ -44,6 +46,8 @@ class LoadData:
         load data
 
         Args:
+            timezone: time zone in US
+            state: two letter state abbv, like NY
             table_name: table that holds the load data/ price data
             site_name: name of the site used in the sql table
             date_col: list of columns as datetime
@@ -54,6 +58,8 @@ class LoadData:
             query_str_train: str ="",
             query_str_predict: str = "",
         """
+        self.timezone=timezone
+        self.state=state
         self.table_name = table_name
         self.site_name = site_name
         self.date_col = date_col
@@ -184,6 +190,12 @@ class LoadData:
         for c in cols:
             df[c] = dw[c]
         return df
+    
+    def add_holiday_dst(self, df, timestamp='timestamp'):
+        cols, dw = Cp.CalendarData().get_holiday_dst(df[timestamp])
+        for c in cols:
+            df[c] = dw[c]
+        return df
 
     def sql_query_scaler(self, qm_str: str, date_col: List[str] = ["max_date"]):
         """
@@ -234,6 +246,8 @@ def build_from_toml(config_file: Union[str, Config], t0: str, t1: str) -> LoadDa
         Config(filename=config_file) if isinstance(config_file, str) else config_file
     )
     ld = LoadData(
+        timezone=config.site_pdt.timezone,
+        state = config.site_pdt.state,
         table_name=config.load["table"],
         site_name=config.site["sql_location"],
         date_col=config.load["datetime_column"],

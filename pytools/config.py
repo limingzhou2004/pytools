@@ -3,7 +3,7 @@ from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from pydantic import BaseModel, FilePath, validator
+from pydantic import BaseModel, FilePath, field_validator, validator
 import toml
 import envtoml
 
@@ -80,21 +80,25 @@ class Site(BaseModel):
     name:str
     base_folder: str
     center: Tuple[float, float]
-    radius: Tuple[float, float, float, float]
+    rect: Tuple[float, float, float, float]
     hrrr_paras_file: FilePath
     sql_location: str 
     site_folder: str 
     description: str 
 
-    @validator('state must be abbrevs')
+    @field_validator('state',mode='after')
+    @classmethod
     def state_must_be_abbrevs(cls, state):
         if state not in US_state_abbvs:
             raise ValueError(f'{state} is not in the two letter abbvs for states, in {US_state_abbvs}')
+        return state
         
-    @validator('Timezone must be in the list')
+    @field_validator('timezone', mode='after')
+    @classmethod
     def timezone_must_be_in_list(cls, timezone):
         if timezone not in US_timezones:
             raise ValueError(f'{timezone} not in the list {US_timezones}')
+        return timezone
 
 
 class Load(BaseModel):

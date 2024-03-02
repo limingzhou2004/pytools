@@ -12,7 +12,7 @@ from pytools import get_file_folder
 
 class CalendarData:
     """
-    Prepare calendar data
+    Prepare calendar data. Provide convinences for load data prep.
     world wide: pip install holidays
 
     holidays using pandas.tseries.holiday, and observed holidays
@@ -28,31 +28,9 @@ class CalendarData:
      _.tm_isdst
     0
 
-    """
+    """     
 
-    def __init__(
-        self,
-        t0, t1, timezone, state
-        # holiday_file=os.path.join(
-        #     get_file_folder(__file__),
-        #     "../../resources/calendar/meta data - calendar.csv",
-        # ),
-        # daylightsaving_file=os.path.join(
-        #     get_file_folder(__file__),
-        #     "../../resources/calendar/daylightsaving time.csv",
-        # ),
-    ):
-        # self.holiday_file = holiday_file
-        # self.holiday_calendar = pd.read_csv(holiday_file, parse_dates=["date"])
-        # self.cal_date = {}
-        # self.daylightsaving_file = daylightsaving_file
-        # self.daylightsaving_data = pd.read_csv(
-        #     self.daylightsaving_file, parse_dates=["start", "end"], index_col=0
-        # )
-        self.timezone=timezone
-        self.state=state
-        self.construct_calendar_data(t0, t1)
-
+    @DeprecationWarning
     def construct_calendar_data(
         self,
         start_time=dt.datetime.strptime("2016-12-01", "%Y-%m-%d"),
@@ -76,9 +54,9 @@ class CalendarData:
         self.cal_date = cal_date
         return self.cal_date
     
-    def _is_us_holiday(dt, state='NY', year=2022):
+    def _is_us_holiday(t, state='NY', year=2022):
         h =  holidays.US(subdiv=state, years=year)
-        return dt in h
+        return t.date() in h
     
     def _is_daylightsaving(dt, tz):
             # Checks if a given date is in daylight saving time.
@@ -147,6 +125,17 @@ class CalendarData:
         index = list(range(len(h)))
         dfr = pd.DataFrame(d, index=index)
         return list(dfr), dfr
+    
+    def get_holiday_dst(self, df:pd.Series):
+        h_hld = df.apply(self._is_us_holiday)
+        h_dst = df.apply(self._is_daylightsaving)
+        index = list(range(len(h_hld)))
+        d = {'holiday':h_hld, 'daylighsaving':h_dst}
+        dfr = pd.DataFrame(d, index=index)
+        return list(dfr), dfr
+
+    
+    
 
 
 @DeprecationWarning
