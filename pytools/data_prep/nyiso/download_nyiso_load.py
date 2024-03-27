@@ -57,6 +57,7 @@ def read_a_hist_zip_folder(fd: str):
 
 
 def get_forecast_load(client, t0, cur_time):
+    raise NotImplementedError
 
     return
 
@@ -73,5 +74,5 @@ def get_hist_load(client, t0, t1):
 
 
 def get_latest_load(client, ):
-
+    raise NotImplementedError
     return

@@ -14,7 +14,7 @@
  base_folder = "/Users/limingzhou/zhoul/work/energy/pytools/resources/albany-test"
  name = "Albany-NY"
  alias = "albany-test"
- sql_location = "capitl"
+ sql_location = "CAPITL"
  site_folder = "resources/test_data/site/nyiso"
  #center[lon, lat]
  center = [-73.0, 43.0]

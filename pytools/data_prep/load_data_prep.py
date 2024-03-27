@@ -1,7 +1,10 @@
 from typing import List, Union
 
+from icecream import ic
 import numpy as np
 import pandas as pd
+
+import pytools.data_prep.pg_utils as pu
 
 # from pandas import DataFrame
 
@@ -132,8 +135,12 @@ class LoadData:
 
         """
         data = self.sql_query(qstr=query, date_col=[self.date_col])
+        if data.shape[0]==0:
+            ic(data)
+            raise ValueError('No load data retrieved!')
         data = self.add_hod(data, timestamp=self.date_col)
         data = self.add_dow(data, timestamp=self.date_col)
+        data = self.add_holiday_dst(data, timestamp=self.date_col)
         return data
 
     def query_max_load_time(self, date_col=["max_date"]) -> np.datetime64:
@@ -192,7 +199,7 @@ class LoadData:
         return df
     
     def add_holiday_dst(self, df, timestamp='timestamp'):
-        cols, dw = Cp.CalendarData().get_holiday_dst(df[timestamp])
+        cols, dw = Cp.CalendarData().get_holiday_dst(df[timestamp], self.timezone)
         for c in cols:
             df[c] = dw[c]
         return df
@@ -208,7 +215,7 @@ class LoadData:
         Returns:
         """
         return Ps.read_sql_timeseries(
-            Mq().get_sqlalchemy_engine(), qstr=qm_str, date_col=date_col
+            pu.get_pg_conn(), qstr=qm_str, date_col=date_col
         ).values[0, 0]
 
     def sql_query(self, qstr: str, date_col: List[str] = []) -> pd.DataFrame:
@@ -225,7 +232,7 @@ class LoadData:
         if not isinstance(date_col, List):
             date_col = [date_col]
         return Ps.read_sql_timeseries(
-            Mq().get_sqlalchemy_engine(), qstr=qstr, date_col=date_col
+            pu.get_pg_conn(), qstr=qstr, date_col=date_col
         )
 
 

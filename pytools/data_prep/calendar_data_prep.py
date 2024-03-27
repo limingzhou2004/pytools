@@ -54,16 +54,18 @@ class CalendarData:
         self.cal_date = cal_date
         return self.cal_date
     
-    def _is_us_holiday(t, state='NY', year=2022):
+    def _is_us_holiday(self, t, state='NY', year=2022):
         h =  holidays.US(subdiv=state, years=year)
         return t.date() in h
     
-    def _is_daylightsaving(dt, tz):
-            # Checks if a given date is in daylight saving time.
+    def _is_daylightsaving(self, t, tz):
+        # Checks if a given date is in daylight saving time.
         # Returns True if the date is in daylight saving time, False otherwise.
-        timezone = pytz.timezone(tz)
-        date = timezone.localize(dt)
-        return date.dst() != dt.timedelta(0)
+        #timezone = pytz.timezone(tz)
+        t2 = t.tz_convert(tz)
+        
+        return t2.dst() != dt.timedelta(0)
+
 
     @DeprecationWarning
     def load_daylightsaving_to_db(self, schema, table):
@@ -126,9 +128,9 @@ class CalendarData:
         dfr = pd.DataFrame(d, index=index)
         return list(dfr), dfr
     
-    def get_holiday_dst(self, df:pd.Series):
+    def get_holiday_dst(self, df:pd.Series, tz):
         h_hld = df.apply(self._is_us_holiday)
-        h_dst = df.apply(self._is_daylightsaving)
+        h_dst = df.apply(self._is_daylightsaving, args=(tz,))
         index = list(range(len(h_hld)))
         d = {'holiday':h_hld, 'daylighsaving':h_dst}
         dfr = pd.DataFrame(d, index=index)

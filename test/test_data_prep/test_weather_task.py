@@ -20,14 +20,15 @@ class TestWeatherTask:
     config_file = get_absolute_path(__file__, "../../pytools/config/albany_test.toml")
 
     def test_hist_load(self, train_t0, train_t1, monkeypatch):
-        monkeypatch.setattr(LoadData, "query_train_data", mock_train_load)
+        #monkeypatch.setattr(LoadData, "query_train_data", mock_train_load)
         res = hist_load(
             config_file=self.config_file,
             grib_type=GribType.hrrr,
             t0=train_t0,
             t1=train_t1,
+            create=True
         )
-        assert res.load_data.train_data.shape == (2, 4)
+        assert res.load_data.train_data.shape == (40, 9)
 
     def test_hist_weather(self):
         dm = hist_load(config_file=self.config_file, grib_type=GribType.hrrr)
