@@ -76,7 +76,7 @@ def extract_data_from_grib2(fn:str, lon:float, lat:float, radius:Union[int,Tuple
     else:
         raise Exception('only pynio and scipy are supported for engine')
 
-    delta_x = ds['gridlat_0'].Dx
+    delta_x = ds['gridlon_0'].Dx
     delta_y = ds['gridlat_0'].Dy
     if isinstance(radius, int):
         east_dist = radius; west_dist = radius; north_dist = radius; south_dist=radius
@@ -108,9 +108,9 @@ def extract_data_from_grib2(fn:str, lon:float, lat:float, radius:Union[int,Tuple
     else:
         return np.stack(arr_list, axis=2)
 
-def get_paras_from_pynio_file(para_file:str, is_utah=False):
+def get_paras_from_pynio_file(para_file:str, is_utah=False) -> Dict:
     a = {}
-    # use file size to decide whether it is a utah file, >100 mb
+    # It is possible to use file size to decide whether it is a utah file, >100 mb
 
     with open(para_file) as f:
         for line in f:
@@ -120,6 +120,7 @@ def get_paras_from_pynio_file(para_file:str, is_utah=False):
             if is_utah:
                 if k == 'APCP_P8_L1_GLC0_acc':
                     k = k + '_1h'
+            # 1 to use;        
             if int(v) == 1:
                 a[k] = int(v)
 

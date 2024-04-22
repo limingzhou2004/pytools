@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import enum
 import dill as pickle
-from typing import Tuple, Union
+from typing import Dict, List, Tuple, Union
 from uuid import uuid4
 
 from pytools.data_prep.weather_scaling import WeatherScaler
@@ -63,7 +63,6 @@ class DataPrepManager:
         max_load_lag_start: int = 1,
         load_lag_order: int = 168,
         utc_to_local_hours: int = -5,
-        weather_type: GribType = GribType.hrrr,
         load_name: str = "load",
         timestamp_name: str = "timestamp",
         load_scaler: float = None,
@@ -86,7 +85,6 @@ class DataPrepManager:
             max_load_lag_start: the first lag of load
             load_lag_order: the overall lag order, 0 for one lag, lag_order + lag_start is the max lag
             utc_to_local_hours: utc datetime + utc_to_local_hours = local datetime
-            weather_type: hrrr or nem
             load_name: load column name, default 'load'
             timestamp_name: timestamp column name, default 'timestamp'
             load_scaler: a standard or minmax scalar
@@ -123,7 +121,6 @@ class DataPrepManager:
         self.max_load_lag_start = max_load_lag_start
         self.load_lag_order = load_lag_order
         self.utc_to_local_hours = utc_to_local_hours
-        self.weather_type = weather_type
         self.data_standard_load_lag = self.add_lag(
             self.data_standard_load, start=max_load_lag_start, order=load_lag_order
         )
@@ -191,18 +188,16 @@ class DataPrepManager:
 
     def build_weather(
         self,
-        weather_folder,
-        jar_address: str,
-        center: str,
-        rect: str,
+        weather,
+        center: List[float]=[],
+        rect: List[float]=[],
         weather_para_file: str = None,
     ):
         """
         Set up a Weatherdata_prep object, and set up hist weather.
 
         Args:
-            weather_folder: grib file folder, as a dict of hrrr_hist, hrrr_predict, nam_hist, nam_predict
-            jar_address: jar lib address
+            weather: weather dict,
             center: (lat, lon)
             rect: (height, width) in km
             weather_para_file: weather parameter file
@@ -210,25 +205,31 @@ class DataPrepManager:
         Returns: None
 
         """
-        if self.weather_type == GribType.hrrr:
-            weather_folder = weather_folder["hrrr_hist"]
-        elif self.weather_type == GribType.nam:
-            weather_folder = weather_folder["nam_hist"]
-        else:
-            raise ValueError("un-recognized grib type, must be hrrr or nam")
+        self.weather = weather
         if weather_para_file is None:
             weather_para_file = self._weather_para_file
         w = self.build_hist_weather(
-            weather_folder=weather_folder,
+            weather=weather,
             weather_para_file=weather_para_file,
-            jar_address=jar_address,
-            grib_type=self.weather_type,
             para_num=self.para_num,
         )
         w.set_utc_to_local_hours(self.utc_to_local_hours)
         self.weather = w
         self.center = center
         self.rect = rect
+
+    def make_npy_train_from_inventory(self, config:Config, parallel:bool=False, n_cores=7):
+        arr = self.weather.make_npy_data_from_inventory(        
+            center=config.center,
+            rect=config.radius,
+            inventory_file=config.weather.inventory_file,
+            parallel=parallel,
+            folder_col_name=config.weather.folder_col_name,
+            filename_col_name=config.weather.filename_col_name,
+            type_col_name=config.weather.type_col_name,
+            n_cores=n_cores)
+
+        return arr
 
     def make_npy_train(self, filter_func=None, parallel=True):
         """
@@ -320,9 +321,7 @@ class DataPrepManager:
 
     def build_hist_weather(
         self,
-        weather_folder: str,
-        jar_address: str,
-        grib_type=GribType.hrrr,
+        weather: Dict,
         weather_para_file=None,
         para_num=None,
     ) -> wp.WeatherDataPrep:
@@ -330,35 +329,21 @@ class DataPrepManager:
         Build a WeatherDataPrep object
 
         Args:
-            weather_folder: grib2 folder
-            jar_address:
-            grib_type:
+            weather: grib2 dict
             weather_para_file:
             para_num:
 
         Returns:
 
         """
-        if grib_type == GribType.hrrr:
-            self.weather = wp.WeatherDataPrep.build_hrrr(
-                weather_folder=weather_folder,
-                jar_address=jar_address,
-                dest_npy_folder=self.get_npy_folder(),
-                weather_para_file=weather_para_file,
-                utc_hour_offset=self.utc_to_local_hours,
-                para_num=para_num,
-            )
-        elif grib_type == GribType.nam:
-            self.weather = wp.WeatherDataPrep.build_nam(
-                weather_folder=weather_folder,
-                jar_address=jar_address,
-                dest_npy_folder=self.get_npy_folder(hrrr=self.weather_type),
-                weather_para_file=weather_para_file,
-                utc_hour_offset=self.utc_to_local_hours,
-                para_num=para_num,
-            )
-        else:
-            raise ValueError("non valid grib type, must be hrrr or nam")
+        self.weather = wp.WeatherDataPrep.build_hrrr(
+            weather=weather,
+            dest_npy_folder=self.get_npy_folder(),
+            weather_para_file=weather_para_file,
+            utc_hour_offset=self.utc_to_local_hours,
+            para_num=para_num,
+        )
+
         return self.weather
 
     def get_train_weather(self) -> np.array:

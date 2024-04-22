@@ -117,6 +117,14 @@ class Load(BaseModel):
     load_lag_start:int
 
 
+class Weather(BaseModel):
+    hist_weather_pickle: str
+    folder_col_name: str 
+    filename_col_name: str 
+    type_col_name: str 
+    hrrr_hist: List[str]
+    hrrr_predict: List[str] 
+
 
 class Config:
     def __init__(self, filename: str = ""):
@@ -205,6 +213,10 @@ class Config:
     @property
     def site(self):
         return self.toml_dict["site"]
+    
+    @property
+    def weather(self):
+        return self.toml_dict["weather_folder"]
 
     @property
     def sql(self):
@@ -243,14 +255,13 @@ class Config:
         )
         df.reset_index().to_csv(file_name, index=False)
 
-    @property
-    def weather_folder(self) -> Dict:
-        path_dict = self.get("weather_folder")
-        return {k: self._join(self._base_folder, path_dict[k]) for k in path_dict}
+    # @property
+    # def weather_folder(self) -> Dict:
+    #     path_dict = self.get("weather_folder")
+    #     return {k: self._join(self._base_folder, path_dict[k]) for k in path_dict}
     
     @property
     def center(self) -> Tuple[float, float]:
-
         return self.toml_dict['site']['center']
     
     @property

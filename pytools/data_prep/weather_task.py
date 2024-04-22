@@ -49,7 +49,6 @@ logger = get_logger("weather_tasks")
 
 def hist_load(
     config_file: str,
-    grib_type: wp.GribType,
     t0: str = "2018-12-29",
     t1: str = "2019-01-01",
     create: bool = False,
@@ -68,20 +67,16 @@ def hist_load(
 
     """
     config = Config(config_file)
-    logger.info(
-        f"... Check hist_load at {config.site_parent_folder} with grib type {grib_type}\n"
-    )
-    grib_str = grib_type if isinstance(grib_type, str) else grib_type.name
-    suffix = f"{grib_str}.pkl"
+    logger.info(f"... Check hist_load at {config.site_parent_folder}\n")
+    suffix = ".pkl"
     dm = dpm.load(config, prefix=prefix, suffix=suffix)
     if not dm or create:
         logger.info("No existing manager detected or replace existing manager...\n")
         dm = Dpmb(
             config_file=config_file, train_t0=t0, train_t1=t1
-        ).build_dm_from_config_weather(weather_type=grib_type, config=config)
+        ).build_dm_from_config_weather(config=config)
         dm.build_weather(
-            weather_folder=config.weather_folder,
-            jar_address=config.jar_config,
+            weather=config.weather,
             center=config.site["center"],
             rect=config.site["rect"],
         )
@@ -92,23 +87,32 @@ def hist_load(
     return dm
 
 
+def hist_weather_prepare_from_report(config_file:str,t_after: str,parallel=False):
+    t_after = pd.to_datetime(t_after, utc=True)
+    logger.info(f"Creating historical npy data from {t_after}...\n")
+    d = hist_load(config_file=config_file, create=False)
+    config = Config(config_file)
+    #hour_offset = config.load["utc_to_local_hours"]
+
+    d.weather-data  = d.make_npy_train_from_inventory(config=config,)
+    return d
+
 def hist_weather_prepare(
-    config_file: str, grib_type: wp.GribType, t_after: str, parallel=True
+    config_file: str, t_after: str, parallel=True
 ):
     """
     Build hist npy data for further uses.
 
     Args:
         config_file:
-        grib_type: grib file type
         t_after: only collect the grib2 files after the t_after
         parallel: True or False
 
     Returns: DataManager
     """
-    t_after = pd.to_datetime(t_after)
+    t_after = pd.to_datetime(t_after, utc=True)
     logger.info(f"Creating historical npy data from {t_after}...\n")
-    d = hist_load(config_file=config_file, grib_type=grib_type, create=False)
+    d = hist_load(config_file=config_file, create=False)
     config = Config(config_file)
     hour_offset = config.load["utc_to_local_hours"]
     hist_max_fst_hours = (

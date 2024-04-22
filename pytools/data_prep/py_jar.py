@@ -29,8 +29,8 @@ class PyJar:
         folder_in: List[str],
         folder_out: str,
         paras_file: Union[str, List[str]],
-        center: str,  # = '"(43.0,-73.0)"',  # no space after the comma, or double quote
-        rect: str,  # = '"(100.0,100.0)"',  # no space after the comma, or double quote
+        center: List[float],  # = '"(43.0,-73.0)"',  # no space after the comma, or double quote
+        rect: List[float],  # = '"(100.0,100.0)"',  # no space after the comma, or double quote
         #jar_address: str,  # ="/Users/limingzhou/zhoul/work/me/Scala-http/classes/artifacts/scalahttp_jar/*",
     ):
         """
@@ -161,7 +161,7 @@ class PyJar:
                 paras=self.paras,
                 lon=self.center[0],
                 lat=self.center[1],
-                radius=self.rect
+                radius=tuple(self.rect)
                 )
         # save the npy file
         np.save(file=f_out, arr=data)

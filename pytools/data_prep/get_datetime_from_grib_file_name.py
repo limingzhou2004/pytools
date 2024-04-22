@@ -57,3 +57,8 @@ def get_datetime_from_grib_file_name(
             return np.datetime64(t)
         else:
             return t
+        
+
+def process_utah_name(fn):
+    
+    return 

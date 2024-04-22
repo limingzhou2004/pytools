@@ -2,7 +2,6 @@ import mlflow
 import numpy as np
 import pytest
 
-from pytools.data_prep.weather_data_prep import GribType
 from pytools.data_prep.load_data_prep import LoadData
 from pytools.mocking_utils import mock_train_load, mock_predict_load, mock_max_date
 from pytools.data_prep.weather_task import (
@@ -23,7 +22,6 @@ class TestWeatherTask:
         #monkeypatch.setattr(LoadData, "query_train_data", mock_train_load)
         res = hist_load(
             config_file=self.config_file,
-            grib_type=GribType.hrrr,
             t0=train_t0,
             t1=train_t1,
             create=True
@@ -31,21 +29,21 @@ class TestWeatherTask:
         assert res.load_data.train_data.shape == (40, 9)
 
     def test_hist_weather(self):
-        dm = hist_load(config_file=self.config_file, grib_type=GribType.hrrr)
-        assert dm.weather_type == GribType.hrrr
+        dm = hist_load(config_file=self.config_file)
+        assert dm.center
         hist_weather_prepare(
-            config_file=self.config_file, grib_type=GribType.hrrr, t_after="2018-12-24"
+            config_file=self.config_file, t_after="2018-12-24",parallel=False,
         )
 
     @pytest.mark.parametrize(
-        "gribtype, shape_cal, shape_weather",
+        "shape_cal, shape_weather",
         [
-            (GribType.hrrr, (32, 6), (32, 34, 34, 13)),
+            ((32, 6), (32, 34, 34, 13)),
         ],
     )
-    def test_train_data_assemble(self, gribtype, shape_cal, shape_weather):
+    def test_train_data_assemble(self, shape_cal, shape_weather):
         weather_data, lag_load, calendar, target_load = train_data_assemble(
-            config_file=self.config_file, grib_type=gribtype
+            config_file=self.config_file
         )
         assert calendar.shape == shape_cal
         assert weather_data.shape == shape_weather

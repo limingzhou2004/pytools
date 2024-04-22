@@ -2,7 +2,7 @@ import shutil
 from enum import Enum
 import datetime as dt
 import os
-from typing import List, Optional, Callable
+from typing import Dict, List, Optional, Callable
 import uuid
 
 import numpy as np
@@ -12,7 +12,9 @@ import dask.bag as bag
 from pytools.data_prep import py_jar as pj
 from pytools.data_prep import weather_data as wd
 from pytools.data_prep.get_datetime_from_grib_file_name import get_datetime_from_grib_file_name
+from pytools.data_prep.grib_utils import extract_data_from_grib2, get_paras_from_pynio_file
 from pytools.data_prep.py_jar import PyJar
+from pytools.utilities import get_file_path, parallelize_dataframe
 
 def grib_filter_func(
     file_names: list,
@@ -138,20 +140,19 @@ class NoTrainingDataError(Exception):
 
 
 class WeatherDataPrep:
-    jar_address = (
-        '"/Users/limingzhou/zhoul/work/me/Scala-http/classes/artifacts/scalahttp_jar/*"'
-    )
-    hrrr_paras = "pytools/resources/params/hrrr_paras.txt"
-    nam_paras = "pytools/resources/params/nam_paras.txt"
+    # jar_address = (
+    #     '"/Users/limingzhou/zhoul/work/me/Scala-http/classes/artifacts/scalahttp_jar/*"'
+    # )
+    # #hrrr_paras = "pytools/resources/params/hrrr_paras.txt"
+    #nam_paras = "pytools/resources/params/nam_paras.txt"
     earliest_time = dt.datetime.strptime("2016-12-01", "%Y-%m-%d")
     hrrr_fmt = "%Y_%m_%d_%H"
-    nam_fmt = "%Y_%m_%d_%H"
+    #nam_fmt = "%Y_%m_%d_%H"
 
     def __init__(
         self,
-        jar_address: str,
         para_file: str,
-        weather_folder: List[str],
+        weather:Dict,
         dest_npy_folder: str,
         hist_fst_flag: HistFst,
         timestamp_fmt,
@@ -159,14 +160,12 @@ class WeatherDataPrep:
         t1: dt.datetime,
         prefix,
         para_num: int = 12,
-        grib_type=GribType.hrrr,
         utc_hour_offset: int = None,
     ):
         """
         Weather Data preparation
 
         Args:
-            jar_address: jar folder
             para_file: parameter file
             weather_folder: folder for source grib files, either str or list[str]
             dest_npy_folder: npy folder
@@ -176,14 +175,13 @@ class WeatherDataPrep:
             t1: end datetime
             prefix: prfix str
             para_num: number of weather channel
-            grib_type: hrrr or nam
+            utc_hour_offset: number of hours to add to convert to UTC,
+
         """
-        if jar_address is None:
-            jar_address = self.jar_address
-        self.jar_address = jar_address
+
         self.para_file = para_file
-        self.para_num = para_num
-        self.weather_folder = weather_folder
+        #self.para_num = para_num
+        self.weather = weather
         self.uuid = uuid.uuid4()
         self.dest_npy_folder = dest_npy_folder
         self.dest_predict_npy_folder = None
@@ -194,21 +192,21 @@ class WeatherDataPrep:
         self.prefix = prefix
         if has_numbers(prefix):
             raise NameException("no digits in prefix")
-        self.grib_type = grib_type
         self.suffix = ".npy"
-        self.pj = None
         self.weather_train_data: Optional[wd.WeatherData] = None
-        self.data_shape = None  # nan X m X n X para
+        self.data_shape = None  # nan * m * n * para
         self.weather_predict_data: Optional[wd.WeatherData] = None
         self.utc_to_local_hours = utc_hour_offset
         self.check_grib_name_filter = None
         self.min_filename_length = 20
+        self.hrrr_paras:Dict = get_paras_from_pynio_file(para_file,False)
+        self.utah_paras:Dict = get_paras_from_pynio_file(para_file,True)
 
     def extract_datetime_from_grib_filename(
         self, filename: str, hour_offset: int = None, nptime=True, get_fst_hour=False
     ):
         """
-        Get the datetime from a grib file name
+        Get the datetime from an hrrr grib file name
 
         Args:
             filename:  file name
@@ -227,30 +225,6 @@ class WeatherDataPrep:
             nptime=nptime,
             get_fst_hour=get_fst_hour,
         )
-
-    def get_pj(self, center: str = None, rect: str = None) -> PyJar:
-        """
-        Provide a pj to run jars
-
-        Args:
-            center: str "(x, y)"
-            rect: str "(height, width)"
-
-        Returns: pj
-
-        """
-        if self.pj is None:
-            if center is None or rect is None:
-                raise ValueError("center or rect is not defined.")
-            self.pj = pj.PyJar(
-                jar_address=self.jar_address,
-                paras_file=self.para_file,
-                folder_in=self.weather_folder,
-                folder_out=self.dest_npy_folder,
-                center=center,
-                rect=rect,
-            )
-        return self.pj
 
     def set_npy_predict_folder(self, folder, clean=True):
         """
@@ -273,10 +247,50 @@ class WeatherDataPrep:
         t_str = t.strftime(self.timestamp_fmt)
         return os.path.join(self.dest_npy_folder, self.prefix + t_str + self.suffix)
 
+    def make_npy_data_from_inventory(
+            self, 
+            center:List[float],
+            rect:List[float],
+            inventory_file:str=None,
+            parallel:bool=False,
+            folder_col_name:str='folder',
+            filename_col_name:str='filename',
+            type_col_name:str='type',
+            n_cores=7):
+        
+        df=pd.read_pickle(get_file_path(inventory_file))
+
+        def single_row_process(row):
+            fn = os.path.join(getattr(row,folder_col_name), getattr(row,filename_col_name))
+            if getattr(row,type_col_name).startswith('hrrr'):
+                is_utah=False
+                p=self.hrrr_paras
+            else:
+                is_utah=True
+                p=self.utah_paras
+
+            arr:np.ndarray = extract_data_from_grib2(
+                fn=fn, lon=center[0],  
+                lat=center[1], radius=rect, paras=p, 
+                return_latlon=False, is_utah=is_utah) 
+            return arr
+        
+        def df_block_process(df_sub):
+            arr=[]
+            for row in df_sub.itertuples():
+                arr.append(single_row_process(row))
+
+            return np.stack(arr, axis=0)
+        
+        if parallel:
+            return parallelize_dataframe(df, df_block_process, n_cores=n_cores )
+        else:
+            return df_block_process(df)
+            
     def make_npy_data(
         self,
-        center: str,
-        rect: str,
+        center: List[float],
+        rect: List[float],
         weather_folder: str = None,
         folder_out: str = None,
         last_time: dt.datetime = None,
@@ -473,8 +487,6 @@ class WeatherDataPrep:
             if self.data_shape is None:
                 self.data_shape = dim
             return data
-        else:
-            return None
 
     def set_utc_to_local_hours(self, hours):
         self.utc_to_local_hours = hours
@@ -486,70 +498,23 @@ class WeatherDataPrep:
     @classmethod
     def build_hrrr(
         cls,
-        weather_folder,
+        weather,
         dest_npy_folder,
         utc_hour_offset: int,
-        jar_address=None,
         weather_para_file=None,
         para_num=None,
     ):
         if weather_para_file is None:
             weather_para_file = cls.hrrr_paras
         return cls(
-            jar_address=jar_address,
             para_file=weather_para_file,
-            weather_folder=weather_folder,
+            weather=weather,
             dest_npy_folder=dest_npy_folder,
             hist_fst_flag=HistFst.hist,
             timestamp_fmt=cls.hrrr_fmt,
             t0=cls.earliest_time,
             t1=dt.datetime.now(),
             prefix="hrrr_hist_",
-            grib_type=GribType.hrrr,
             utc_hour_offset=utc_hour_offset,
             para_num=para_num,
         )
-
-# deprecated
-    @classmethod
-    def build_nam(
-        cls,
-        weather_folder,
-        dest_npy_folder,
-        utc_hour_offset: int,
-        jar_address=None,
-        weather_para_file=None,
-        para_num=None,
-    ):
-        """
-
-        Args:
-            weather_folder:
-            dest_npy_folder:
-            utc_hour_offset: hours to convert utc to local time
-            jar_address:
-            weather_para_file: weather parameter file
-            para_num : number of weather paras
-
-        Returns: WeatherDataPrep
-
-        """
-
-        if weather_para_file is None:
-            weather_para_file = cls.nam_paras
-        return cls(
-            jar_address=jar_address,
-            para_file=weather_para_file,
-            weather_folder=weather_folder,
-            dest_npy_folder=dest_npy_folder,
-            hist_fst_flag=HistFst.hist,
-            timestamp_fmt=cls.nam_fmt,
-            t0=cls.earliest_time,
-            t1=dt.datetime.now(),
-            prefix="nam_hist_",
-            grib_type=GribType.nam,
-            utc_hour_offset=utc_hour_offset,
-            para_num=para_num,
-        )
-
-

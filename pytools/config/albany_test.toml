@@ -11,11 +11,11 @@
 [site]
  timezone = "US/Eastern"
  state = "NY"
- base_folder = "/Users/limingzhou/zhoul/work/energy/pytools/resources/albany-test"
+ base_folder = "/Users/limingzhou/zhoul/work/energy/sites/albany-test"
  name = "Albany-NY"
  alias = "albany-test"
  sql_location = "CAPITL"
- site_folder = "resources/test_data/site/nyiso"
+ site_folder = "nyiso"
  #center[lon, lat]
  center = [-73.0, 43.0]
  #[east, west, south, north]
@@ -43,12 +43,13 @@
  load_lag_start = 72
 
 [weather_folder]
+hist_weather_pickle = "pytools/data/grib2_folder_0.pkl"
+folder_col_name = "folder"
+filename_col_name = "filename"
+type_col_name = "type"
+
 hrrr_hist = ["utah"] #["hrrr2", "utah"]
 hrrr_predict = ["hrrr_fst"]
-hrrr_utah_hist=[]
-hrrr_utah_predict=[]
-
-
 
 [model]
 y_label = "load"

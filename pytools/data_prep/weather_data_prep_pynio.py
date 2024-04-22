@@ -15,7 +15,7 @@ default_pickle_file = os.path.join(os.path.dirname(__file__), '../data/grib2_fol
 
 def create_weather_data(pickle_file:str=default_pickle_file, fout:str='0', parallel=False, t0:str=None, t1:str=None, lon:float=0, lat:float=0, radius=0, paras=[]) -> np.ndarray:
     """
-    Read the grib files and extract the npy array
+    Read the grib files and extract the npy array. The pickle file schema, file_name, folder, type, timestamp
 
     Args:
         pickle_file (str): pickle file name
@@ -23,6 +23,7 @@ def create_weather_data(pickle_file:str=default_pickle_file, fout:str='0', paral
         parallel (bool): True for multi process
         t0 (str): starting time
         t1 (str): ending time
+        
 
     Returns:
         np.ndarray: np array, sample * x * y * channels
@@ -33,7 +34,7 @@ def create_weather_data(pickle_file:str=default_pickle_file, fout:str='0', paral
 
     parallelize_dataframe()
 
-    return
+    return df
 
 
 
