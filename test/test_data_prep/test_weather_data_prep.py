@@ -3,7 +3,7 @@ import numpy as np
 from pytools.data_prep import get_datetime_from_grib_file_name as wp
 from pytools.data_prep import data_prep_manager as dm
 from pytools.config import Config
-import pytools.data_prep.get_datetime_from_utah_file_name
+#import pytools.data_prep.get_datetime_from_utah_file_name
 
 
 class TestWeatherDataPrep:
@@ -12,7 +12,7 @@ class TestWeatherDataPrep:
     def test_get_datetime_from_utah_file_name(self):
         fn = '20200105.hrrr.t14z.wrfsfcf00.grib2'
 
-        t, fhour = pytools.data_prep.get_datetime_from_utah_file_name.get_datetime_from_utah_file_name(filename=fn,get_fst_hour=True)
+        t, fhour = wp.get_datetime_from_utah_file_name(filename=fn,get_fst_hour=True)
 
         assert t==np.datetime64('2020-01-05T14:00')
         assert fhour==0

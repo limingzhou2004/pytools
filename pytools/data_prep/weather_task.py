@@ -94,7 +94,7 @@ def hist_weather_prepare_from_report(config_file:str,t_after: str,parallel=False
     config = Config(config_file)
     #hour_offset = config.load["utc_to_local_hours"]
 
-    d.weather-data  = d.make_npy_train_from_inventory(config=config,)
+    d.weather_data  = d.make_npy_train_from_inventory(config=config,)
     return d
 
 def hist_weather_prepare(

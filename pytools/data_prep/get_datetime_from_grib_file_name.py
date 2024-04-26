@@ -1,5 +1,5 @@
 import numpy as np
-
+import pendulum as pu
 
 import datetime as dt
 import os
@@ -36,15 +36,11 @@ def get_datetime_from_grib_file_name(
     if m.lastindex == 5:
         nums = [int(m.group(i)) for i in range(1, 6)]
         nums = [-1] + nums
-        t = dt.datetime(nums[1], nums[2], nums[3], nums[4])
-        + dt.timedelta(hours=nums[5])
-        + dt.timedelta(hours=hour_offset)
+        t = dt.datetime(nums[1], nums[2], nums[3], nums[4]) + dt.timedelta(hours=nums[5]) + dt.timedelta(hours=hour_offset)
         
     else:
         nums = [int(m.group(i)) for i in range(1, 7)]
-        t = dt.datetime(nums[1], nums[2], nums[3], nums[0])
-        + dt.timedelta(hours=nums[5])
-        + dt.timedelta(hours=hour_offset)
+        t = dt.datetime(nums[1], nums[2], nums[3], nums[0])+ dt.timedelta(hours=nums[5]) + dt.timedelta(hours=hour_offset)
     
     if t is None:
         raise ValueError("Unrecognized file name format for hrrr!")
@@ -76,3 +72,16 @@ def get_datetime_from_grib_file_name_utah(
         else:
             return t
     
+
+def get_datetime_from_utah_file_name(filename:str, get_fst_hour=False, numpy=True):
+    t = pu.parse(filename[0:8])
+    chour = int(filename[15:17])
+    fhour = int(filename[26:28])
+    t = t.add(hours=chour)
+    if numpy:
+        t = np.datetime64(t)
+
+    if get_fst_hour:
+        return t, fhour
+    else:
+        return t
