@@ -226,6 +226,10 @@ class WeatherDataPrep:
             get_fst_hour=get_fst_hour,
         )
 
+    def extract_datetime_from_grib_filename_utah():
+
+        return
+
     def set_npy_predict_folder(self, folder, clean=True):
         """
         set the npy folder for predictions

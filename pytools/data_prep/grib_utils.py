@@ -54,7 +54,9 @@ def find_ind_fromlatlon(lon:float, lat:float, arr_lon:np.ndarray, arr_lat:np.nda
     return x_ind, y_ind
 
 
-def extract_data_from_grib2(fn:str, lon:float, lat:float, radius:Union[int,Tuple[int, int, int, int]], paras:List[str], return_latlon:bool=False, is_utah=False)->np.ndarray:
+def extract_data_from_grib2(fn:str, lon:float, lat:float, radius:Union[int,Tuple[int, int, int, int]], paras:List[str], 
+return_latlon:bool=False, 
+is_utah=False)->np.ndarray:
     """
     Extract a subset, based on a rectangle area. We assume all paras share the same grid. Both lat/lon are increasing in the grid. The hrrr data has a grid of 1799 by 1059
     The order of the paras is decided by the paras file. 

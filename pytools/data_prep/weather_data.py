@@ -15,6 +15,14 @@ class Scaling(Enum):
 
 class WeatherData:
     def __init__(self, dict_data, scaling=Scaling.minmax, prediction=False):
+        """
+        WeatherData
+
+        Args:
+            dict_data (Dict): Use timestamp as the key
+            scaling (Scaling): Scaler Defaults to Scaling.minmax.
+            prediction (bool, optional): _description_. Defaults to False.
+        """
         self.dict_data = OrderedDict(sorted(dict_data.items(), key=lambda t: t[0]))
         self.scaling = scaling
         self.timestamp = sorted(dict_data.keys())
