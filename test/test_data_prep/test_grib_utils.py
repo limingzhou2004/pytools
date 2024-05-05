@@ -103,9 +103,5 @@ def test_decide_grib_type():
     assert decide_grib_type(hrrr_obs) == 'hrrr_obs'
     assert decide_grib_type(hrrr_fst) == 'hrrr_fst'
     assert decide_grib_type(utah_grib) == 'utah_grib'
-    assert decide_grib_type('Nosense') == None
+    assert decide_grib_type('Nosense') is None
 
-
-def test_get_stats():
-   # get_stats()
-    assert 1==1

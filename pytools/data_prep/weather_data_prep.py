@@ -11,9 +11,10 @@ import dask.bag as bag
 
 from pytools.data_prep import py_jar as pj
 from pytools.data_prep import weather_data as wd
-from pytools.data_prep.get_datetime_from_grib_file_name import get_datetime_from_grib_file_name
+from pytools.data_prep.get_datetime_from_grib_file_name import get_datetime_from_grib_file_name, get_datetime_from_grib_file_name_utah
 from pytools.data_prep.grib_utils import extract_data_from_grib2, get_paras_from_pynio_file
 from pytools.data_prep.py_jar import PyJar
+from pytools.retry.api import retry
 from pytools.utilities import get_file_path, parallelize_dataframe
 
 def grib_filter_func(
@@ -203,7 +204,7 @@ class WeatherDataPrep:
         self.utah_paras:Dict = get_paras_from_pynio_file(para_file,True)
 
     def extract_datetime_from_grib_filename(
-        self, filename: str, hour_offset: int = None, nptime=True, get_fst_hour=False
+        self, filename: str, hour_offset: int = None, nptime=True, get_fst_hour=False, 
     ):
         """
         Get the datetime from an hrrr grib file name
@@ -260,12 +261,27 @@ class WeatherDataPrep:
             folder_col_name:str='folder',
             filename_col_name:str='filename',
             type_col_name:str='type',
-            n_cores=7):
-        
-        df=pd.read_pickle(get_file_path(inventory_file))
+            t0: str='2018-01-01',
+            t1: str='2018-01-03',
+            n_cores=7,
+            save_npz_file:bool=False):
+        df=pd.read_pickle(get_file_path(fn=inventory_file, this_file_path=__file__))
+        df=df[(df['timestamp']>=t0) & (df['timestamp']<=t1)]
 
         def single_row_process(row):
-            fn = os.path.join(getattr(row,folder_col_name), getattr(row,filename_col_name))
+
+            # from shutil import copy2
+            # from pathlib import Path
+
+            filename = getattr(row,filename_col_name)
+            fn = os.path.join(getattr(row,folder_col_name), filename)
+            # if tmp_folder:
+            #     dir = os.path.join(Path.home(),tmp_folder)
+            #     Path(dir).mkdir(parents=True, exist_ok=True)
+            #     dst = os.path.join(dir, filename)
+            #     copy2(fn, dst)
+            #     fn = dst
+
             if getattr(row,type_col_name).startswith('hrrr'):
                 is_utah=False
                 p=self.hrrr_paras
@@ -273,23 +289,36 @@ class WeatherDataPrep:
                 is_utah=True
                 p=self.utah_paras
 
+            timestamp = get_datetime_from_grib_file_name_utah(filename,hour_offset=0, nptime=True, get_fst_hour=False)  if is_utah \
+                else get_datetime_from_grib_file_name(
+                filename=filename, 
+                hour_offset=0,
+                nptime=True, 
+                get_fst_hour=False)
             arr:np.ndarray = extract_data_from_grib2(
                 fn=fn, lon=center[0],  
                 lat=center[1], radius=rect, paras=p, 
                 return_latlon=False, is_utah=is_utah) 
-            return arr
+            
+            # if tmp_folder:
+            #     os.remove(fn)
+
+            return timestamp, arr
         
         def df_block_process(df_sub):
-            arr=[]
+            data_dict={}
             for row in df_sub.itertuples():
-                arr.append(single_row_process(row))
+                k, v = single_row_process(row)
+                data_dict[k] = v
 
-            return np.stack(arr, axis=0)
+            return data_dict  #np.stack(arr, axis=0)
         
         if parallel:
-            return parallelize_dataframe(df, df_block_process, n_cores=n_cores )
+            dict_arr = parallelize_dataframe(df, df_block_process, n_cores=n_cores )
         else:
-            return df_block_process(df)
+            dict_arr = df_block_process(df)
+
+        return wd.WeatherData(dict_data=dict_arr, prediction=False)
             
     def make_npy_data(
         self,

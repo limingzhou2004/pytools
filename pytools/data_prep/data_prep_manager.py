@@ -221,12 +221,13 @@ class DataPrepManager:
     def make_npy_train_from_inventory(self, config:Config, parallel:bool=False, n_cores=7):
         arr = self.weather.make_npy_data_from_inventory(        
             center=config.center,
-            rect=config.radius,
+            rect=config.rect,
             inventory_file=config.weather.inventory_file,
             parallel=parallel,
-            folder_col_name=config.weather.folder_col_name,
-            filename_col_name=config.weather.filename_col_name,
-            type_col_name=config.weather.type_col_name,
+            folder_col_name=config.weather_pdt.folder_col_name,
+            filename_col_name=config.weather_pdt.filename_col_name,
+            type_col_name=config.weather_pdt.type_col_name,
+            save_npz_file=False,
             n_cores=n_cores)
 
         return arr

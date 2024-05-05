@@ -373,7 +373,7 @@ def task_1(**args):
 
 
 def task_2(**args):
-    dm = hist_weather_prepare(**args)
+    dm = hist_weather_prepare_from_report(**args)
     return dm
 
 

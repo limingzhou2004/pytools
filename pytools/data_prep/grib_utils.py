@@ -53,12 +53,12 @@ def find_ind_fromlatlon(lon:float, lat:float, arr_lon:np.ndarray, arr_lat:np.nda
 
     return x_ind, y_ind
 
-
 def extract_data_from_grib2(fn:str, lon:float, lat:float, radius:Union[int,Tuple[int, int, int, int]], paras:List[str], 
 return_latlon:bool=False, 
 is_utah=False)->np.ndarray:
     """
-    Extract a subset, based on a rectangle area. We assume all paras share the same grid. Both lat/lon are increasing in the grid. The hrrr data has a grid of 1799 by 1059
+    Extract a subset, based on a rectangle area. We assume all paras share the same grid. 
+    Both lat/lon are increasing in the grid. The hrrr data has a grid of 1799 by 1059
     The order of the paras is decided by the paras file. 
     Args:
         fn (str): file name of the grib2 file.
@@ -72,6 +72,7 @@ is_utah=False)->np.ndarray:
         np.ndarray: 3D tensor extracted np array, west->east:south->north:parameter
     """
     if fn.endswith('.grib2'):
+        print(f'process...{fn}')
         ds = xr.load_dataset(fn, engine="pynio")
     elif fn.endswith('.nc'):
         ds = xr.load_dataset(fn, engine="scipy")
@@ -81,7 +82,10 @@ is_utah=False)->np.ndarray:
     delta_x = ds['gridlon_0'].Dx
     delta_y = ds['gridlat_0'].Dy
     if isinstance(radius, int):
-        east_dist = radius; west_dist = radius; north_dist = radius; south_dist=radius
+        east_dist = radius
+        west_dist = radius 
+        north_dist = radius 
+        south_dist = radius
     else:
         east_dist, west_dist, south_dist, north_dist = radius
  

@@ -98,6 +98,16 @@ class WeatherData:
             data[:, :, :, p] = scaled.reshape(d1_arr.shape)
         self.data = data
 
+    def save_unscaled_npz(self, fn:str):
+        """
+        Save the original weather data and timestamp
+
+        Args:
+            fn (str): the npz file name
+        """
+
+        np.savez_compressed(fn, data=np.array([d for d in self.dict_data.values()]), timestamp=self.timestamp )
+
     def transform(self, x_data: np.array = None, inverse: bool = False) -> np.array:
         """
         Standardize with saved scaler

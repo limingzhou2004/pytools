@@ -3,6 +3,7 @@ import numpy as np
 from pytools.data_prep import get_datetime_from_grib_file_name as wp
 from pytools.data_prep import data_prep_manager as dm
 from pytools.config import Config
+from pytools.data_prep.weather_task import hist_load
 #import pytools.data_prep.get_datetime_from_utah_file_name
 
 
@@ -25,6 +26,29 @@ class TestWeatherDataPrep:
         fn_generate = wp.get_datetime_from_grib_file_name(fn, hour_offset=-5)
         assert fn_generate == np.datetime64("2019-06-23T12:00:00.000000")
 
+
+    def test_make_npy_data_from_inventory(self, cur_toml_file):
+        config = Config(filename=cur_toml_file)
+        d = hist_load(config_file=cur_toml_file, create=False)
+      
+        d.build_weather(
+        weather=config.weather,
+        center=config.site["center"],
+        rect=config.site["rect"],)
+        
+        arr= d.weather.make_npy_data_from_inventory(
+            center=config.site['center'],
+            rect=config.site['rect'],
+            inventory_file=config.weather_pdt.hist_weather_pickle,
+            parallel=False,
+            folder_col_name=config.weather_pdt.folder_col_name,
+            filename_col_name=config.weather_pdt.filename_col_name,
+            type_col_name=config.weather_pdt.type_col_name,
+            save_npz_file=True,
+            n_cores=2,
+            )
+        assert arr.shape[0]>0
+
     def test_make_npy_data(self, cur_toml_file, weather_type):
         config = Config(filename=cur_toml_file)
         d: dm.DataPrepManager = dm.load(
@@ -33,7 +57,6 @@ class TestWeatherDataPrep:
         # set up d.weather for both hrrr and nam, depending on self.weather_type
         d.build_weather(
             weather_folder=config.weather_folder,
-            jar_address=config.jar_config,
             center=config.site["center"],
             rect=config.site["rect"],
         )

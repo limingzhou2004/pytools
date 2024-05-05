@@ -2,11 +2,11 @@
  name = "electric_load"
  description = "mwh for zones in iso or rto"
 
-[jar_config]
- flag = "deprecated"
- address = "\"Scala-http/classes/artifacts/scalahttp_jar/*\""
- comments = """escape the quotation mark as the path will be passed to the command line arguments and in case of spaces
-  in the path"""
+# [jar_config]
+#  flag = "deprecated"
+#  address = "\"Scala-http/classes/artifacts/scalahttp_jar/*\""
+#  comments = """escape the quotation mark as the path will be passed to the command line arguments and in case of spaces
+#   in the path"""
 
 [site]
  timezone = "US/Eastern"
@@ -42,8 +42,8 @@
  utc_to_local_hours = -5
  load_lag_start = 72
 
-[weather_folder]
-hist_weather_pickle = "pytools/data/grib2_folder_0.pkl"
+[weather]
+hist_weather_pickle = "../data/grib2_folder_0.pkl"
 folder_col_name = "folder"
 filename_col_name = "filename"
 type_col_name = "type"

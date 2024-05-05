@@ -77,6 +77,7 @@ US_timezones=['US/Alaska',
 class Site(BaseModel):
     timezone:str
     state:str
+    alias:str
     name:str
     base_folder: str
     center: Tuple[float, float]
@@ -139,9 +140,7 @@ class Config:
         # use pydantic to validate the config
         self.site_pdt = Site(**self.toml_dict['site'])
         self.load_pdt = Load(**self.toml_dict['load'])
-
-        
-        # jar and weather folder are processed separately as properties
+        self.weather_pdt = Weather(**self.toml_dict['weather'])
 
     def _add_base_folder(self, dict_to_update, key):
         dict_to_update[key] = os.path.join(self._base_folder, dict_to_update[key])
@@ -174,7 +173,7 @@ class Config:
         return os.path.join(
             self._base_folder,
             self.site_parent_folder,
-            prefix + self.site["alias"] + class_name + suffix,
+            prefix + self.site_pdt.alias + class_name + suffix,
         )
 
     @property
@@ -202,9 +201,9 @@ class Config:
     def load(self):
         return self.toml_dict["load"]
 
-    @property
-    def jar_config(self):
-        return self._join(self._base_folder, self.toml_dict["jar_config"]["address"])
+    # @property
+    # def jar_config(self):
+    #     return self._join(self._base_folder, self.toml_dict["jar_config"]["address"])
 
     @property
     def model(self):
@@ -212,11 +211,11 @@ class Config:
 
     @property
     def site(self):
-        return self.toml_dict["site"]
+        return self.toml_dict['site']
     
     @property
     def weather(self):
-        return self.toml_dict["weather_folder"]
+        return self.toml_dict['weather']
 
     @property
     def sql(self):
@@ -265,5 +264,5 @@ class Config:
         return self.toml_dict['site']['center']
     
     @property
-    def radius(self) -> Union[int,Tuple[int, int, int, int]]:
-        return self.toml_dict['site']['radius']
+    def rect(self) -> Union[int,Tuple[int, int, int, int]]:
+        return self.toml_dict['site']['rect']
