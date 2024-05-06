@@ -40,11 +40,13 @@ class TestWeatherDataPrep:
             center=config.site['center'],
             rect=config.site['rect'],
             inventory_file=config.weather_pdt.hist_weather_pickle,
-            parallel=False,
+            parallel=True,
             folder_col_name=config.weather_pdt.folder_col_name,
             filename_col_name=config.weather_pdt.filename_col_name,
             type_col_name=config.weather_pdt.type_col_name,
             save_npz_file=True,
+            t0=np.datetime64('2018-01-01'),
+            t1=np.datetime64('2018-01-01T08:00'),
             n_cores=2,
             )
         assert arr.shape[0]>0

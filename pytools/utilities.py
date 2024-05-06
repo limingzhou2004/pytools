@@ -7,6 +7,7 @@ import os.path as osp
 import xarray as xr
 import numpy as np
 import pandas as pd
+import dask.bag as bag
 
 
 def get_file_path(fn,this_file_path):   
@@ -78,10 +79,13 @@ def get_logger(level=logging.INFO, file_name=f"{get_now_str()}.log"):
     return logger
 
 
-def parallelize_dataframe(df, func, n_cores=7):
+def parallelize_dataframe(df, func, n_cores=7, partition_size=1):
     # usage train = parallelize_dataframe(train_df, add_features)
     df_split = np.array_split(df, n_cores)
-    with Pool(n_cores) as pool:
-        df = pd.concat(pool.map_async(func, df_split), )
+    # with Pool(n_cores) as pool:
+    #     p_res = pool.map_async(func, df_split)
+    #     df = pd.concat(p_res )
+    file_bag = bag.from_sequence(df_split, partition_size=partition_size)
+    res = file_bag.map(func).compute()
 
-    return df
+    return res

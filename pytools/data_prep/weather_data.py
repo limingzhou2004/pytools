@@ -14,7 +14,7 @@ class Scaling(Enum):
 
 
 class WeatherData:
-    def __init__(self, dict_data, scaling=Scaling.minmax, prediction=False):
+    def __init__(self, dict_data, scaling=Scaling.minmax, prediction=False, paras=None):
         """
         WeatherData
 
@@ -29,6 +29,7 @@ class WeatherData:
         self._scaler = None
         self.data = None
         self.shape = None
+        self.paras = paras
         if not prediction:
             self.standardize()
 

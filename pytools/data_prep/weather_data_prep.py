@@ -261,8 +261,8 @@ class WeatherDataPrep:
             folder_col_name:str='folder',
             filename_col_name:str='filename',
             type_col_name:str='type',
-            t0: str='2018-01-01',
-            t1: str='2018-01-03',
+            t0: np.datetime64=np.datetime64('2018-01-01'),
+            t1: np.datetime64=np.datetime64('2018-01-03'),
             n_cores=7,
             save_npz_file:bool=False):
         df=pd.read_pickle(get_file_path(fn=inventory_file, this_file_path=__file__))
@@ -270,17 +270,8 @@ class WeatherDataPrep:
 
         def single_row_process(row):
 
-            # from shutil import copy2
-            # from pathlib import Path
-
             filename = getattr(row,filename_col_name)
             fn = os.path.join(getattr(row,folder_col_name), filename)
-            # if tmp_folder:
-            #     dir = os.path.join(Path.home(),tmp_folder)
-            #     Path(dir).mkdir(parents=True, exist_ok=True)
-            #     dst = os.path.join(dir, filename)
-            #     copy2(fn, dst)
-            #     fn = dst
 
             if getattr(row,type_col_name).startswith('hrrr'):
                 is_utah=False
@@ -299,9 +290,6 @@ class WeatherDataPrep:
                 fn=fn, lon=center[0],  
                 lat=center[1], radius=rect, paras=p, 
                 return_latlon=False, is_utah=is_utah) 
-            
-            # if tmp_folder:
-            #     os.remove(fn)
 
             return timestamp, arr
         
@@ -314,11 +302,15 @@ class WeatherDataPrep:
             return data_dict  #np.stack(arr, axis=0)
         
         if parallel:
-            dict_arr = parallelize_dataframe(df, df_block_process, n_cores=n_cores )
-        else:
-            dict_arr = df_block_process(df)
+            dict_list = parallelize_dataframe(df, df_block_process, n_cores=n_cores )
+            dict_ta = {}
+            for d in dict_list:
+                dict_ta.update(d)
 
-        return wd.WeatherData(dict_data=dict_arr, prediction=False)
+        else:
+            dict_ta = df_block_process(df)
+
+        return wd.WeatherData(dict_data=dict_ta, prediction=False, paras=self.hrrr_paras)
             
     def make_npy_data(
         self,
