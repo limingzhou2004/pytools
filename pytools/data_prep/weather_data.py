@@ -14,7 +14,8 @@ class Scaling(Enum):
 
 
 class WeatherData:
-    def __init__(self, dict_data, scaling=Scaling.minmax, prediction=False, paras=None):
+    def __init__(self, dict_data, scaling=Scaling.minmax, prediction=False, paras=None,
+                 grid_x=None, grid_y=None):
         """
         WeatherData
 
@@ -29,7 +30,9 @@ class WeatherData:
         self._scaler = None
         self.data = None
         self.shape = None
-        self.paras = paras
+        self.paras_array = np.array(list(paras.keys()))
+        self.grid_x = grid_x
+        self.grid_y = grid_y
         if not prediction:
             self.standardize()
 
@@ -107,7 +110,8 @@ class WeatherData:
             fn (str): the npz file name
         """
 
-        np.savez_compressed(fn, data=np.array([d for d in self.dict_data.values()]), timestamp=self.timestamp )
+        np.savez_compressed(fn, data=np.array([d for d in self.dict_data.values()]), timestamp=self.timestamp, paras=self.paras_array, 
+        x_grid=self.grid_x, y_grid=self.grid_y )
 
     def transform(self, x_data: np.array = None, inverse: bool = False) -> np.array:
         """

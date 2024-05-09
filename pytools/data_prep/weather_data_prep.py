@@ -202,6 +202,8 @@ class WeatherDataPrep:
         self.min_filename_length = 20
         self.hrrr_paras:Dict = get_paras_from_pynio_file(para_file,False)
         self.utah_paras:Dict = get_paras_from_pynio_file(para_file,True)
+        self.x_grid = None
+        self.y_grid = None
 
     def extract_datetime_from_grib_filename(
         self, filename: str, hour_offset: int = None, nptime=True, get_fst_hour=False, 
@@ -264,9 +266,9 @@ class WeatherDataPrep:
             t0: np.datetime64=np.datetime64('2018-01-01'),
             t1: np.datetime64=np.datetime64('2018-01-03'),
             n_cores=7,
-            save_npz_file:bool=False):
-        df=pd.read_pickle(get_file_path(fn=inventory_file, this_file_path=__file__))
-        df=df[(df['timestamp']>=t0) & (df['timestamp']<=t1)]
+            ):
+        df = pd.read_pickle(get_file_path(fn=inventory_file, this_file_path=__file__))
+        df = df[(df['timestamp']>=t0) & (df['timestamp']<=t1)]
 
         def single_row_process(row):
 
@@ -286,12 +288,20 @@ class WeatherDataPrep:
                 hour_offset=0,
                 nptime=True, 
                 get_fst_hour=False)
-            arr:np.ndarray = extract_data_from_grib2(
+            
+            return_latlon = False
+            if self.x_grid is None:
+                return_latlon = True
+            res = extract_data_from_grib2(
                 fn=fn, lon=center[0],  
                 lat=center[1], radius=rect, paras=p, 
-                return_latlon=False, is_utah=is_utah) 
-
-            return timestamp, arr
+                return_latlon=return_latlon, is_utah=is_utah) 
+            if self.x_grid is None:
+                self.x_grid = res[1].data
+                self.y_grid = res[2].data
+                return timestamp, res[0]
+            else:
+                return timestamp, res
         
         def df_block_process(df_sub):
             data_dict={}
@@ -310,7 +320,7 @@ class WeatherDataPrep:
         else:
             dict_ta = df_block_process(df)
 
-        return wd.WeatherData(dict_data=dict_ta, prediction=False, paras=self.hrrr_paras)
+        return wd.WeatherData(dict_data=dict_ta, prediction=False, paras=self.hrrr_paras, grid_x=self.x_grid, grid_y=self.y_grid)
             
     def make_npy_data(
         self,

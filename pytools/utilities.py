@@ -82,9 +82,6 @@ def get_logger(level=logging.INFO, file_name=f"{get_now_str()}.log"):
 def parallelize_dataframe(df, func, n_cores=7, partition_size=1):
     # usage train = parallelize_dataframe(train_df, add_features)
     df_split = np.array_split(df, n_cores)
-    # with Pool(n_cores) as pool:
-    #     p_res = pool.map_async(func, df_split)
-    #     df = pd.concat(p_res )
     file_bag = bag.from_sequence(df_split, partition_size=partition_size)
     res = file_bag.map(func).compute()
 
