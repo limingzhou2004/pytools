@@ -19,7 +19,9 @@
  #center[lon, lat]
  center = [-73.0, 43.0]
  #[east, west, south, north]
- rect = [100.0, 100.0, 100.0, 100.0]
+ rect = [50.0, 50.0, 50.0, 50.0]
+ t0="2018-01-01"
+ t1="2018-01-04"
  hrrr_paras_file = "/Users/limingzhou/zhoul/work/energy/pytools/pytools/data_prep/hrrr_paras_pynio.txt"
  description = "Zone Capital of NYISO"
  comments = """name is used for database query and must match what the database use; while alias is used for setting up

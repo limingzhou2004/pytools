@@ -187,19 +187,19 @@ class LoadData:
         Returns: dataframe with hour of day added
 
         """
-        cols, dh = Cp.CalendarData().get_hourofday(df[timestamp])
+        cols, dh = Cp.CalendarData().get_hourofday(df[timestamp].apply(lambda t: t.tz_convert(tz=self.timezone)))
         for c in cols:
             df[c] = dh[c]
         return df
 
     def add_dow(self, df, timestamp="timestamp"):
-        cols, dw = Cp.CalendarData().get_dayofweek(df[timestamp])
+        cols, dw = Cp.CalendarData().get_dayofweek(df[timestamp].apply(lambda t: t.tz_convert(tz=self.timezone)))
         for c in cols:
             df[c] = dw[c]
         return df
     
     def add_holiday_dst(self, df, timestamp='timestamp'):
-        cols, dw = Cp.CalendarData().get_holiday_dst(df[timestamp], self.timezone)
+        cols, dw = Cp.CalendarData().get_holiday_dst(df[timestamp].apply(lambda t: t.tz_convert(tz=self.timezone)), self.timezone)
         for c in cols:
             df[c] = dw[c]
         return df

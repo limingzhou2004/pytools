@@ -17,26 +17,25 @@ from pytools.modeling.utilities import load_npz_as_dict, extract_model_settings
 from pytools.modeling.weather_net import WeatherNet, ModelSettings, default_layer_sizes
 
 
-def get_npz_train_weather_file_name(cfg: Config, grb: dpm.GribType) -> str:
+def get_npz_train_weather_file_name(cfg: Config, suffix) -> str:
     save_folder = os.path.join(
-        cfg.site_parent_folder, "weather", grb.name + f"_weather_train.npz"
+        cfg.site_parent_folder, f"sync_data_train_{suffix}.npz"
     )
     return save_folder
 
 
-def get_training_data(cfg: Config, grib_type, cat_fraction):
+def get_training_data(cfg: Config, suffix, cat_fraction):
     """
     Get training weather data
 
     Args:
         cfg: the Config object
-        grib_type: hrrr or nem
         cat_fraction: fraction for train|validate|test
 
     Returns: WeatherData object
 
     """
-    npz_file = get_npz_train_weather_file_name(cfg, grib_type)
+    npz_file = get_npz_train_weather_file_name(cfg, suffix)
     if os.path.exists(npz_file):
         data = load_npz_as_dict(npz_file)
         return WeatherDataSetBuilder(**data, cat_fraction=cat_fraction)
@@ -48,7 +47,7 @@ def get_training_data(cfg: Config, grib_type, cat_fraction):
 
 def prepare_train_data(data, ahead_hrs, batch_size, num_workers=None, full_data=False):
     """
-    Load the train, validation, test triple
+    Load the train, validation, test triplet
 
     Args:
         data: loaded from the npz file

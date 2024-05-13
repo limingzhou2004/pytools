@@ -141,14 +141,9 @@ class NoTrainingDataError(Exception):
 
 
 class WeatherDataPrep:
-    # jar_address = (
-    #     '"/Users/limingzhou/zhoul/work/me/Scala-http/classes/artifacts/scalahttp_jar/*"'
-    # )
-    # #hrrr_paras = "pytools/resources/params/hrrr_paras.txt"
-    #nam_paras = "pytools/resources/params/nam_paras.txt"
+
     earliest_time = dt.datetime.strptime("2016-12-01", "%Y-%m-%d")
     hrrr_fmt = "%Y_%m_%d_%H"
-    #nam_fmt = "%Y_%m_%d_%H"
 
     def __init__(
         self,
@@ -183,6 +178,8 @@ class WeatherDataPrep:
         self.para_file = para_file
         #self.para_num = para_num
         self.weather = weather
+        self.weather_obj = None
+        self.weather_obj_fn = ""
         self.uuid = uuid.uuid4()
         self.dest_npy_folder = dest_npy_folder
         self.dest_predict_npy_folder = None
@@ -202,7 +199,9 @@ class WeatherDataPrep:
         self.min_filename_length = 20
         self.hrrr_paras:Dict = get_paras_from_pynio_file(para_file,False)
         self.utah_paras:Dict = get_paras_from_pynio_file(para_file,True)
+        # lon 2D
         self.x_grid = None
+        # lat 2D
         self.y_grid = None
 
     def extract_datetime_from_grib_filename(
@@ -266,7 +265,7 @@ class WeatherDataPrep:
             t0: np.datetime64=np.datetime64('2018-01-01'),
             t1: np.datetime64=np.datetime64('2018-01-03'),
             n_cores=7,
-            ):
+            )->wd.WeatherData:
         df = pd.read_pickle(get_file_path(fn=inventory_file, this_file_path=__file__))
         df = df[(df['timestamp']>=t0) & (df['timestamp']<=t1)]
 
@@ -320,7 +319,10 @@ class WeatherDataPrep:
         else:
             dict_ta = df_block_process(df)
 
-        return wd.WeatherData(dict_data=dict_ta, prediction=False, paras=self.hrrr_paras, grid_x=self.x_grid, grid_y=self.y_grid)
+        w_data = wd.WeatherData(dict_data=dict_ta, prediction=False, paras=self.hrrr_paras, grid_x=self.x_grid, grid_y=self.y_grid)
+        self.weather_train_data = w_data
+
+        return w_data
             
     def make_npy_data(
         self,
@@ -410,12 +412,12 @@ class WeatherDataPrep:
         Returns: WeatherData object
 
         """
-        if folders is None:
-            folders = self.dest_npy_folder
-        self.weather_train_data = self.load_all_npy(
-            folders=folders, para_num=self.para_num
-        )
-        self.weather_train_data.standardize()
+        # if folders is None:
+        #     folders = self.dest_npy_folder
+        # self.weather_train_data = self.load_all_npy(
+        #     folders=folders, para_num=self.para_num
+        # )
+        #self.weather_train_data.standardize()
         return self.weather_train_data
 
     def get_weather_predict(

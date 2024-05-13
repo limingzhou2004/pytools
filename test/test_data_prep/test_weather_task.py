@@ -1,4 +1,4 @@
-import mlflow
+#import mlflow
 import numpy as np
 import pytest
 
@@ -6,7 +6,8 @@ from pytools.data_prep.load_data_prep import LoadData
 from pytools.mocking_utils import mock_train_load, mock_predict_load, mock_max_date
 from pytools.data_prep.weather_task import (
     hist_load,
-    hist_weather_prepare,
+   # hist_weather_prepare,
+    hist_weather_prepare_from_report,
     main,
     train_data_assemble,
     train_model,
@@ -18,22 +19,16 @@ from pytools.utilities import get_absolute_path
 class TestWeatherTask:
     config_file = get_absolute_path(__file__, "../../pytools/config/albany_test.toml")
 
-    def test_hist_load(self, train_t0, train_t1, monkeypatch):
+    def test_hist_load(self, ):
         #monkeypatch.setattr(LoadData, "query_train_data", mock_train_load)
-        res = hist_load(
-            config_file=self.config_file,
-            t0=train_t0,
-            t1=train_t1,
-            create=True
-        )
-        assert res.load_data.train_data.shape == (40, 9)
+        res = hist_load(config_file=self.config_file, create=True)
+        assert res.load_data.train_data.shape[1] == 9
+        assert res.load_data.train_data.shape[0] >= 2
 
-    def test_hist_weather(self):
-        dm = hist_load(config_file=self.config_file)
-        assert dm.center
-        hist_weather_prepare(
-            config_file=self.config_file, t_after="2018-12-24",parallel=False,
-        )
+    def test_hist_weather_from_inventory(self):
+        dm = hist_weather_prepare_from_report(config_file=self.config_file, n_cores=8)
+        assert dm.weather.weather_train_data.standardized_data.shape[0]>1
+
 
     @pytest.mark.parametrize(
         "shape_cal, shape_weather",

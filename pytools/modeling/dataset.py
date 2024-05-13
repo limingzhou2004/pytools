@@ -85,6 +85,7 @@ class WeatherDataSetBuilder:
             lag_load: lagged load; if none, use y_label shifted by one
             calendar_data: 2d npy data array
             y_labels:
+            cat_fraction: dict {'train':0.8, 'test':0.1, 'validation':0.1}
             #hours_ahead: forecast starting, 1 hour, 7 hours, 25 hours, 49 hours etc
         """
         self._weather = weather.squeeze()
@@ -108,10 +109,8 @@ class WeatherDataSetBuilder:
             if not cat_fraction
             else cat_fraction
         )
-        assert (
-            np.isclose(1, sum(self._cat_fraction.values())),
-            "sum of train, test, validation fractions should be 1!",
-        )
+        assert np.isclose(1, sum(self._cat_fraction.values())), \
+            "sum of train, test, validation fractions should be 1!"
         self._cat_index = {"train": None, "test": None, "validation": None}
         self._cat = "train"
         assert (

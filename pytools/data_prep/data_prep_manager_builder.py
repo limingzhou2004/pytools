@@ -8,16 +8,24 @@ from pytools.data_prep import load_data_prep as ldp
 
 
 class DataPrepManagerBuilder:
-    def __init__(self, config_file: str, train_t0: str, train_t1: str):
+    def __init__(self, config_file: str, t0: str=None, t1: str=None):
         self.uuid = uuid.uuid4()
-        self.t0 = train_t0
-        self.t1 = train_t1
+
         self.config = Config(config_file)
+        if t0:
+            self.t0 = t0
+        else: 
+            self.t0 = self.config.t0
+        if t1:
+            self.t1 = t1
+        else: 
+            self.t1 = self.config.t1
         self.load_data = None
 
     def build_load_data_from_config(self, config_file: Config = None) -> ldp.LoadData:
         if config_file is None:
             config_file = self.config
+
         return ldp.build_from_toml(config_file=config_file, t0=self.t0, t1=self.t1)
 
     def build_dm_from_config_weather(self, config: Config = None) -> dpm.DataPrepManager:

@@ -22,13 +22,14 @@ class WeatherData:
         Args:
             dict_data (Dict): Use timestamp as the key
             scaling (Scaling): Scaler Defaults to Scaling.minmax.
-            prediction (bool, optional): _description_. Defaults to False.
+            prediction (bool, optional): For prediction or training. Defaults to False.
         """
         self.dict_data = OrderedDict(sorted(dict_data.items(), key=lambda t: t[0]))
         self.scaling = scaling
         self.timestamp = sorted(dict_data.keys())
         self._scaler = None
-        self.data = None
+        # standardized weathe rdata
+        self.standardized_data = None
         self.shape = None
         self.paras_array = np.array(list(paras.keys()))
         self.grid_x = grid_x
@@ -63,10 +64,11 @@ class WeatherData:
         name0, name1 = list(t_df)
         t_dict0 = t_df.to_dict(orient="records")
         t_dict = {d[name0]: d[name1] for d in t_dict0}
+        tt = self.get_timestamps()
         zipped = [
             (t, self.dict_data[t])
-            for t in self.get_timestamps()
-            if t_dict.get(pd.Timestamp(t), -1) >= 0
+            for t in tt
+            if t_dict.get(pd.Timestamp(t).to_datetime64(), -1) >= 0
         ]
         if not zipped:
             raise ValueError(
@@ -100,11 +102,11 @@ class WeatherData:
                 sc = self._scaler[p]
                 scaled = sc.transform(d1_arr.reshape(-1, 1))
             data[:, :, :, p] = scaled.reshape(d1_arr.shape)
-        self.data = data
+        self.standardized_data = data
 
     def save_unscaled_npz(self, fn:str):
         """
-        Save the original weather data and timestamp
+        Save the original weather data and timestamp, for other purposes rather than modeling.
 
         Args:
             fn (str): the npz file name
@@ -112,6 +114,17 @@ class WeatherData:
 
         np.savez_compressed(fn, data=np.array([d for d in self.dict_data.values()]), timestamp=self.timestamp, paras=self.paras_array, 
         x_grid=self.grid_x, y_grid=self.grid_y )
+
+    def save_scaled_npz(self, fn:str):
+        """
+        Save the scaled weather data and timestamp, for successive modeling.
+
+        Args:
+            fn (str): the npz file name
+        """
+
+        np.savez_compressed(fn, data=np.array(self.standardized_data), timestamp=self.timestamp, paras=self.paras_array, 
+        x_grid=self.grid_x, y_grid=self.grid_y, scaler=self.scaler)
 
     def transform(self, x_data: np.array = None, inverse: bool = False) -> np.array:
         """

@@ -82,6 +82,8 @@ class Site(BaseModel):
     base_folder: str
     center: Tuple[float, float]
     rect: Tuple[float, float, float, float]
+    t0: str
+    t1: str
     hrrr_paras_file: FilePath
     sql_location: str 
     site_folder: str 
@@ -158,7 +160,7 @@ class Config:
         return self.toml_dict[table]
 
     def get_model_file_name(
-        self, class_name: str = "_data_manager_", prefix: str = "", suffix: str = ""
+        self, class_name: str = "_data_manager_", prefix: str = "", suffix: str = "", extension='.pkl'
     ) -> str:
         """
         Return the full name of the model file name from the config file
@@ -173,7 +175,7 @@ class Config:
         return os.path.join(
             self._base_folder,
             self.site_parent_folder,
-            prefix + self.site_pdt.alias + class_name + suffix,
+            prefix + self.site_pdt.alias + class_name + suffix + extension,
         )
 
     @property
@@ -266,3 +268,13 @@ class Config:
     @property
     def rect(self) -> Union[int,Tuple[int, int, int, int]]:
         return self.toml_dict['site']['rect']
+    
+    @property
+    def t0(self) -> str:
+        return self.site_pdt.t0 
+    
+    @property
+    def t1(self) -> str:
+        return self.site_pdt.t1
+
+
