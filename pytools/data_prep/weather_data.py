@@ -65,17 +65,17 @@ class WeatherData:
         t_dict0 = t_df.to_dict(orient="records")
         t_dict = {d[name0]: d[name1] for d in t_dict0}
         tt = self.get_timestamps()
+        # return the pd.Timestamp matched
         zipped = [
-            (t, self.dict_data[t])
+            (pd.Timestamp(t,tz='UTC'), self.dict_data[t])
             for t in tt
-            if t_dict.get(pd.Timestamp(t).to_datetime64(), -1) >= 0
+            if t_dict.get(pd.Timestamp(t,tz='UTC'), -1) >= 0
         ]
         if not zipped:
             raise ValueError(
                 "No overlapping data between load and weather. Are you going to do a forecast?"
             )
         t, y = zip(*zipped)
-
         return np.array(t), np.array(y)
 
     def standardize(self):

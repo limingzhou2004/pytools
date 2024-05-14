@@ -33,7 +33,7 @@ class TestWeatherTask:
     @pytest.mark.parametrize(
         "shape_cal, shape_weather",
         [
-            ((32, 6), (32, 34, 34, 13)),
+            ((68, 7), (68, 35, 35, 1)),
         ],
     )
     def test_train_data_assemble(self, shape_cal, shape_weather):
