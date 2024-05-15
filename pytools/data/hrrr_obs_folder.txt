@@ -4,6 +4,8 @@
 "/Users/limingzhou/zhoul/work/energy/grib2/hrrr_fst",-1
 "/Volumes/T7 Blue/grib2_2018",0
 "/Volumes/T7 Blue/grib2_2018b",0
-"/Volumes/T7/utah",0
-"/Volumes/T7/utah1",0
+"/Volumes/T7 Red/utah",0
+"/Volumes/T7 Red/utah1",0
 "/Users/limingzhou/zhoul/work/energy/utah_2",0
+"/Users/limingzhou/zhoul/work/energy/utah_3",0
+"/Volumes/T7 Gray/hrrr_obs_2023",0

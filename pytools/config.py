@@ -3,8 +3,130 @@ from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
+from pydantic import BaseModel, FilePath, field_validator, validator
 import toml
 import envtoml
+
+US_state_abbvs=['AL',
+'AK',
+'AZ',
+'AR',
+'CA',
+'CO',
+'CT',
+'DE',
+'DC',
+'FL',
+'GA',
+'HI',
+'ID',
+'IL',
+'IN',
+'IA',
+'KS',
+'KY',
+'LA',
+'ME',
+'MD',
+'MA',
+'MI',
+'MN',
+'MS',
+'MO',
+'MT',
+'NE',
+'NV',
+'NH',
+'NJ',
+'NM',
+'NY',
+'NC',
+'ND',
+'OH',
+'OK',
+'OR',
+'PA',
+'RI',
+'SC',
+'SD',
+'TN',
+'TX',
+'UT',
+'VT',
+'VA',
+'WA',
+'WV',
+'WI',
+'WY',
+]
+
+US_timezones=['US/Alaska',
+ 'US/Aleutian',
+ 'US/Arizona',
+ 'US/Central',
+ 'US/East-Indiana',
+ 'US/Eastern',
+ 'US/Hawaii',
+ 'US/Indiana-Starke',
+ 'US/Michigan',
+ 'US/Mountain',
+ 'US/Pacific',
+ 'US/Samoa']
+
+
+class Site(BaseModel):
+    timezone:str
+    state:str
+    alias:str
+    name:str
+    base_folder: str
+    center: Tuple[float, float]
+    rect: Tuple[float, float, float, float]
+    t0: str
+    t1: str
+    hrrr_paras_file: FilePath
+    sql_location: str 
+    site_folder: str 
+    description: str 
+
+    @field_validator('state',mode='after')
+    @classmethod
+    def state_must_be_abbrevs(cls, state):
+        if state not in US_state_abbvs:
+            raise ValueError(f'{state} is not in the two letter abbvs for states, in {US_state_abbvs}')
+        return state
+        
+    @field_validator('timezone', mode='after')
+    @classmethod
+    def timezone_must_be_in_list(cls, timezone):
+        if timezone not in US_timezones:
+            raise ValueError(f'{timezone} not in the list {US_timezones}')
+        return timezone
+
+
+class Load(BaseModel):
+    schema:str
+    table:str #for hist
+    table_iso_fst: str
+    table_our_fst: str
+    unit:str
+    datetime_column:str 
+    daylightsaving_col:str 
+    load_column:str 
+    sql_template_file: str
+    limit: Tuple[float,float]
+    lag_hours:int
+    utc_to_local_hours:int 
+    load_lag_start:int
+
+
+class Weather(BaseModel):
+    hist_weather_pickle: str
+    folder_col_name: str 
+    filename_col_name: str 
+    type_col_name: str 
+    hrrr_hist: List[str]
+    hrrr_predict: List[str] 
 
 
 class Config:
@@ -15,9 +137,12 @@ class Config:
         self._base_folder = (
             base_folder if base_folder.endswith("/") else base_folder + "/"
         )
+        # validate the settings via pydantic
         self._add_base_folder(self.toml_dict["site"], "hrrr_paras_file")
-        
-        # jar and weather folder are processed separately as properties
+        # use pydantic to validate the config
+        self.site_pdt = Site(**self.toml_dict['site'])
+        self.load_pdt = Load(**self.toml_dict['load'])
+        self.weather_pdt = Weather(**self.toml_dict['weather'])
 
     def _add_base_folder(self, dict_to_update, key):
         dict_to_update[key] = os.path.join(self._base_folder, dict_to_update[key])
@@ -35,7 +160,7 @@ class Config:
         return self.toml_dict[table]
 
     def get_model_file_name(
-        self, class_name: str = "_data_manager_", prefix: str = "", suffix: str = ""
+        self, class_name: str = "_data_manager_", prefix: str = "", suffix: str = "", extension='.pkl'
     ) -> str:
         """
         Return the full name of the model file name from the config file
@@ -50,7 +175,7 @@ class Config:
         return os.path.join(
             self._base_folder,
             self.site_parent_folder,
-            prefix + self.site["alias"] + class_name + suffix,
+            prefix + self.site_pdt.alias + class_name + suffix + extension,
         )
 
     @property
@@ -78,9 +203,9 @@ class Config:
     def load(self):
         return self.toml_dict["load"]
 
-    @property
-    def jar_config(self):
-        return self._join(self._base_folder, self.toml_dict["jar_config"]["address"])
+    # @property
+    # def jar_config(self):
+    #     return self._join(self._base_folder, self.toml_dict["jar_config"]["address"])
 
     @property
     def model(self):
@@ -88,7 +213,11 @@ class Config:
 
     @property
     def site(self):
-        return self.toml_dict["site"]
+        return self.toml_dict['site']
+    
+    @property
+    def weather(self):
+        return self.toml_dict['weather']
 
     @property
     def sql(self):
@@ -127,16 +256,25 @@ class Config:
         )
         df.reset_index().to_csv(file_name, index=False)
 
-    @property
-    def weather_folder(self) -> Dict:
-        path_dict = self.get("weather_folder")
-        return {k: self._join(self._base_folder, path_dict[k]) for k in path_dict}
+    # @property
+    # def weather_folder(self) -> Dict:
+    #     path_dict = self.get("weather_folder")
+    #     return {k: self._join(self._base_folder, path_dict[k]) for k in path_dict}
     
     @property
-    def center(self) -> Tuple[int, int]:
-
+    def center(self) -> Tuple[float, float]:
         return self.toml_dict['site']['center']
     
     @property
-    def radius(self) -> Union[int,Tuple[int, int, int, int]]:
-        return self.toml_dict['site']['radius']
+    def rect(self) -> Union[int,Tuple[int, int, int, int]]:
+        return self.toml_dict['site']['rect']
+    
+    @property
+    def t0(self) -> str:
+        return self.site_pdt.t0 
+    
+    @property
+    def t1(self) -> str:
+        return self.site_pdt.t1
+
+

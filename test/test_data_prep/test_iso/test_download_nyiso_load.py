@@ -13,12 +13,6 @@ from pytools.data_prep.pg_utils import get_pg_conn, upsert_df
 zip_folder = "/Users/limingzhou/zhoul/work/energy/iso-load/nyiso-load"
 
 
-def test_read_a_hist_zip_folder():
-    df = read_a_hist_zip_folder()
-
-
-    assert 1
-
 def test_populate_nyiso_load_compare():
     df_zip = read_a_hist_zip_folder(zip_folder)
     c = client_factory('NYISO')

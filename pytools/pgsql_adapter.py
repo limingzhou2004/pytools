@@ -139,7 +139,4 @@ class PGSqlQuery:
         df = pd.read_sql(qstr, con=engine, params=paras)
         return df
 
-    #
-    # def df2sql(self, df):
-    #
-    #     return
+

@@ -1,6 +1,7 @@
 import sys
 import datetime as dt
 from functools import partial
+import os.path as osp
 from typing import Tuple
 
 import pytz
@@ -45,43 +46,38 @@ from pytools.config import Config
 nam_hist_max_fst_hour = 5
 hrrr_hist_max_fst_hour = 0
 logger = get_logger("weather_tasks")
-
+weather_data_file_name = 'weather_data.npz'
 
 def hist_load(
     config_file: str,
-    grib_type: wp.GribType,
-    t0: str = "2018-12-29",
-    t1: str = "2019-01-01",
+    t0: str = None,
+    t1: str = None,
     create: bool = False,
-    prefix="",
+    prefix='',
+    suffix='v0'
 ) -> DataPrepManager:
     """
     Get historical load data to train a model.
 
     config_file: the configuration file from a toml file
     grib_type: grib file type, hrrr or nam
-    t0: historical load data starting datetime
-    t1: historical load data ending datetime
+    t0: historical load data starting datetime. Override the t0 in the config.
+    t1: historical load data ending datetime. Override the t1 in the config.
     create: create a new one without loading previous
 
     Returns: a data manager
 
     """
     config = Config(config_file)
-    logger.info(
-        f"... Check hist_load at {config.site_parent_folder} with grib type {grib_type}\n"
-    )
-    grib_str = grib_type if isinstance(grib_type, str) else grib_type.name
-    suffix = f"{grib_str}.pkl"
+    logger.info(f"... Check hist_load at {config.site_parent_folder}\n")
     dm = dpm.load(config, prefix=prefix, suffix=suffix)
     if not dm or create:
         logger.info("No existing manager detected or replace existing manager...\n")
         dm = Dpmb(
-            config_file=config_file, train_t0=t0, train_t1=t1
-        ).build_dm_from_config_weather(weather_type=grib_type, config=config)
+            config_file=config_file, t0=t0, t1=t1
+        ).build_dm_from_config_weather(config=config)
         dm.build_weather(
-            weather_folder=config.weather_folder,
-            jar_address=config.jar_config,
+            weather=config.weather,
             center=config.site["center"],
             rect=config.site["rect"],
         )
@@ -92,51 +88,41 @@ def hist_load(
     return dm
 
 
-def hist_weather_prepare(
-    config_file: str, grib_type: wp.GribType, t_after: str, parallel=True
-):
-    """
-    Build hist npy data for further uses.
+def hist_weather_prepare_from_report(config_file:str, n_cores=1,prefix='',suffix='v0'):
+    d = hist_load(config_file=config_file, create=False)
+    logger.info(f"Creating historical npy data from {d.t0} to {d.t1}...\n")
 
-    Args:
-        config_file:
-        grib_type: grib file type
-        t_after: only collect the grib2 files after the t_after
-        parallel: True or False
-
-    Returns: DataManager
-    """
-    t_after = pd.to_datetime(t_after)
-    logger.info(f"Creating historical npy data from {t_after}...\n")
-    d = hist_load(config_file=config_file, grib_type=grib_type, create=False)
     config = Config(config_file)
-    hour_offset = config.load["utc_to_local_hours"]
-    hist_max_fst_hours = (
-        hrrr_hist_max_fst_hour
-        if d.weather_type == wp.GribType.hrrr
-        else nam_hist_max_fst_hour
-    )
-    filter_func_train = partial(
-        wp.grib_filter_func,
-        func_timestamp=partial(
-            get_datetime_from_grib_file_name,
-            hour_offset=hour_offset,
-            get_fst_hour=False,
-        ),
-        func_fst_hours=partial(
-            get_datetime_from_grib_file_name, hour_offset=hour_offset, get_fst_hour=True
-        ),
-        predict=False,
-        max_fst_hours=hist_max_fst_hours,
-        t_after=t_after,
-    )
-    d.make_npy_train(filter_func=filter_func_train, parallel=parallel)
+    #hour_offset = config.load["utc_to_local_hours"]
+    d.build_weather(
+        weather=config.weather,
+        center=config.site["center"],
+        rect=config.site["rect"],)
+
+    parallel=False
+    if n_cores > 1:
+        parallel = True
+    w_obj = d.weather.make_npy_data_from_inventory(
+        center=config.site['center'],
+        rect=config.site['rect'],
+        inventory_file=config.weather_pdt.hist_weather_pickle,
+        parallel=parallel,
+        folder_col_name=config.weather_pdt.folder_col_name,
+        filename_col_name=config.weather_pdt.filename_col_name,
+        type_col_name=config.weather_pdt.type_col_name,
+        t0=d.t0,
+        t1=d.t1,
+        n_cores=n_cores,
+        )
+    #w_obj.save_scaled_npz(osp.join(config.site_parent_folder, weather_data_file_name))
+    #w_obj.save_unscaled_npz(osp.join(config.site_parent_folder, 'unscaled_'+weather_data_file_name))
+    dpm.save(config=config, dmp=d, suffix=suffix)
+
     return d
 
 
 def train_data_assemble(
-    config_file: str,
-    grib_type: wp.GribType,
+    config_file: str, suffix='v0'
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Assemble training data. Save to a npz file.
@@ -148,10 +134,10 @@ def train_data_assemble(
     Returns: DataPrepManager with load and hist weather organized for training
 
     """
-    d: DataPrepManager = hist_load(
-        config_file=config_file, grib_type=grib_type, prefix="", create=False
-    )
-    h_weather = d.get_train_weather()
+    d: DataPrepManager = hist_load(config_file=config_file, create=False)
+   # w_data = np.load(osp.join(config.site_parent_folder, weather_data_file_name))
+    h_weather = d.weather.get_weather_train()#.standardized_data #w_data['data']
+
     lag_data, calendar_data, data_standard_load = d.process_load_data(
         d.load_data, max_lag_start=1
     )
@@ -165,12 +151,12 @@ def train_data_assemble(
     )
     cols_calendar.remove(d.load_data.date_col)
     # Let's set up the weather data scaler, and save the file with all weather data
-    join_wdata = d.standardize_weather(weather_array=join_wdata)
+    #join_wdata = d.standardize_weather(weather_array=join_wdata)
     cfg = Config(config_file)
-    dpm.save(config=cfg, dmp=d, suffix=f"{d.weather.grib_type.name}.pkl")
-    save_folder = get_npz_train_weather_file_name(cfg=cfg, grb=d.weather.grib_type)
+    dpm.save(config=cfg, dmp=d, suffix=suffix)
+    save_fn = get_npz_train_weather_file_name(cfg=cfg, suffix=suffix)
     np.savez_compressed(
-        save_folder,
+        save_fn,
         weather=join_wdata,
         load_lag=join_load[cols_lag].values,
         calendar=join_load[cols_calendar].values,
@@ -200,7 +186,7 @@ def train_model(
     )
     data = get_training_data(cfg, grib_type, cat_fraction)
     weather_para = data.get_weather_para()
-    d = hist_load(config_file=config_file, grib_type=grib_type, create=False)
+    d = hist_load(config_file=config_file, create=False)
     train_data, validation_data, test_data = prepare_train_data(
         data,
         ahead_hrs=ahead_hours,
@@ -369,7 +355,7 @@ def task_1(**args):
 
 
 def task_2(**args):
-    dm = hist_weather_prepare(**args)
+    dm = hist_weather_prepare_from_report(**args)
     return dm
 
 

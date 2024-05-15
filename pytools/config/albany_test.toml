@@ -2,26 +2,31 @@
  name = "electric_load"
  description = "mwh for zones in iso or rto"
 
-[jar_config]
- flag = "deprecated"
- address = "\"Scala-http/classes/artifacts/scalahttp_jar/*\""
- comments = """escape the quotation mark as the path will be passed to the command line arguments and in case of spaces
-  in the path"""
+# [jar_config]
+#  flag = "deprecated"
+#  address = "\"Scala-http/classes/artifacts/scalahttp_jar/*\""
+#  comments = """escape the quotation mark as the path will be passed to the command line arguments and in case of spaces
+#   in the path"""
 
 [site]
- base_folder = "/Users/limingzhou/zhoul/work/energy/pytools/resources/albany-test"
+ timezone = "US/Eastern"
+ state = "NY"
+ base_folder = "/Users/limingzhou/zhoul/work/energy/sites/albany-test"
  name = "Albany-NY"
  alias = "albany-test"
- sql_location = "capitl"
- site_folder = "resources/test_data/site/nyiso"
+ sql_location = "CAPITL"
+ site_folder = "nyiso"
  #center[lon, lat]
  center = [-73.0, 43.0]
- radius = [100.0, 100.0, 100.0, 100.0]
+ #[east, west, south, north]
+ rect = [50.0, 50.0, 50.0, 50.0]
+ t0="2018-01-01"
+ t1="2018-01-04"
  hrrr_paras_file = "/Users/limingzhou/zhoul/work/energy/pytools/pytools/data_prep/hrrr_paras_pynio.txt"
  description = "Zone Capital of NYISO"
  comments = """name is used for database query and must match what the database use; while alias is used for setting up
   the folder structure"""
- envtest = "$ENV_TEST"
+ #envtest = "$ENV_TEST"
 
 [load]
  schema = "iso"
@@ -39,13 +44,14 @@
  utc_to_local_hours = -5
  load_lag_start = 72
 
-[weather_folder]
+[weather]
+hist_weather_pickle = "../data/grib2_folder_0.pkl"
+folder_col_name = "folder"
+filename_col_name = "filename"
+type_col_name = "type"
+
 hrrr_hist = ["utah"] #["hrrr2", "utah"]
 hrrr_predict = ["hrrr_fst"]
-hrrr_utah_hist=[]
-hrrr_utah_predict=[]
-
-
 
 [model]
 y_label = "load"

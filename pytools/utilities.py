@@ -1,11 +1,31 @@
 import logging
 from multiprocessing import Pool
 import os
+import os.path as osp
 
 
 import xarray as xr
 import numpy as np
 import pandas as pd
+import dask.bag as bag
+
+
+def get_file_path(fn,this_file_path):   
+    """
+    Get the absolute path of a file path. If not found, use the this_file_path given by __FILE__
+
+    Args:
+        fn (function): full path of a file, or relative pathto __FILE__
+        this_file_path (_type_): __FILE__ from a given py file
+
+    Returns: absolute path of the file
+
+    """
+    if osp.exists(fn):
+        return fn
+    else:
+        return osp.join(osp.dirname(this_file_path), fn)
+
 
 def get_absolute_path(cur_path: str, file_name) -> str:
     """
@@ -18,7 +38,7 @@ def get_absolute_path(cur_path: str, file_name) -> str:
     Returns: full path-name for the file_name
 
     """
-    return os.path.join(os.path.dirname(cur_path), file_name)
+    return osp.join(os.path.dirname(cur_path), file_name)
 
 
 def get_files_from_a_folder(fd:str):
@@ -59,11 +79,10 @@ def get_logger(level=logging.INFO, file_name=f"{get_now_str()}.log"):
     return logger
 
 
-def parallelize_dataframe(df, func, n_cores=7):
+def parallelize_dataframe(df, func, n_cores=7, partition_size=1):
     # usage train = parallelize_dataframe(train_df, add_features)
     df_split = np.array_split(df, n_cores)
-    pool = Pool(n_cores)
-    df = pd.concat(pool.map(func, df_split))
-    pool.close()
-    pool.join()
-    return df
+    file_bag = bag.from_sequence(df_split, partition_size=partition_size)
+    res = file_bag.map(func).compute()
+
+    return res

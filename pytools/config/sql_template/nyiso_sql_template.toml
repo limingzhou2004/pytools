@@ -7,24 +7,22 @@ query_max_date = """
 """
 
 query_train = """
- SELECT timestamp, case when holiday is null then 0 else 1 end holiday, \
+ SELECT timestamp, \
  case when "Time Zone" = 'EDT' then 1 else 0 end daylightsaving, \
  "Integrated Load" "load" \
- FROM {table_name} l right join calendar c on \
- date_add(l."Time Stamp", interval case when "Time Zone" = 'EDT' then -1 else 0 end hour)= c.timestamp \
+ FROM {table_name} l \
  where "Name"='{site_name}' and timestamp between '{t0}' and '{t1}' \
- order by c.timestamp
+ order by timestamp
 """
 
 query_predict = """
- SELECT timestamp, case when holiday is null then 0 else 1 end holiday, \
+ SELECT timestamp, \
  case when "Time Zone" = 'EDT' then 1 else 0 end daylightsaving, \
  "Integrated Load" "load"  \
- FROM {table_name} l right join calendar c on \
- date_add(l."Time Stamp", interval case when "Time Zone" = 'EDT' then -1 else 0 end hour)= c.timestamp \
+ FROM {table_name} l \
  where "Name"='{site_name}' and timestamp between '{t0}' and '{t1}' \
  union \
- select timestamp, case when holiday is null then 0 else 1 end holiday, \
+ select timestamp, \
  case when c.timestamp >= d.start and c.timestamp<d.end then 1 else   0 end daylightsaving, \
  null "load" \
  from calendar c join daylightsaving d on year(c.timestamp )=d.year \

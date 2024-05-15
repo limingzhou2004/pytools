@@ -98,6 +98,17 @@ TODO
 
 
 ### Fill missing hrrr data
-1. Create the pickle file, `python -m  pytools.data_prep.grib_util_org 0`.
-2. Run the report, `python -m  pytools.data_prep.grib_util_org`
-3. Run the Utah downloading to fill missing hours, `python -m pytools.data_prep.grib_utils /Users/limingzhou/zhoul/work/energy/utah_2`
+The folders included are listed in pytools/data/hrrr_obs_folder.txt file, with stages ==0 for prod and <0 for test.
+1. Create the pickle file to list each file for each hour, including missing hours, `python -m  pytools.data_prep.grib_util_org 0`
+2. Run the report of statistics, by not using additional args, `python -m  pytools.data_prep.grib_util_org` . __Remember__ to run step 1 to update the pickle file.
+3. Run the Utah downloading to fill missing hours, `python -m pytools.data_prep.grib_utils 0 "/Users/limingzhou/zhoul/work/energy/utah_3"`
+   
+   After the missings are filled, rerun the statisitcal report, there should be no missings.
+
+### Integration
+#### Weather prep
+The weather steps include:
+- For obs weather, extract grib2 files from multiple folders to generate npy files into a folder. `python -m `
+- Get load data
+- Combine npy weather data.
+- 

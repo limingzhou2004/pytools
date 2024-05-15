@@ -34,7 +34,6 @@ with DAG(
     if not obs_dest_path:
         obs_dest_path = '.'
 
-    #t0 = LatestOnlyOperator(task_id='latest-start', dag=dag)  
 
     def download_data(tgt_folder, fst_hour,  execution_date_str, external_trigger, critical_time):
         from pytools.data_prep.grib_utils import download_hrrr_by_hour
@@ -73,8 +72,6 @@ with DAG(
         expect_pendulum=True,
         dag=dag,  
        )  
-
-    #t0.set_downstream(t1)
 
 
 if __name__ == "__main__":

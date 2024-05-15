@@ -10,6 +10,8 @@ from airflow.operators.latest_only import LatestOnlyOperator
 from airflow.models import Variable
 import pendulum as pu
 
+
+
 # won't work in the airflow env as pyiso not installed there
 #from pyiso import client_factory
 
@@ -55,6 +57,7 @@ with DAG(
 
         from pytools.data_prep.pg_utils import get_pg_conn, upsert_df
         from pytools.data_prep.nyiso.download_nyiso_load import nyiso_cols, nyiso_index, nyiso_fst_cols,nyiso_fst_index
+        from pytools.data_prep.pg_utils import clean_tmp_tables
 
         c = client_factory('NYISO')
         eng = get_pg_conn(para_airflow=pg_dict)
@@ -69,6 +72,9 @@ with DAG(
         df2['timestamp_spot'] = pd.Timestamp.now()
         df2.set_index(nyiso_fst_index, inplace=True)
         res = upsert_df(df2,table_name=f'{fst_table}', engine=eng, schema=schema)
+        clean_tmp_tables('iso', eng)
+
+
 
 
     t1 = ExternalPythonOperator(

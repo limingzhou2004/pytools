@@ -1,49 +1,44 @@
-import mlflow
+#import mlflow
 import numpy as np
 import pytest
 
-from pytools.data_prep.weather_data_prep import GribType
 from pytools.data_prep.load_data_prep import LoadData
 from pytools.mocking_utils import mock_train_load, mock_predict_load, mock_max_date
 from pytools.data_prep.weather_task import (
     hist_load,
-    hist_weather_prepare,
+   # hist_weather_prepare,
+    hist_weather_prepare_from_report,
     main,
     train_data_assemble,
     train_model,
 )
 import pytools.data_prep.weather_data_prep as wp
+from pytools.utilities import get_absolute_path
 
 
 class TestWeatherTask:
-    config_file = "../../pytools/config/albany_prod_test0.toml"
+    config_file = get_absolute_path(__file__, "../../pytools/config/albany_test.toml")
 
-    def test_hist_load(self, train_t0, train_t1, monkeypatch):
-        monkeypatch.setattr(LoadData, "query_train_data", mock_train_load)
-        res = hist_load(
-            config_file=self.config_file,
-            grib_type=GribType.hrrr,
-            t0=train_t0,
-            t1=train_t1,
-        )
-        assert res.load_data.train_data.shape == (2, 4)
+    def test_hist_load(self, ):
+        #monkeypatch.setattr(LoadData, "query_train_data", mock_train_load)
+        res = hist_load(config_file=self.config_file, create=True)
+        assert res.load_data.train_data.shape[1] == 9
+        assert res.load_data.train_data.shape[0] >= 2
 
-    def test_hist_weather(self):
-        dm = hist_load(config_file=self.config_file, grib_type=GribType.hrrr)
-        assert dm.weather_type == GribType.hrrr
-        hist_weather_prepare(
-            config_file=self.config_file, grib_type=GribType.hrrr, t_after="2018-12-24"
-        )
+    def test_hist_weather_from_inventory(self):
+        dm = hist_weather_prepare_from_report(config_file=self.config_file, n_cores=8)
+        assert dm.weather.weather_train_data.standardized_data.shape[0]>1
+
 
     @pytest.mark.parametrize(
-        "gribtype, shape_cal, shape_weather",
+        "shape_cal, shape_weather",
         [
-            (GribType.hrrr, (32, 6), (32, 34, 34, 13)),
+            ((68, 7), (68, 35, 35, 1)),
         ],
     )
-    def test_train_data_assemble(self, gribtype, shape_cal, shape_weather):
+    def test_train_data_assemble(self, shape_cal, shape_weather):
         weather_data, lag_load, calendar, target_load = train_data_assemble(
-            config_file=self.config_file, grib_type=gribtype
+            config_file=self.config_file
         )
         assert calendar.shape == shape_cal
         assert weather_data.shape == shape_weather

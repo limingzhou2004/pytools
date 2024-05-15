@@ -21,6 +21,7 @@ class TestLoadDataPrep:
         ret = query_str_fill(qstr="test{t0}test", t0="_filled_")
         assert ret == "test_filled_test"
 
+    @DeprecationWarning
     def test_calendar_data(self):
         cd = CD.CalendarData()
         res = cd.construct_calendar_data()
@@ -28,6 +29,7 @@ class TestLoadDataPrep:
         # cd.load_to_db(schema="zhoul", table="calendar")
         # cd.load_daylightsaving_to_db(schema="zhoul", table="daylightsaving")
 
+    @DeprecationWarning
     def test_daylightsaving_data(self):
         cd = CD.CalendarData()
         assert cd.is_daylightsaving(np.datetime64("2018-10-01 13:00"))
