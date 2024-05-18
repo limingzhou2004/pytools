@@ -21,6 +21,7 @@ class ArgClass:
     4 extract npy from grib2 data for weather prediction;
     5 predictions from a multi hour ahead model;
     6 roll out predictions from an hour-ahead model;
+    7 ...
     """
 
     def __init__(self, args=None):
@@ -34,12 +35,12 @@ class ArgClass:
             7: self._add_task7,
         }
         parent_parser = ArgumentParser(
-            description="Generate data prep manager and prepare weather data"
+            description="Generate data prep manager and prepare weather data",            
         )
         self._args = args if args is not None else sys.argv
         # parent_parser.add_argument("-o" "--option", required=True, type=str, help="options, 1-6 for tasks")
         parent_parser.add_argument(
-            "-c",
+            "-cfg",
             "--config",
             dest="config_file",
             required=True,
@@ -47,19 +48,19 @@ class ArgClass:
             help="config file name",
         )
         parent_parser.add_argument(
-            "-g",
-            "--grib_type",
-            dest="grib_type",
+            "-sx",
+            "--suffix",
+            dest="suffix",
             required=False,
             type=str,
-            help="hrrr|nam",
-            default="hrrr",
+            help="suffix as an ID to add to the end of body of file names",
+            default="v0",
         )
         self.parser = parent_parser
         self.sub_commands = self.parser.add_subcommands()
-        # self.parser.add_subcommands(
-        #     dest="option", help="For different tasks from 1 to 7"
-        # )
+        self.parser.add_subcommands(
+            dest="option", help="For different tasks from 1 to 7"
+        )
         self._add_task1()
         self._add_task2()
         self._add_task3()
@@ -68,15 +69,13 @@ class ArgClass:
         self._add_task6()
         self._add_task7()
 
-    def construct_args(self):
+    def construct_args_dict(self):
         """
 
-        Returns: a dict with all parameters
+        Returns: Extract the dict with all parameters to pass to the tasks.
 
         """
         args = self.parser.parse_args(self._args)
-        grib_type = wp.GribType.hrrr if args.grib_type == "hrrr" else wp.GribType.nam
-        args.grib_type = grib_type
         a_dict = args.__dict__
 
         def clean_args(dct):
@@ -90,11 +89,10 @@ class ArgClass:
                 a_dict.update(a.__dict__)
         else:
             raise ValueError(
-                "A subcommand like task_1 must be provided in the command line! "
+                "A subcommand for -option like task_1 must be provided in the command line! "
             )
         a_dict = clean_args(a_dict)
-        a_dict.pop("grib_type")
-        return {"config_file": args.config_file, "grib_type": grib_type, **a_dict}
+        return {"config_file": args.config_file, "suffix": args.suffix, **a_dict}
 
     def _add_task1(self):
         sub_parser = ArgumentParser()
