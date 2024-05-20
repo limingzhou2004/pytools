@@ -8,7 +8,6 @@ from argparse import ArgumentParser
 import sys, os
 
 from pytools.data_prep import weather_data_prep as wp
-from pytools.weather_task import task_1
 
 
 class ArgClass:
@@ -123,7 +122,7 @@ class ArgClass:
             type=str,
             help="end datetime",
         )
-        sub_parser.set_defaults(func=task_1)
+        sub_parser.set_defaults(func=fun)
 
 
     def _add_task2(self):
