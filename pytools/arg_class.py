@@ -1,9 +1,10 @@
-from jsonargparse import (
-    ArgumentParser,
-    ActionConfigFile,
-    ActionJsonSchema,
-    ActionJsonnetExtVars,
-)
+# from jsonargparse import (
+#     ArgumentParser,
+#     ActionConfigFile,
+#     ActionJsonSchema,
+#     ActionJsonnetExtVars,
+# )
+from argparse import ArgumentParser
 import sys, os
 
 from pytools.data_prep import weather_data_prep as wp
@@ -34,12 +35,13 @@ class ArgClass:
             6: self._add_task6,
             7: self._add_task7,
         }
-        parent_parser = ArgumentParser(
-            description="Generate data prep manager and prepare weather data",            
+        parser = ArgumentParser(
+            description="Generate data prep manager and prepare weather data",    
+            add_help=False,        
         )
         self._args = args if args is not None else sys.argv
         # parent_parser.add_argument("-o" "--option", required=True, type=str, help="options, 1-6 for tasks")
-        parent_parser.add_argument(
+        parser.add_argument(
             "-cfg",
             "--config",
             dest="config_file",
@@ -47,7 +49,7 @@ class ArgClass:
             type=str,
             help="config file name",
         )
-        parent_parser.add_argument(
+        parser.add_argument(
             "-sx",
             "--suffix",
             dest="suffix",
@@ -56,18 +58,22 @@ class ArgClass:
             help="suffix as an ID to add to the end of body of file names",
             default="v0",
         )
-        self.parser = parent_parser
-        self.sub_commands = self.parser.add_subcommands()
-        self.parser.add_subcommands(
-            dest="option", help="For different tasks from 1 to 7"
+        parser.add_argument(
+            "-cr",
+            "--create",
+            action="store_true",
+            help="Create a new DataManager",
         )
+        self.parser = parser
+        self.sub_parsers = self.parser.add_subparsers()
+
         self._add_task1()
-        self._add_task2()
-        self._add_task3()
-        self._add_task4()
-        self._add_task5()
-        self._add_task6()
-        self._add_task7()
+        # self._add_task2()
+        # self._add_task3()
+        # self._add_task4()
+        # self._add_task5()
+        # self._add_task6()
+        # self._add_task7()
 
     def construct_args_dict(self):
         """
@@ -95,7 +101,9 @@ class ArgClass:
         return {"config_file": args.config_file, "suffix": args.suffix, **a_dict}
 
     def _add_task1(self):
-        sub_parser = ArgumentParser()
+        #sub_parser = ArgumentParser('task1')
+        sub_parser = self.sub_parsers.add_parser("task_1")
+
         sub_parser.add_argument(
             "-t0",
             "--datetime0",
@@ -112,13 +120,7 @@ class ArgClass:
             type=str,
             help="end datetime",
         )
-        sub_parser.add_argument(
-            "-cr",
-            "--create",
-            action="store_true",
-            help="Create a new DataManager",
-        )
-        self.sub_commands.add_subcommand("task_1", sub_parser)
+
 
     def _add_task2(self):
         sub_parser = ArgumentParser()
@@ -131,11 +133,11 @@ class ArgClass:
             type=str,
             help="minimum datetime to start the weather",
         )
-        self.sub_commands.add_subcommand("task_2", sub_parser)
+        self.sub_parsers.add_subparser("task_2")
 
     def _add_task3(self):
         sub_parser = ArgumentParser()
-        self.sub_commands.add_subcommand("task_3", sub_parser, help="Task 3")
+        self.sub_parsers.add_subparser("task_3", sub_parser, help="Task 3")
 
     def _add_task4(self):
         sub_parser = ArgumentParser()
