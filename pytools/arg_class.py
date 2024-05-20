@@ -8,6 +8,7 @@ from argparse import ArgumentParser
 import sys, os
 
 from pytools.data_prep import weather_data_prep as wp
+from pytools.weather_task import task_1
 
 
 class ArgClass:
@@ -98,9 +99,11 @@ class ArgClass:
                 "A subcommand for -option like task_1 must be provided in the command line! "
             )
         a_dict = clean_args(a_dict)
-        return {"config_file": args.config_file, "suffix": args.suffix, **a_dict}
 
-    def _add_task1(self):
+        return self.parser.get_default('func'), a_dict
+        #return {"config_file": args.config_file, "suffix": args.suffix, **a_dict}
+
+    def _add_task1(self, fun):
         #sub_parser = ArgumentParser('task1')
         sub_parser = self.sub_parsers.add_parser("task_1")
 
@@ -120,6 +123,7 @@ class ArgClass:
             type=str,
             help="end datetime",
         )
+        sub_parser.set_defaults(func=task_1)
 
 
     def _add_task2(self):
