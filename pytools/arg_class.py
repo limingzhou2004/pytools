@@ -1,9 +1,3 @@
-# from jsonargparse import (
-#     ArgumentParser,
-#     ActionConfigFile,
-#     ActionJsonSchema,
-#     ActionJsonnetExtVars,
-# )
 from argparse import ArgumentParser
 import sys, os
 
@@ -25,7 +19,7 @@ class ArgClass:
     7 ...
     """
 
-    def __init__(self, args=None):
+    def __init__(self, args=None, fun_list=[]):
         self.tasks_dict = {
             1: self._add_task1,
             2: self._add_task2,
@@ -40,7 +34,6 @@ class ArgClass:
             add_help=False,        
         )
         self._args = args if args is not None else sys.argv
-        # parent_parser.add_argument("-o" "--option", required=True, type=str, help="options, 1-6 for tasks")
         parser.add_argument(
             "-cfg",
             "--config",
@@ -67,7 +60,7 @@ class ArgClass:
         self.parser = parser
         self.sub_parsers = self.parser.add_subparsers()
 
-        self._add_task1()
+        self._add_task1(fun_list[0])
         # self._add_task2()
         # self._add_task3()
         # self._add_task4()
@@ -87,25 +80,13 @@ class ArgClass:
         def clean_args(dct):
             return {k: dct[k] for k in dct if not k.startswith("__")}
 
-        sub_cmd = a_dict.pop("subcommand", None)
-        if sub_cmd:
-            a_dict["option"] = sub_cmd
-            a = a_dict.pop(sub_cmd, None)
-            if a:
-                a_dict.update(a.__dict__)
-        else:
-            raise ValueError(
-                "A subcommand for -option like task_1 must be provided in the command line! "
-            )
         a_dict = clean_args(a_dict)
+        fun = a_dict.pop('func')
 
-        return self.parser.get_default('func'), a_dict
-        #return {"config_file": args.config_file, "suffix": args.suffix, **a_dict}
+        return fun, a_dict
 
     def _add_task1(self, fun):
-        #sub_parser = ArgumentParser('task1')
         sub_parser = self.sub_parsers.add_parser("task_1")
-
         sub_parser.add_argument(
             "-t0",
             "--datetime0",
@@ -123,7 +104,6 @@ class ArgClass:
             help="end datetime",
         )
         sub_parser.set_defaults(func=fun)
-
 
     def _add_task2(self):
         sub_parser = ArgumentParser()
