@@ -44,6 +44,7 @@ from pytools.config import Config
 # use hour 0-5 forecast as history to train models, also called analysis
 
 #nam_hist_max_fst_hour = 5
+#nam_hist_max_fst_hour = 5
 hrrr_hist_max_fst_hour = 0
 logger = get_logger("weather_tasks")
 weather_data_file_name = 'weather_data.npz'
@@ -334,9 +335,8 @@ def main(args):
 
     """
 
-    task_list = [task_1, task_2, task_3, task_4, task_5, task_6, task_7]
-    pa = ArgClass(args, task_list=task_list)
-    args = pa.construct_args_dict()
+    pa = ArgClass(args)
+    args = pa.construct_args()
     task_dict = {
         "task_1": task_1,
         "task_2": task_2,
