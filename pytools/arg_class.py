@@ -1,9 +1,4 @@
-from jsonargparse import (
-    ArgumentParser,
-    ActionConfigFile,
-    ActionJsonSchema,
-    ActionJsonnetExtVars,
-)
+from argparse import ArgumentParser
 import sys, os
 
 from pytools.data_prep import weather_data_prep as wp
@@ -21,9 +16,10 @@ class ArgClass:
     4 extract npy from grib2 data for weather prediction;
     5 predictions from a multi hour ahead model;
     6 roll out predictions from an hour-ahead model;
+    7 ...
     """
 
-    def __init__(self, args=None):
+    def __init__(self, args=None, fun_list=[]):
         self.tasks_dict = {
             1: self._add_task1,
             2: self._add_task2,
@@ -33,71 +29,64 @@ class ArgClass:
             6: self._add_task6,
             7: self._add_task7,
         }
-        parent_parser = ArgumentParser(
-            description="Generate data prep manager and prepare weather data"
+        parser = ArgumentParser(
+            description="Generate data prep manager and prepare weather data",    
+            add_help=False,        
         )
         self._args = args if args is not None else sys.argv
-        # parent_parser.add_argument("-o" "--option", required=True, type=str, help="options, 1-6 for tasks")
-        parent_parser.add_argument(
-            "-c",
+        parser.add_argument(
+            "-cfg",
             "--config",
             dest="config_file",
             required=True,
             type=str,
             help="config file name",
         )
-        parent_parser.add_argument(
-            "-g",
-            "--grib_type",
-            dest="grib_type",
+        parser.add_argument(
+            "-sx",
+            "--suffix",
+            dest="suffix",
             required=False,
             type=str,
-            help="hrrr|nam",
-            default="hrrr",
+            help="suffix as an ID to add to the end of body of file names",
+            default="v0",
         )
-        self.parser = parent_parser
-        self.sub_commands = self.parser.add_subcommands()
-        # self.parser.add_subcommands(
-        #     dest="option", help="For different tasks from 1 to 7"
-        # )
-        self._add_task1()
-        self._add_task2()
-        self._add_task3()
-        self._add_task4()
-        self._add_task5()
-        self._add_task6()
-        self._add_task7()
+        parser.add_argument(
+            "-cr",
+            "--create",
+            action="store_true",
+            help="Create a new DataManager",
+        )
+        self.parser = parser
+        self.sub_parsers = self.parser.add_subparsers()
 
-    def construct_args(self):
+        self._add_task1(fun_list[0])
+        # self._add_task2()
+        # self._add_task3()
+        # self._add_task4()
+        # self._add_task5()
+        # self._add_task6()
+        # self._add_task7()
+
+    def construct_args_dict(self):
         """
 
-        Returns: a dict with all parameters
+        Returns: Extract the dict with all parameters to pass to the tasks.
 
         """
         args = self.parser.parse_args(self._args)
-        grib_type = wp.GribType.hrrr if args.grib_type == "hrrr" else wp.GribType.nam
-        args.grib_type = grib_type
         a_dict = args.__dict__
 
         def clean_args(dct):
             return {k: dct[k] for k in dct if not k.startswith("__")}
 
-        sub_cmd = a_dict.pop("subcommand", None)
-        if sub_cmd:
-            a_dict["option"] = sub_cmd
-            a = a_dict.pop(sub_cmd, None)
-            if a:
-                a_dict.update(a.__dict__)
-        else:
-            raise ValueError(
-                "A subcommand like task_1 must be provided in the command line! "
-            )
         a_dict = clean_args(a_dict)
-        a_dict.pop("grib_type")
-        return {"config_file": args.config_file, "grib_type": grib_type, **a_dict}
+        fun = a_dict.pop('func')
 
-    def _add_task1(self):
-        sub_parser = ArgumentParser()
+        return fun, a_dict
+
+    def _add_task1(self, fun):
+        sub_parser = self.sub_parsers.add_parser("task_1")
         sub_parser.add_argument(
             "-t0",
             "--datetime0",
@@ -114,13 +103,7 @@ class ArgClass:
             type=str,
             help="end datetime",
         )
-        sub_parser.add_argument(
-            "-cr",
-            "--create",
-            action="store_true",
-            help="Create a new DataManager",
-        )
-        self.sub_commands.add_subcommand("task_1", sub_parser)
+        sub_parser.set_defaults(func=fun)
 
     def _add_task2(self):
         sub_parser = ArgumentParser()
@@ -133,11 +116,11 @@ class ArgClass:
             type=str,
             help="minimum datetime to start the weather",
         )
-        self.sub_commands.add_subcommand("task_2", sub_parser)
+        self.sub_parsers.add_subparser("task_2")
 
     def _add_task3(self):
         sub_parser = ArgumentParser()
-        self.sub_commands.add_subcommand("task_3", sub_parser, help="Task 3")
+        self.sub_parsers.add_subparser("task_3", sub_parser, help="Task 3")
 
     def _add_task4(self):
         sub_parser = ArgumentParser()

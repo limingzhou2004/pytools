@@ -4,7 +4,7 @@ duckdb
 envtoml
 holidays
 icecream
-jsonargparse
+#jsonargparse
 mlflow
 geopandas
 pandas

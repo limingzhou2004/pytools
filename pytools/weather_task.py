@@ -43,7 +43,7 @@ from pytools.config import Config
 
 # use hour 0-5 forecast as history to train models, also called analysis
 
-nam_hist_max_fst_hour = 5
+#nam_hist_max_fst_hour = 5
 hrrr_hist_max_fst_hour = 0
 logger = get_logger("weather_tasks")
 weather_data_file_name = 'weather_data.npz'
@@ -122,7 +122,7 @@ def hist_weather_prepare_from_report(config_file:str, n_cores=1,prefix='',suffix
 
 
 def train_data_assemble(
-    config_file: str, suffix='v0'
+    config_file: str, fst_horizon=1,suffix='v0'
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Assemble training data. Save to a npz file.
@@ -139,7 +139,7 @@ def train_data_assemble(
     h_weather = d.weather.get_weather_train()#.standardized_data #w_data['data']
 
     lag_data, calendar_data, data_standard_load = d.process_load_data(
-        d.load_data, max_lag_start=1
+        d.load_data, max_lag_start=fst_horizon,
     )
     cols_lag = list(lag_data)
     cols_calendar = list(calendar_data)
@@ -334,8 +334,9 @@ def main(args):
 
     """
 
-    pa = ArgClass(args)
-    args = pa.construct_args()
+    task_list = [task_1, task_2, task_3, task_4, task_5, task_6, task_7]
+    pa = ArgClass(args, task_list=task_list)
+    args = pa.construct_args_dict()
     task_dict = {
         "task_1": task_1,
         "task_2": task_2,

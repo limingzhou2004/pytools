@@ -3,7 +3,7 @@ import numpy as np
 from pytools.data_prep import get_datetime_from_grib_file_name as wp
 from pytools.data_prep import data_prep_manager as dm
 from pytools.config import Config
-from pytools.data_prep.weather_task import hist_load
+from pytools.weather_task import hist_load
 #import pytools.data_prep.get_datetime_from_utah_file_name
 
 

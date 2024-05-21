@@ -4,7 +4,7 @@ import pytest
 
 from pytools.data_prep.load_data_prep import LoadData
 from pytools.mocking_utils import mock_train_load, mock_predict_load, mock_max_date
-from pytools.data_prep.weather_task import (
+from pytools.weather_task import (
     hist_load,
    # hist_weather_prepare,
     hist_weather_prepare_from_report,
