@@ -61,8 +61,8 @@ class ArgClass:
         self.sub_parsers = self.parser.add_subparsers()
 
         self._add_task1(fun_list[0])
-        # self._add_task2()
-        # self._add_task3()
+        self._add_task2(fun_list[1])
+        self._add_task3(fun_list[2])
         # self._add_task4()
         # self._add_task5()
         # self._add_task6()
@@ -105,24 +105,34 @@ class ArgClass:
         )
         sub_parser.set_defaults(func=fun)
 
-    def _add_task2(self):
-        sub_parser = ArgumentParser()
+    def _add_task2(self, fun):
+        sub_parser = self.sub_parsers.add_parser("task_2")
         sub_parser.add_argument(
-            "-ta",
-            "--t_after",
-            dest="t_after",
+            "-n",
+            "--n-cores",
+            dest="n_cores",
             required=False,
-            default="1/1/2018",
-            type=str,
-            help="minimum datetime to start the weather",
+            default=1,
+            type=int,
+            help="number of cores to use, default 1",
         )
-        self.sub_parsers.add_subparser("task_2")
+        sub_parser.set_defaults(func=fun)
 
-    def _add_task3(self):
+    def _add_task3(self, fun):
         sub_parser = ArgumentParser()
         self.sub_parsers.add_subparser("task_3", sub_parser, help="Task 3")
+        sub_parser.add_argument(
+            "-f",
+            "--fst-hours",
+            dest="fst_hours",
+            required=False,
+            default=1,
+            type=int,
+            help="number of hours to forecast ahead",
+        )
+        sub_parser.set_defaults(func=fun)
 
-    def _add_task4(self):
+    def _add_task4(self, fun):
         sub_parser = ArgumentParser()
         sub_parser.add_argument(
             "-to",
@@ -178,9 +188,9 @@ class ArgClass:
             type=str,
             help="--tags k1=v1,k2=v2",
         )
-        self.sub_commands.add_subcommand("task_4", sub_parser, help="Task 4")
+        sub_parser.set_defaults(func=fun)
 
-    def _add_task5(self):
+    def _add_task5(self, fun):
         sub_parser = ArgumentParser()
         sub_parser.add_argument(
             "-mha",
@@ -207,9 +217,9 @@ class ArgClass:
             help="create npy files",
         )
 
-        self.sub_commands.add_subcommand("task_5", sub_parser, help="Task 5")
+        sub_parser.set_defaults(func=fun)
 
-    def _add_task6(self):
+    def _add_task6(self, fun):
         sub_parser = ArgumentParser()
         self.sub_commands.add_subcommand("task_6", sub_parser, help="Task 6")
         sub_parser.add_argument(
@@ -249,10 +259,12 @@ class ArgClass:
             help="Ending report time",
         )
 
-        return
+        sub_parser.set_defaults(func=fun)
 
-    def _add_task7(self):
+
+    def _add_task7(self, fun):
         sub_parser = ArgumentParser()
         self.sub_commands.add_subcommand("task_7", sub_parser, help="Task 7")
 
-        return
+        sub_parser.set_defaults(func=fun)
+

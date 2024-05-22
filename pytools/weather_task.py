@@ -89,7 +89,7 @@ def hist_load(
     return dm
 
 
-def hist_weather_prepare_from_report(config_file:str, n_cores=1,prefix='',suffix='v0'):
+def hist_weather_prepare_from_report(config_file:str, n_cores=1, suffix='v0'):
     d = hist_load(config_file=config_file, create=False)
     logger.info(f"Creating historical npy data from {d.t0} to {d.t1}...\n")
 
@@ -123,14 +123,15 @@ def hist_weather_prepare_from_report(config_file:str, n_cores=1,prefix='',suffix
 
 
 def train_data_assemble(
-    config_file: str, fst_horizon=1,suffix='v0'
+    config_file: str, fst_horizon=1,suffix='v0', 
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Assemble training data. Save to a npz file.
 
     Args:
         config_file:
-        grib_type:
+        fst_horizon: forecast horizon, 1, 6, 24
+        suffix: id, will add fst_horizon
 
     Returns: DataPrepManager with load and hist weather organized for training
 
@@ -138,6 +139,7 @@ def train_data_assemble(
     d: DataPrepManager = hist_load(config_file=config_file, create=False)
    # w_data = np.load(osp.join(config.site_parent_folder, weather_data_file_name))
     h_weather = d.weather.get_weather_train()#.standardized_data #w_data['data']
+    suffix = suffix + f'_f{fst_horizon}'
 
     lag_data, calendar_data, data_standard_load = d.process_load_data(
         d.load_data, max_lag_start=fst_horizon,
@@ -335,8 +337,6 @@ def main(args):
 
     """
 
-    pa = ArgClass(args)
-    args = pa.construct_args()
     task_dict = {
         "task_1": task_1,
         "task_2": task_2,
@@ -346,7 +346,9 @@ def main(args):
         "task_6": task_6,
         "task_7": task_7,
     }
-    fun = task_dict[args.pop("option")]
+    pa = ArgClass(args, list(task_dict.values()))
+    fun, args = pa.construct_args()
+
     return fun(**args)
 
 
