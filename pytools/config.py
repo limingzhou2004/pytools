@@ -7,6 +7,8 @@ from pydantic import BaseModel, FilePath, field_validator, validator
 import toml
 import envtoml
 
+from pytools.utilities import get_absolute_path
+
 US_state_abbvs=['AL',
 'AK',
 'AZ',
@@ -118,6 +120,7 @@ class Load(BaseModel):
     lag_hours:int
     utc_to_local_hours:int 
     load_lag_start:int
+    fst_hours: List[int]
 
 
 class Weather(BaseModel):
@@ -138,7 +141,10 @@ class Config:
             base_folder if base_folder.endswith("/") else base_folder + "/"
         )
         # validate the settings via pydantic
-        self._add_base_folder(self.toml_dict["site"], "hrrr_paras_file")
+        if not self.toml_dict["site"].get('hrrr_paras_file', None):
+            self.toml_dict['site']['hrrr_paras_file']= get_absolute_path(__file__, 'data_prep/hrrr_paras_pynio.txt')
+        else:
+            self._add_base_folder(self.toml_dict["site"], "hrrr_paras_file")
         # use pydantic to validate the config
         self.site_pdt = Site(**self.toml_dict['site'])
         self.load_pdt = Load(**self.toml_dict['load'])
@@ -202,10 +208,6 @@ class Config:
     @property
     def load(self):
         return self.toml_dict["load"]
-
-    # @property
-    # def jar_config(self):
-    #     return self._join(self._base_folder, self.toml_dict["jar_config"]["address"])
 
     @property
     def model(self):

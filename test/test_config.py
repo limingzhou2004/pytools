@@ -17,3 +17,7 @@ class TestConfig:
     def test_center_radias(self, config):
         assert config.site['center'] == [43.0, -73.0]
         assert config.site['radius'] == [100.0, 100.0, 100.0, 100.0]
+
+    def test_get_fst_hours(self, config):
+
+        assert config.load_pdt.fst_hours==[1,6, 24]

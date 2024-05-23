@@ -175,24 +175,23 @@ def train_data_assemble(
 
 def train_model(
     config_file: str,
-    ahead_hours: int,
+    fst_hours: int,
     train_options,
     tracking_uri,
     model_uri,
     experiment_name,
     tags="",
-    grib_type: wp.GribType = wp.GribType.hrrr,
 ):
     cfg = Config(config_file)
     cat_fraction = (
         train_options.cat_fraction if hasattr(train_options, "cat_fraction") else None
     )
-    data = get_training_data(cfg, grib_type, cat_fraction)
+    data = get_training_data(cfg, cat_fraction, fst_hour=fst_hours)
     weather_para = data.get_weather_para()
     d = hist_load(config_file=config_file, create=False)
     train_data, validation_data, test_data = prepare_train_data(
         data,
-        ahead_hrs=ahead_hours,
+        ahead_hrs=fst_hours,
         batch_size=train_options.batch_size,
         num_workers=None,
         full_data=cat_fraction[0] == 1,

@@ -15,7 +15,7 @@ def get_file_path(fn,this_file_path):
     Get the absolute path of a file path. If not found, use the this_file_path given by __FILE__
 
     Args:
-        fn (function): full path of a file, or relative pathto __FILE__
+        fn (function): full path of a file, or relative path to __FILE__
         this_file_path (_type_): __FILE__ from a given py file
 
     Returns: absolute path of the file

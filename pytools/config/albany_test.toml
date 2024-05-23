@@ -2,12 +2,6 @@
  name = "electric_load"
  description = "mwh for zones in iso or rto"
 
-# [jar_config]
-#  flag = "deprecated"
-#  address = "\"Scala-http/classes/artifacts/scalahttp_jar/*\""
-#  comments = """escape the quotation mark as the path will be passed to the command line arguments and in case of spaces
-#   in the path"""
-
 [site]
  timezone = "US/Eastern"
  state = "NY"
@@ -22,7 +16,7 @@
  rect = [50.0, 50.0, 50.0, 50.0]
  t0="2018-01-01"
  t1="2018-01-04"
- hrrr_paras_file = "/Users/limingzhou/zhoul/work/energy/pytools/pytools/data_prep/hrrr_paras_pynio.txt"
+ #hrrr_paras_file = "data_prep/hrrr_paras_pynio.txt"
  description = "Zone Capital of NYISO"
  comments = """name is used for database query and must match what the database use; while alias is used for setting up
   the folder structure"""
@@ -43,6 +37,7 @@
  lag_hours = 168
  utc_to_local_hours = -5
  load_lag_start = 72
+ fst_hours =[1, 6, 24]
 
 [weather]
 hist_weather_pickle = "../data/grib2_folder_0.pkl"
