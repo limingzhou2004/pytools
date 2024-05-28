@@ -123,7 +123,7 @@ def hist_weather_prepare_from_report(config_file:str, n_cores=1, suffix='v0'):
 
 
 def train_data_assemble(
-    config_file: str, fst_horizon=1,suffix='v0', 
+    config_file: str, suffix='v0', 
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Assemble training data. Save to a npz file.
@@ -137,12 +137,11 @@ def train_data_assemble(
 
     """
     d: DataPrepManager = hist_load(config_file=config_file, create=False)
-   # w_data = np.load(osp.join(config.site_parent_folder, weather_data_file_name))
-    h_weather = d.weather.get_weather_train()#.standardized_data #w_data['data']
-    suffix = suffix + f'_f{fst_horizon}'
-
+    h_weather = d.weather.get_weather_train()
+    #suffix = suffix + f'_f{fst_horizon}'
+  
     lag_data, calendar_data, data_standard_load = d.process_load_data(
-        d.load_data, max_lag_start=fst_horizon,
+        d.load_data, max_lag_start=f_hr,
     )
     cols_lag = list(lag_data)
     cols_calendar = list(calendar_data)

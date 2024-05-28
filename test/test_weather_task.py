@@ -17,7 +17,7 @@ from pytools.utilities import get_absolute_path
 
 
 class TestWeatherTask:
-    config_file = get_absolute_path(__file__, "../../pytools/config/albany_test.toml")
+    config_file = get_absolute_path(__file__, "../pytools/config/albany_test.toml")
 
     def test_hist_load(self, ):
         #monkeypatch.setattr(LoadData, "query_train_data", mock_train_load)
