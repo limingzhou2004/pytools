@@ -1,13 +1,13 @@
 dask
-dill
+dill==0.3.1.1
 duckdb
 envtoml
 holidays
 icecream
 #jsonargparse
 mlflow
-geopandas
-pandas
+geopandas==0.12.2
+pandas==1.3.3
 pendulum
 polars
 # manual install pyiso from source code as v1.0
@@ -17,18 +17,18 @@ psycopg2-binary
 #pynio -- need to use conda 
 #CONDA_SUBDIR=osx-64 conda install -y pynio
 # conda install -y -c conda-forge pynio
-pydantic
+pydantic==2.6.1
 pytorch-lightning
 read_env
-requests
-rioxarray
+requests==2.28.2
+rioxarray==0.13.3
 scikit-learn
-shapely
+shapely==2.0.0
 sqlalchemy
 toml
 torch==1.13 
 tqdm
-xarray
+xarray==2022.12.0
 
 
 pytest
