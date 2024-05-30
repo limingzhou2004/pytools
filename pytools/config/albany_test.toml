@@ -36,7 +36,7 @@
  limit = [0, 99999]
  lag_hours = 168
  utc_to_local_hours = -5
- load_lag_start = 72
+ #load_lag_start = 72
  fst_hours =[1, 6, 24]
 
 [weather]

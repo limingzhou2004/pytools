@@ -138,7 +138,7 @@ class DataPrepManager:
         self.para_num = para_num
 
     def process_load_data(
-        self, load_data: ldp.LoadData, max_lag_start=168, fst_horizon:List[int]=None
+        self, load_data: ldp.LoadData, lag_hours=168, fst_horizon:List[int]=None
     ) -> tuple[Dict, pd.DataFrame, pd.DataFrame]:
         """
         Process the LoadData to generate lag load, calendar, and target load. 
@@ -161,7 +161,7 @@ class DataPrepManager:
         del raw_load_data[self.load_name]
 
         calendar_data = raw_load_data
-        lag_start =  max_lag_start
+        lag_start = lag_hours
 
         # load data are complete for lagged data
         lag_set = []
@@ -188,7 +188,7 @@ class DataPrepManager:
         df_lag = (
             df.shift(start).fillna(value=mean).rename(columns={col_name: col_name + f'_{start}'})
         )
-        for i in range(start+1, start+order):
+        for i in range(start, start+order):
             df_lag[f'load_{i}'] = df.shift(i).fillna(value=mean)
         return df_lag
 
