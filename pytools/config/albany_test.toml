@@ -36,11 +36,11 @@
  limit = [0, 99999]
  lag_hours = 168
  utc_to_local_hours = -5
- #load_lag_start = 72
+ #load_lag_start = 72, to delete
  fst_hours =[1, 6, 24]
 
 [weather]
-hist_weather_pickle = "../data/grib2_folder_0.pkl"
+hist_weather_pickle = "../data/grib2_folder_1.pkl"
 folder_col_name = "folder"
 filename_col_name = "filename"
 type_col_name = "type"

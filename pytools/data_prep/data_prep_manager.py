@@ -121,9 +121,9 @@ class DataPrepManager:
       #  self.max_load_lag_start = max_load_lag_start
       #  self.load_lag_order = load_lag_order
         self.utc_to_local_hours = utc_to_local_hours
-        self.data_standard_load_lag = self.add_lag(
-            self.data_standard_load, start=max_load_lag_start, order=load_lag_order
-        )
+        # self.data_standard_load_lag = self.add_lag(
+        #     self.data_standard_load, start=max_load_lag_start, order=load_lag_order
+        # )
         self.weather: wp.WeatherDataPrep = None
         self.center = None
         self.rect = None
@@ -170,6 +170,14 @@ class DataPrepManager:
             self.data_standard_load, start=lag_start, order=h))
 
         return np.stack(lag_set, axis=0), calendar_data, data_standard_load
+
+    def clear_lag_load(self):
+        self.data_standard_load_lag = None
+
+    def set_lag_load(self, start, order):
+        self.data_standard_load_lag = self.add_lag(
+            self.data_standard_load, start=start, order=order
+         )
 
     def add_lag(self, df: pd.DataFrame, start, order):
         """

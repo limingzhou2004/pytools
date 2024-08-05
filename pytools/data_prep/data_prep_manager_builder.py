@@ -38,7 +38,7 @@ class DataPrepManagerBuilder:
         Returns: a dataManager, Config
 
         """
-        if config is None:
+        if not config:
             config = self.config
         load_data = ldp.build_from_toml(config_file=config, t0=self.t0, t1=self.t1)
 
@@ -52,7 +52,7 @@ class DataPrepManagerBuilder:
             t1=self.t1,
             load_data=load_data,
             load_limit=config.load["limit"],
-            max_load_lag_start=config.load["load_lag_start"],
+            # max_load_lag_start=config.load["load_lag_start"],
             utc_to_local_hours=config.load["utc_to_local_hours"],
             load_name=config.load["load_column"],
             timestamp_name=config.load["datetime_column"],
@@ -63,19 +63,19 @@ class DataPrepManagerBuilder:
         dm.setup_grib_predict_folder(weather_predict_folder)
         return dm
 
-    def build_dm_from_config(self) -> Tuple[Dict[str, dpm.DataPrepManager], Config]:
-        """
-        Build to data_managers, one for hrrr, and one for nam
+    # def build_dm_from_config(self) -> Tuple[Dict[str, dpm.DataPrepManager], Config]:
+    #     """
+    #     Build to data_managers, one for hrrr, and one for nam
 
-        Returns: a dict of hrrr:dm, nam:dm
+    #     Returns: a dict of hrrr:dm, nam:dm
 
-        """
-        dm2 = {
-            "hrrr": self.build_dm_from_config_weather(
-                weather_type=GribType.hrrr, config=self.config
-            ),
-            "nam": self.build_dm_from_config_weather(
-                weather_type=GribType.nam, config=self.config
-            ),
-        }
-        return dm2, self.config
+    #     """
+    #     dm2 = {
+    #         "hrrr": self.build_dm_from_config_weather(
+    #             weather_type=GribType.hrrr, config=self.config
+    #         ),
+    #         "nam": self.build_dm_from_config_weather(
+    #             weather_type=GribType.nam, config=self.config
+    #         ),
+    #     }
+    #     return dm2, self.config

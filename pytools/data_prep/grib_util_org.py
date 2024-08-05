@@ -18,7 +18,7 @@ from typing import List, Tuple, Union, Dict
 import pandas as pd
 import numpy as np
 import pendulum as pu
-import polars as pl
+#import polars as pl
 from tqdm import tqdm
 from pytools.data_prep.get_datetime_from_grib_file_name import get_datetime_from_utah_file_name
 

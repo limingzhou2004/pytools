@@ -73,11 +73,11 @@ is_utah=False)->np.ndarray:
     """
     if fn.endswith('.grib2'):
         print(f'process...{fn}')
-        ds = xr.load_dataset(fn, engine="pynio")
+        ds = xr.load_dataset(fn, engine="cfgrib")
     elif fn.endswith('.nc'):
         ds = xr.load_dataset(fn, engine="scipy")
     else:
-        raise Exception('only pynio and scipy are supported for engine')
+        raise Exception('only grib2 and nc files are supported!')
 
     delta_x = ds['gridlon_0'].Dx
     delta_y = ds['gridlat_0'].Dy
@@ -121,7 +121,8 @@ def get_paras_from_pynio_file(para_file:str, is_utah=False) -> Dict:
     with open(para_file) as f:
         for line in f:
             kv = line.strip().split(',')
-            k = kv[0].strip(); v = kv[1].strip()
+            k = kv[0].strip()
+            v = kv[1].strip()
             # use 1h precipitation for Utah data
             if is_utah:
                 if k == 'APCP_P8_L1_GLC0_acc':

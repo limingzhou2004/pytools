@@ -188,7 +188,7 @@ def train_model(
     d = hist_load(config_file=config_file, create=False)
     train_data, validation_data, test_data = prepare_train_data(
         data,
-        ahead_hrs=fst_hours,
+        ahead_hours=fst_hours,
         batch_size=train_options.batch_size,
         num_workers=None,
         full_data=cat_fraction[0] == 1,

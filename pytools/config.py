@@ -119,7 +119,7 @@ class Load(BaseModel):
     limit: Tuple[float,float]
     lag_hours:int
     utc_to_local_hours:int 
-    load_lag_start:int
+    #load_lag_start:int # to delete
     fst_hours: List[int]
 
 
