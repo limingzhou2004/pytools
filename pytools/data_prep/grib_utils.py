@@ -1,4 +1,5 @@
 
+from collections import OrderedDict
 from functools import partial
 import glob
 from itertools import chain
@@ -113,7 +114,22 @@ is_utah=False)->np.ndarray:
                 ds['gridlat_0'][west_ind:east_ind+1, south_ind:north_ind+1])
     else:
         return np.stack(arr_list, axis=2)
+    
+def get_paras_from_cfgrib_file(paras_file:str)->Dict:
+    with open(paras_file) as f:
+        f.readline() #skip the header row
+        p_dict = {'2m': list(), '10m': list(), 'surface': list()}
+        for line in f:
+            kv = line.strip().split(',')
+            flag = kv[0].strip()
+            k = kv[4].strip()
+            v = kv[1].strip()
+            if flag=='1':
+                p_dict[k].append(v) 
 
+    return p_dict
+
+@DeprecationWarning
 def get_paras_from_pynio_file(para_file:str, is_utah=False) -> Dict:
     a = {}
     # It is possible to use file size to decide whether it is a utah file, >100 mb

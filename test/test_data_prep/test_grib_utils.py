@@ -9,11 +9,14 @@ import xarray as xr
 # import rioxarray
 
 
-from pytools.data_prep.grib_utils import download_hrrr, download_utah_file_extract, extract_data_from_grib2, find_missing_grib2, print_grib2_info, find_ind_fromlatlon, extract_a_file, decide_grib_type
+from pytools.data_prep.grib_utils import download_hrrr, download_utah_file_extract, extract_data_from_grib2, find_missing_grib2, get_paras_from_cfgrib_file, print_grib2_info, find_ind_fromlatlon, extract_a_file, decide_grib_type
 
 
 hrrr_obs_path = '/Users/limingzhou/zhoul/work/energy/grib2/hrrrdata'
 fn = hrrr_obs_path + '/hrrrsub_2020_01_01_00F0.grib2'
+
+
+cfgrib_paras_file = 'pytools/data_prep/hrrr_paras_cfgrib.txt'
 
 paras = """
 0	19	0	0	1	0	255	0	Visibility
@@ -34,8 +37,16 @@ paras = """
 
 def test_extract_data_from_grib2():
     ret = extract_data_from_grib2(fn=fn, lat=43, lon=-73, radius=30, paras=paras,return_latlon=False)
-    
+
+
     assert 1==1
+
+def test_get_paras_from_cfgrib_file():
+    ret = get_paras_from_cfgrib_file(cfgrib_paras_file)
+
+    assert len(ret['2m'])==4
+    assert len(ret['10m'])==3
+    assert len(ret['surface'])==9
 
 #@pytest.mark.skip(reason='large binary files needed for the test')
 def test_read_grib2():
