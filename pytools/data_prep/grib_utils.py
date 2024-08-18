@@ -26,6 +26,12 @@ from pytools.data_prep.get_datetime_from_grib_file_name import get_datetime_from
 hrrr_url_str_template = 'http://nomads.ncep.noaa.gov/cgi-bin/filter_hrrr_2d.pl?file=hrrr.t{HH}z.wrfsfcf{FHH}.grib2&lev_10_m_above_ground=on&lev_2_m_above_ground=on&lev_surface=on&var_APCP=on&var_ASNOW=on&var_DPT=on&var_DSWRF=on&var_GUST=on&var_HPBL=on&var_PRES=on&var_RH=on&var_SNOD=on&var_SNOWC=on&var_SPFH=on&var_TCDC=on&var_TMP=on&var_UGRD=on&var_VBDSF=on&var_VDDSF=on&var_VGRD=on&var_VIS=on&var_WIND=on&leftlon=0&rightlon=360&toplat=90&bottomlat=-90&dir=%2Fhrrr.YYYYMMDD%2Fconus'
 
 
+# HRRR settings
+HRRR_DX = 3
+HRRR_DY = 3
+HRRR_lat_name = 'latitude'
+HRRR_lon_name = 'longitude'
+
 
 def print_grib2_info(fn:str):
     ds = xr.open_dataset(fn, engine="pynio")
@@ -54,9 +60,29 @@ def find_ind_fromlatlon(lon:float, lat:float, arr_lon:np.ndarray, arr_lat:np.nda
 
     return x_ind, y_ind
 
-def extract_data_from_grib2(fn:str, lon:float, lat:float, radius:Union[int,Tuple[int, int, int, int]], paras:List[str], 
-return_latlon:bool=False, 
-is_utah=False)->np.ndarray:
+
+def _extract_a_group(fn:str, group:str, paras: List[str], exatract_latlon:bool=False):
+    # group of 2m, 10m, and surface
+    backend_kwargs={'filter_by_keys': {'typeOfLevel': 'heightAboveGround', 'level': 10}}
+
+    if group=='2m':
+        backend_kwargs['filter_by_keys']['level'] = 2
+    if group=='surface':
+        backend_kwargs['filter_by_keys'] = {'stepType': 'instant',                                    'typeOfLevel': 'surface'}
+    dat = xr.open_dataset(fn, engine='cfgrib', backend_kwargs=backend_kwargs)
+    dr = xr.Dataset()
+    lat = HRRR_lat_name
+    lon = HRRR_lon_name
+    if exatract_latlon:
+        return dat[lon].data, dat[lat].data
+    for p in paras:
+        dr[p] = dat[p]
+    return dr
+
+
+
+def extract_data_from_grib2(fn:str, lon:float, lat:float, radius:Union[int,Tuple[int, int, int, int]], 
+    paras:Dict, return_latlon:bool=False, )->np.ndarray:
     """
     Extract a subset, based on a rectangle area. We assume all paras share the same grid. 
     Both lat/lon are increasing in the grid. The hrrr data has a grid of 1799 by 1059
@@ -72,16 +98,24 @@ is_utah=False)->np.ndarray:
     Returns:
         np.ndarray: 3D tensor extracted np array, west->east:south->north:parameter
     """
-    if fn.endswith('.grib2'):
-        print(f'process...{fn}')
-        ds = xr.load_dataset(fn, engine="cfgrib")
-    elif fn.endswith('.nc'):
-        ds = xr.load_dataset(fn, engine="scipy")
-    else:
-        raise Exception('only grib2 and nc files are supported!')
+    # if fn.endswith('.grib2'):
+    #     print(f'process...{fn}')
+    #     ds = xr.load_dataset(fn, engine="cfgrib")
+    # elif fn.endswith('.nc'):
+    #     ds = xr.load_dataset(fn, engine="scipy")
+    # else:
+    #     raise Exception('only grib2 and nc files are supported!')
+    ds_data = {}
+    #groups = list(paras.keys())
+    for k in paras:
+        ds_data[k] = _extract_a_group(fn, k, paras[k])
 
-    delta_x = ds['gridlon_0'].Dx
-    delta_y = ds['gridlat_0'].Dy
+    group='2m'
+    arr_lon, arr_lat = _extract_a_group(fn, k, paras[group], exatract_latlon=True)
+
+    delta_x = HRRR_DX
+    delta_y = HRRR_DY
+
     if isinstance(radius, int):
         east_dist = radius
         west_dist = radius 
@@ -90,8 +124,6 @@ is_utah=False)->np.ndarray:
     else:
         east_dist, west_dist, south_dist, north_dist = radius
  
-    arr_lat = ds['gridlat_0'].data 
-    arr_lon = ds['gridlon_0'].data 
     center_x_ind, center_y_ind = find_ind_fromlatlon(lat=lat, lon=lon, arr_lon=arr_lon, arr_lat=arr_lat)
     east_ind = ceil(center_x_ind+east_dist/delta_x)
     west_ind = floor(center_x_ind-west_dist/delta_x)
@@ -101,12 +133,14 @@ is_utah=False)->np.ndarray:
     # for u, v wind, the 3 dim, dim 0 for 10 and 80 m
     ground_2m_dim=0
   
-    for p in paras:
-        x = ds[p].data[west_ind:(east_ind+1), south_ind:(north_ind+1)]
-        if len(x.shape)>2:
-            x = ds[p].data[ground_2m_dim, west_ind:(east_ind+1), south_ind:(north_ind+1)]
-            
-        arr_list.append(x)
+    for k in paras:
+        for p in paras[k]:
+            ds = ds_data[k]
+            x = ds[p].data[west_ind:(east_ind+1), south_ind:(north_ind+1)]
+            if len(x.shape)>2:
+                x = ds[p].data[ground_2m_dim, west_ind:(east_ind+1), south_ind:(north_ind+1)]
+                
+            arr_list.append(x)
 
     if return_latlon:
         return (np.stack(arr_list, axis=2), 

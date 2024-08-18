@@ -36,10 +36,10 @@ paras = """
 
 
 def test_extract_data_from_grib2():
+    paras = get_paras_from_cfgrib_file(cfgrib_paras_file)
     ret = extract_data_from_grib2(fn=fn, lat=43, lon=-73, radius=30, paras=paras,return_latlon=False)
-
-
-    assert 1==1
+    #lon, lat, paras
+    assert ret.shape==(11,21,16)
 
 def test_get_paras_from_cfgrib_file():
     ret = get_paras_from_cfgrib_file(cfgrib_paras_file)
@@ -48,7 +48,7 @@ def test_get_paras_from_cfgrib_file():
     assert len(ret['10m'])==3
     assert len(ret['surface'])==9
 
-#@pytest.mark.skip(reason='large binary files needed for the test')
+@pytest.mark.skip(reason='large binary files needed for the test')
 def test_read_grib2():
     # hrrr_obs_path = '/Users/limingzhou/zhoul/work/energy/grib2/hrrrdata'
     # fn = hrrr_obs_path + '/hrrrsub_2020_01_01_00F0.grib2'
