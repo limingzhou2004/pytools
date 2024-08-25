@@ -225,7 +225,6 @@ class DataPrepManager:
         w = self.build_hist_weather(
             weather=weather,
             weather_para_file=weather_para_file,
-            para_num=self.para_num,
         )
         w.set_utc_to_local_hours(self.utc_to_local_hours)
         self.weather = w
@@ -338,7 +337,6 @@ class DataPrepManager:
         self,
         weather: Dict,
         weather_para_file=None,
-        para_num=None,
     ) -> wp.WeatherDataPrep:
         """
         Build a WeatherDataPrep object
@@ -356,7 +354,6 @@ class DataPrepManager:
             dest_npy_folder=self.get_npy_folder(),
             weather_para_file=weather_para_file,
             utc_hour_offset=self.utc_to_local_hours,
-            para_num=para_num,
         )
 
         return self.weather
@@ -412,7 +409,7 @@ class DataPrepManager:
         self, df: pd.DataFrame, field: str, min_val: float, max_val: float
     ) -> pd.DataFrame:  # load data have to be checked
         df.loc[(df[field] < min_val) | (df[field] > max_val)] = np.nan
-        return df.fillna(method="backfill")
+        return df.bfill() #fillna(method="backfill")
 
     def reconcile(
         self, load_df: pd.DataFrame, date_column: str, w_data: wd.WeatherData

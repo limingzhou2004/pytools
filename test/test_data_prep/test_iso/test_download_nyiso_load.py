@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import pandas as pd
 import pytz
 
@@ -61,6 +61,7 @@ def test_get_hist_load():
     c = client_factory('NYISO')
 
     now = pytz.utc.localize(datetime.utcnow())
+    now = datetime.now(timezone.utc)
     today = now.astimezone(pytz.timezone(c.TZ_NAME)).date()
     content_list = c.fetch_csvs(today, 'isolf')
     assert(len(content_list)==1)

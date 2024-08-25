@@ -32,7 +32,7 @@ HRRR_DY = 3
 HRRR_lat_name = 'latitude'
 HRRR_lon_name = 'longitude'
 
-
+@DeprecationWarning
 def print_grib2_info(fn:str):
     ds = xr.open_dataset(fn, engine="pynio")
     ds['gridlat_0'].data 

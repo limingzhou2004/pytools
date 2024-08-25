@@ -57,25 +57,8 @@ class DataPrepManagerBuilder:
             load_name=config.load["load_column"],
             timestamp_name=config.load["datetime_column"],
         )
-        weather_para_file = config.site["hrrr_paras_file"]
-        dm.setup_grib_para_file(weather_para_file)
-        weather_predict_folder = config.weather["hrrr_predict"] 
+        dm.setup_grib_para_file(config.automate_path(config.weather_pdt.hrrr_paras_file))
+        weather_predict_folder = config.automate_path(config.weather_pdt.hrrr_predict) 
         dm.setup_grib_predict_folder(weather_predict_folder)
         return dm
 
-    # def build_dm_from_config(self) -> Tuple[Dict[str, dpm.DataPrepManager], Config]:
-    #     """
-    #     Build to data_managers, one for hrrr, and one for nam
-
-    #     Returns: a dict of hrrr:dm, nam:dm
-
-    #     """
-    #     dm2 = {
-    #         "hrrr": self.build_dm_from_config_weather(
-    #             weather_type=GribType.hrrr, config=self.config
-    #         ),
-    #         "nam": self.build_dm_from_config_weather(
-    #             weather_type=GribType.nam, config=self.config
-    #         ),
-    #     }
-    #     return dm2, self.config

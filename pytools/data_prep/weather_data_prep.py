@@ -9,12 +9,9 @@ import numpy as np
 import pandas as pd
 import dask.bag as bag
 
-from pytools.data_prep import py_jar as pj
 from pytools.data_prep import weather_data as wd
 from pytools.data_prep.get_datetime_from_grib_file_name import get_datetime_from_grib_file_name, get_datetime_from_grib_file_name_utah
-from pytools.data_prep.grib_utils import extract_data_from_grib2, get_paras_from_pynio_file
-from pytools.data_prep.py_jar import PyJar
-from pytools.retry.api import retry
+from pytools.data_prep.grib_utils import extract_data_from_grib2, get_paras_from_cfgrib_file
 from pytools.utilities import get_file_path, parallelize_dataframe
 
 def grib_filter_func(
@@ -155,7 +152,7 @@ class WeatherDataPrep:
         t0: dt.datetime,
         t1: dt.datetime,
         prefix,
-        para_num: int = 12,
+        #para_num: int = 12,
         utc_hour_offset: int = None,
     ):
         """
@@ -176,7 +173,6 @@ class WeatherDataPrep:
         """
 
         self.para_file = para_file
-        #self.para_num = para_num
         self.weather = weather
         self.weather_obj = None
         self.weather_obj_fn = ""
@@ -197,8 +193,9 @@ class WeatherDataPrep:
         self.utc_to_local_hours = utc_hour_offset
         self.check_grib_name_filter = None
         self.min_filename_length = 20
-        self.hrrr_paras:Dict = get_paras_from_pynio_file(para_file,False)
-        self.utah_paras:Dict = get_paras_from_pynio_file(para_file,True)
+        self.hrrr_paras:Dict = get_paras_from_cfgrib_file(para_file)
+        #self.hrrr_paras:Dict = get_paras_from_pynio_file(para_file,False)
+        #self.utah_paras:Dict = get_paras_from_pynio_file(para_file,True)
         # lon 2D
         self.x_grid = None
         # lat 2D
@@ -539,10 +536,8 @@ class WeatherDataPrep:
         dest_npy_folder,
         utc_hour_offset: int,
         weather_para_file=None,
-        para_num=None,
     ):
-        if weather_para_file is None:
-            weather_para_file = cls.hrrr_paras
+
         return cls(
             para_file=weather_para_file,
             weather=weather,
@@ -553,5 +548,4 @@ class WeatherDataPrep:
             t1=dt.datetime.now(),
             prefix="hrrr_hist_",
             utc_hour_offset=utc_hour_offset,
-            para_num=para_num,
         )

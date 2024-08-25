@@ -4,7 +4,6 @@ from functools import partial
 import os.path as osp
 from typing import Tuple
 
-import pytz
 import torch
 from dateutil import parser
 import mlflow
@@ -71,7 +70,9 @@ def hist_load(
     """
     config = Config(config_file)
     logger.info(f"... Check hist_load at {config.site_parent_folder}\n")
-    dm = dpm.load(config, prefix=prefix, suffix=suffix)
+    dm = None
+    if not create:
+        dm = dpm.load(config, prefix=prefix, suffix=suffix)
     if not dm or create:
         logger.info("No existing manager detected or replace existing manager...\n")
         dm = Dpmb(

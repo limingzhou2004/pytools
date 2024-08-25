@@ -16,14 +16,14 @@
  rect = [50.0, 50.0, 50.0, 50.0]
  t0="2018-01-01"
  t1="2018-01-04"
- #hrrr_paras_file = "data_prep/hrrr_paras_pynio.txt"
  description = "Zone Capital of NYISO"
  comments = """name is used for database query and must match what the database use; while alias is used for setting up
   the folder structure"""
  #envtest = "$ENV_TEST"
 
 [load]
- schema = "iso"
+ db_name="daf"
+ db_schema = "iso"
  table = "nyiso_hist_load"
  table_iso_fst = "nyiso_fst_load"
  table_our_fst = "nyiso_fst_load_ours"
@@ -31,12 +31,12 @@
  datetime_column = "timestamp"
  daylightsaving_col = "daylightsaving"
  load_column = "load"
+ #relative to the config folder
  sql_template_file = "sql_template/nyiso_sql_template.toml"
  #reasonable value range limit
  limit = [0, 99999]
  lag_hours = 168
  utc_to_local_hours = -5
- #load_lag_start = 72, to delete
  fst_hours =[1, 6, 24]
 
 [weather]
@@ -44,9 +44,10 @@ hist_weather_pickle = "../data/grib2_folder_1.pkl"
 folder_col_name = "folder"
 filename_col_name = "filename"
 type_col_name = "type"
+hrrr_paras_file = "data_prep/hrrr_paras_cfgrib.txt"
 
 hrrr_hist = ["utah"] #["hrrr2", "utah"]
-hrrr_predict = ["hrrr_fst"]
+hrrr_predict = "hrrr_fst"
 
 [model]
 y_label = "load"
