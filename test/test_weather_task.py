@@ -26,7 +26,7 @@ class TestWeatherTask:
         assert res.load_data.train_data.shape[0] >= 2
 
     def test_hist_weather_from_inventory(self):
-        dm = hist_weather_prepare_from_report(config_file=self.config_file, n_cores=8)
+        dm = hist_weather_prepare_from_report(config_file=self.config_file, n_cores=1)
         assert dm.weather.weather_train_data.standardized_data.shape[0]>1
 
 
