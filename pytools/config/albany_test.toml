@@ -5,7 +5,7 @@
 [site]
  timezone = "US/Eastern"
  state = "NY"
- base_folder = "/Users/limingzhou/zhoul/work/energy/sites/albany-test"
+ base_folder = "~/zhoul/work/energy/sites/albany-test"
  name = "Albany-NY"
  alias = "albany-test"
  sql_location = "CAPITL"
