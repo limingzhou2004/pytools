@@ -185,7 +185,7 @@ class Config:
 
         """
         return os.path.join(
-            self._base_folder,
+            #self._base_folder,
             self.site_parent_folder,
             prefix + self.site_pdt.alias + class_name + suffix + extension,
         )
