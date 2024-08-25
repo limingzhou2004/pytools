@@ -1,5 +1,6 @@
 import os
 import os.path as osp
+from pathlib import Path
 from typing import Dict, List, Tuple, Union
 
 import numpy as np
@@ -143,6 +144,8 @@ class Config:
         self.filename = filename
         self.toml_dict = envtoml.load(filename)
         base_folder = self.toml_dict["site"].get("base_folder")
+        home = str(Path.home())
+        base_folder = base_folder.replace('~', home)
         self._base_folder = (
             base_folder if base_folder.endswith("/") else base_folder + "/"
         )
