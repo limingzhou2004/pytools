@@ -161,15 +161,12 @@ class DataPrepManager:
         del raw_load_data[self.load_name]
 
         calendar_data = raw_load_data
-        lag_start = lag_hours
 
         # load data are complete for lagged data
-        lag_set = []
-        for h in fst_horizon:
-            lag_set.append(self.add_lag(
-            self.data_standard_load, start=lag_start, order=h))
+        lag_data = self.add_lag(
+        self.data_standard_load, start=1, order=lag_hours+max(fst_horizon))
 
-        return np.stack(lag_set, axis=0), calendar_data, data_standard_load
+        return lag_data, calendar_data, data_standard_load
 
     def clear_lag_load(self):
         self.data_standard_load_lag = None
@@ -197,7 +194,7 @@ class DataPrepManager:
             df.shift(start).fillna(value=mean).rename(columns={col_name: col_name + f'_{start}'})
         )
         for i in range(start, start+order):
-            df_lag[f'load_{i}'] = df.shift(i).fillna(value=mean)
+            df_lag[f'load_{i}'] = df.shift(i).fillna(value=mean).copy()
         return df_lag
 
     def build_weather(

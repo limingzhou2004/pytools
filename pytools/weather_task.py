@@ -138,11 +138,14 @@ def train_data_assemble(
 
     """
     d: DataPrepManager = hist_load(config_file=config_file, create=False)
+
     h_weather = d.weather.get_weather_train()  
+    c: Config = Config(config_file)
+    
     lag_data, calendar_data, data_standard_load = d.process_load_data(
-        d.load_data, max_lag_start=168, 
+        d.load_data, lag_hours=c.load_pdt.lag_hours, fst_horizon=c.load_pdt.fst_hours
     )
-    cols_lag = list(lag_data)
+    cols_lag = list(lag_data.keys())
     cols_calendar = list(calendar_data)
     cols_load = list(data_standard_load)
     join_load, join_wdata = d.reconcile(

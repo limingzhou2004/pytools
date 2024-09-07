@@ -37,12 +37,12 @@ paras = """
 
 def test_extract_data_from_grib2():
     paras = get_paras_from_cfgrib_file(cfgrib_paras_file)
-    ret = extract_data_from_grib2(fn=fn, lat=43, lon=-73, radius=30, paras=paras,return_latlon=False)
+    ret, envelope = extract_data_from_grib2(fn=fn, lat=43, lon=-73, radius=30, paras=paras,return_latlon=False)
     #south-north, west-east, paras
-    assert ret.shape==(11,21,16)
+    assert ret.shape==(21,21,16)
 
 def test_get_paras_from_cfgrib_file():
-    ret = get_paras_from_cfgrib_file(cfgrib_paras_file)
+    ret= get_paras_from_cfgrib_file(cfgrib_paras_file)
 
     assert len(ret['2m'])==4
     assert len(ret['10m'])==3

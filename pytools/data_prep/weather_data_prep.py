@@ -291,7 +291,7 @@ class WeatherDataPrep:
             res = extract_data_from_grib2(
                 fn=fn, lon=center[0],  
                 lat=center[1], radius=rect, paras=p, 
-                return_latlon=return_latlon, is_utah=is_utah) 
+                return_latlon=return_latlon) 
             if self.x_grid is None:
                 self.x_grid = res[1].data
                 self.y_grid = res[2].data
