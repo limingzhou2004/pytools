@@ -266,7 +266,10 @@ class WeatherDataPrep:
         df = pd.read_pickle(get_file_path(fn=inventory_file, this_file_path=__file__))
         df = df[(df['timestamp']>=t0) & (df['timestamp']<=t1)]
 
+        envelope = []
+
         def single_row_process(row):
+            nonlocal envelope
 
             filename = getattr(row,filename_col_name)
             fn = os.path.join(getattr(row,folder_col_name), filename)
@@ -291,13 +294,12 @@ class WeatherDataPrep:
             res = extract_data_from_grib2(
                 fn=fn, lon=center[0],  
                 lat=center[1], radius=rect, paras=p, 
-                return_latlon=return_latlon) 
+                return_latlon=return_latlon, envelope=envelope)
+            envelope = res[1] 
             if self.x_grid is None:
-                self.x_grid = res[1].data
-                self.y_grid = res[2].data
-                return timestamp, res[0]
-            else:
-                return timestamp, res
+                self.x_grid = res[2].data
+                self.y_grid = res[3].data
+            return timestamp, res[0]
         
         def df_block_process(df_sub):
             data_dict={}
