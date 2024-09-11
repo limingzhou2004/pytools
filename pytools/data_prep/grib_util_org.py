@@ -18,7 +18,7 @@ from typing import List, Tuple, Union, Dict
 import pandas as pd
 import numpy as np
 import pendulum as pu
-import polars as pl
+#import polars as pl
 from tqdm import tqdm
 from pytools.data_prep.get_datetime_from_grib_file_name import get_datetime_from_utah_file_name
 
@@ -38,21 +38,22 @@ col_timestamp = 'timestamp'
 col_complete_timestamp = 'cplt_timestamp'
 
 
-def make_stats(fn=None):
+def make_stats(fn=None, i=1):
     if not fn:
         fn = os.path.join(os.path.dirname(__file__),'../data/hrrr_stats_summary.csv')
     #load all pickle files for batch no from 0
     dfs = []
-    for i in range(100):
-        pkl_path = os.path.join(os.path.dirname(__file__), f'../data/grib2_folder_{i}.pkl')
-        if exists(pkl_path):
-            dfs.append(pd.read_pickle(pkl_path))
-        else:
-            break
+    #for i in range(100):
+    pkl_path = os.path.join(os.path.dirname(__file__), f'../data/grib2_folder_{i}.pkl')
+    if exists(pkl_path):
+        dfs.append(pd.read_pickle(pkl_path))
+    else:
+        print(f"{fn} file not found!")
+        return
     df = pd.concat(dfs)
     df['year'] = df[col_complete_timestamp].apply(lambda t: t.year)
     df['month'] = df[col_complete_timestamp].apply(lambda t: t.month)
-    dfg = df[df[col_timestamp].isna()==False].groupby(by=['year','month'])[col_complete_timestamp].count()
+    dfg = df[df[col_timestamp].isna() == False].groupby(by=['year','month'])[col_complete_timestamp].count()
     dfg2 = df[df[col_timestamp].isna()].groupby(['year', 'month'])[col_complete_timestamp].count()
     dfg = pd.merge(dfg, dfg2, on=['year', 'month'], how='left')
     dfg.columns = ['count', 'missing']
@@ -112,6 +113,9 @@ def main():
 if __name__ == '__main__':
 # usage, python -m  pytools.data_prep.grib_util_org 0
     if len(sys.argv) > 1:
-        load_files(batch_no=int(sys.argv[1]))
-    else:
-        make_stats()
+        if sys.argv[1]=='summary':
+            make_stats(i=int(sys.argv[2]))
+
+        else:
+            load_files(batch_no=int(sys.argv[1]))
+    

@@ -24,18 +24,19 @@ def get_npz_train_weather_file_name(cfg: Config, suffix) -> str:
     return save_folder
 
 
-def get_training_data(cfg: Config, suffix, cat_fraction):
+def get_training_data(cfg: Config, suffix, fst_hour, cat_fraction):
     """
     Get training weather data
 
     Args:
         cfg: the Config object
+        fst_hour: forecast horizon in hours
         cat_fraction: fraction for train|validate|test
 
     Returns: WeatherData object
 
     """
-    npz_file = get_npz_train_weather_file_name(cfg, suffix)
+    npz_file = get_npz_train_weather_file_name(cfg, suffix+f'_f{fst_hour}')
     if os.path.exists(npz_file):
         data = load_npz_as_dict(npz_file)
         return WeatherDataSetBuilder(**data, cat_fraction=cat_fraction)

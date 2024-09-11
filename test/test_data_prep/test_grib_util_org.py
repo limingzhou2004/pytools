@@ -11,6 +11,6 @@ def test_load_files():
 
 @pytest.mark.skip(reason='grib files')
 def test_make_stats():
-    make_stats()
+    make_stats(i=1)
 
     assert 1==1

@@ -4,7 +4,6 @@ from functools import partial
 import os.path as osp
 from typing import Tuple
 
-import pytz
 import torch
 from dateutil import parser
 import mlflow
@@ -44,6 +43,7 @@ from pytools.config import Config
 # use hour 0-5 forecast as history to train models, also called analysis
 
 #nam_hist_max_fst_hour = 5
+#nam_hist_max_fst_hour = 5
 hrrr_hist_max_fst_hour = 0
 logger = get_logger("weather_tasks")
 weather_data_file_name = 'weather_data.npz'
@@ -70,7 +70,9 @@ def hist_load(
     """
     config = Config(config_file)
     logger.info(f"... Check hist_load at {config.site_parent_folder}\n")
-    dm = dpm.load(config, prefix=prefix, suffix=suffix)
+    dm = None
+    if not create:
+        dm = dpm.load(config, prefix=prefix, suffix=suffix)
     if not dm or create:
         logger.info("No existing manager detected or replace existing manager...\n")
         dm = Dpmb(
@@ -88,7 +90,7 @@ def hist_load(
     return dm
 
 
-def hist_weather_prepare_from_report(config_file:str, n_cores=1,prefix='',suffix='v0'):
+def hist_weather_prepare_from_report(config_file:str, n_cores=1, suffix='v0'):
     d = hist_load(config_file=config_file, create=False)
     logger.info(f"Creating historical npy data from {d.t0} to {d.t1}...\n")
 
@@ -122,26 +124,28 @@ def hist_weather_prepare_from_report(config_file:str, n_cores=1,prefix='',suffix
 
 
 def train_data_assemble(
-    config_file: str, fst_horizon=1,suffix='v0'
+    config_file: str, suffix='v0', 
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Assemble training data. Save to a npz file.
 
     Args:
         config_file:
-        grib_type:
+        fst_horizon: forecast horizon, 1, 6, 24
+        suffix: id, will add fst_horizon
 
     Returns: DataPrepManager with load and hist weather organized for training
 
     """
     d: DataPrepManager = hist_load(config_file=config_file, create=False)
-   # w_data = np.load(osp.join(config.site_parent_folder, weather_data_file_name))
-    h_weather = d.weather.get_weather_train()#.standardized_data #w_data['data']
 
+    h_weather = d.weather.get_weather_train()  
+    c: Config = Config(config_file)
+    
     lag_data, calendar_data, data_standard_load = d.process_load_data(
-        d.load_data, max_lag_start=fst_horizon,
+        d.load_data, lag_hours=c.load_pdt.lag_hours, fst_horizon=c.load_pdt.fst_hours
     )
-    cols_lag = list(lag_data)
+    cols_lag = list(lag_data.keys())
     cols_calendar = list(calendar_data)
     cols_load = list(data_standard_load)
     join_load, join_wdata = d.reconcile(
@@ -172,24 +176,23 @@ def train_data_assemble(
 
 def train_model(
     config_file: str,
-    ahead_hours: int,
+    fst_hours: int,
     train_options,
     tracking_uri,
     model_uri,
     experiment_name,
     tags="",
-    grib_type: wp.GribType = wp.GribType.hrrr,
 ):
     cfg = Config(config_file)
     cat_fraction = (
         train_options.cat_fraction if hasattr(train_options, "cat_fraction") else None
     )
-    data = get_training_data(cfg, grib_type, cat_fraction)
+    data = get_training_data(cfg, cat_fraction, fst_hour=fst_hours)
     weather_para = data.get_weather_para()
     d = hist_load(config_file=config_file, create=False)
     train_data, validation_data, test_data = prepare_train_data(
         data,
-        ahead_hrs=ahead_hours,
+        ahead_hours=fst_hours,
         batch_size=train_options.batch_size,
         num_workers=None,
         full_data=cat_fraction[0] == 1,
@@ -334,9 +337,6 @@ def main(args):
 
     """
 
-    task_list = [task_1, task_2, task_3, task_4, task_5, task_6, task_7]
-    pa = ArgClass(args, task_list=task_list)
-    args = pa.construct_args_dict()
     task_dict = {
         "task_1": task_1,
         "task_2": task_2,
@@ -346,7 +346,9 @@ def main(args):
         "task_6": task_6,
         "task_7": task_7,
     }
-    fun = task_dict[args.pop("option")]
+    pa = ArgClass(args, list(task_dict.values()))
+    fun, args = pa.construct_args()
+
     return fun(**args)
 
 

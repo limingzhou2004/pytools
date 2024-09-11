@@ -6,23 +6,53 @@ import numpy as np
 import pendulum as pu
 import pytest
 import xarray as xr
-import rioxarray
-
-from airflow.operators.python import ExternalPythonOperator
+# import rioxarray
 
 
-from pytools.data_prep.grib_utils import download_hrrr, download_utah_file_extract, find_missing_grib2, print_grib2_info, find_ind_fromlatlon, extract_a_file, decide_grib_type
+from pytools.data_prep.grib_utils import download_hrrr, download_utah_file_extract, extract_data_from_grib2, find_missing_grib2, get_paras_from_cfgrib_file, print_grib2_info, find_ind_fromlatlon, extract_a_file, decide_grib_type
 
 
-def test_extract_a_file():
+hrrr_obs_path = '/Users/limingzhou/zhoul/work/energy/grib2/hrrrdata'
+fn = hrrr_obs_path + '/hrrrsub_2020_01_01_00F0.grib2'
 
-    assert 1==1
+
+cfgrib_paras_file = 'pytools/data_prep/hrrr_paras_cfgrib.txt'
+
+paras = """
+0	19	0	0	1	0	255	0	Visibility
+0	2	22	0	1	0	255	0	Wind speed (gust)
+0	3	0	0	1	0	255	0	Pressure
+0	0	0	0	1	0	255	0	Temperature
+0	0	0	0	103	2	255	0	Temperature
+0	1	0	0	103	2	255	0	Specific humidity
+0	0	6	0	103	2	255	0	Dewpoint temperature
+0	1	1	0	103	2	255	0	Relative humidity
+0	2	2	0	103	10	255	0	u-component of wind
+0	2	3	0	103	10	255	0	v-component of wind
+0	4	7	0	1	0	255	0	Downward short-wave radiation flux
+0	3	18	0	1	0	255	0	Planetary boundary layer height
+0	1	8	0	1	0	255	0	Total precipitation
+""".split('\n')
+
+
+def test_extract_data_from_grib2():
+    paras = get_paras_from_cfgrib_file(cfgrib_paras_file)
+    ret, envelope = extract_data_from_grib2(fn=fn, lat=43, lon=-73, radius=30, paras=paras,return_latlon=False)
+    #south-north, west-east, paras
+    assert ret.shape==(21,21,16)
+
+def test_get_paras_from_cfgrib_file():
+    ret= get_paras_from_cfgrib_file(cfgrib_paras_file)
+
+    assert len(ret['2m'])==4
+    assert len(ret['10m'])==3
+    assert len(ret['surface'])==9
 
 @pytest.mark.skip(reason='large binary files needed for the test')
 def test_read_grib2():
-    hrrr_obs_path = '/Users/limingzhou/zhoul/work/energy/grib2/hrrrdata'
-    fn = hrrr_obs_path + '/hrrrsub_2020_01_01_00F0.grib2'
-    #ds = xr.open_dataset(fn, engine="pynio")
+    # hrrr_obs_path = '/Users/limingzhou/zhoul/work/energy/grib2/hrrrdata'
+    # fn = hrrr_obs_path + '/hrrrsub_2020_01_01_00F0.grib2'
+    ds = xr.open_dataset(fn, engine="cfgrib")
     #arr=ds['gridlat_0'].data 
     #ds['gridlat_0'].Dx #Dy
     #dd=ds['APCP_P8_L1_GLC0_acc'].data

@@ -1,4 +1,5 @@
 
+from collections import OrderedDict
 from functools import partial
 import glob
 from itertools import chain
@@ -9,7 +10,8 @@ import sys
 import time
 from typing import List, Tuple, Union, Dict
 
-from pytools.retry.api import retry
+
+import cartopy.crs as ccrs
 import pandas as pd
 import pendulum as pu
 import geopandas
@@ -19,13 +21,28 @@ from tqdm import tqdm
 from shapely.geometry import Point
 import xarray as xr
 
+from pytools.retry.api import retry
 from pytools.data_prep.get_datetime_from_grib_file_name import get_datetime_from_grib_file_name
 
 
 hrrr_url_str_template = 'http://nomads.ncep.noaa.gov/cgi-bin/filter_hrrr_2d.pl?file=hrrr.t{HH}z.wrfsfcf{FHH}.grib2&lev_10_m_above_ground=on&lev_2_m_above_ground=on&lev_surface=on&var_APCP=on&var_ASNOW=on&var_DPT=on&var_DSWRF=on&var_GUST=on&var_HPBL=on&var_PRES=on&var_RH=on&var_SNOD=on&var_SNOWC=on&var_SPFH=on&var_TCDC=on&var_TMP=on&var_UGRD=on&var_VBDSF=on&var_VDDSF=on&var_VGRD=on&var_VIS=on&var_WIND=on&leftlon=0&rightlon=360&toplat=90&bottomlat=-90&dir=%2Fhrrr.YYYYMMDD%2Fconus'
 
 
+# HRRR settings
+HRRR_DX = 3
+HRRR_DY = 3
+HRRR_lat_name = 'latitude'
+HRRR_lon_name = 'longitude'
 
+
+def get_LCC_proj():
+    return ccrs.LambertConformal(central_longitude=262.5, 
+                                   central_latitude=38.5, 
+                                   standard_parallels=(38.5, 38.5),
+                                    globe=ccrs.Globe(semimajor_axis=6371229,
+                                                     semiminor_axis=6371229))
+
+@DeprecationWarning
 def print_grib2_info(fn:str):
     ds = xr.open_dataset(fn, engine="pynio")
     ds['gridlat_0'].data 
@@ -44,18 +61,68 @@ def _find_nearest_index(val:float, arr:np.ndarray) -> Tuple[int,int]:
     arr = np.abs(arr-val)
     ind = np.argmin(arr)
 
-    return np.unravel_index(ind, np.array(arr).shape)
+    return ind
+
+    #return np.unravel_index(ind, np.array(arr).shape)
 
 
 def find_ind_fromlatlon(lon:float, lat:float, arr_lon:np.ndarray, arr_lat:np.ndarray) -> Tuple[int,int]:
-    x_ind = _find_nearest_index(lon, arr_lon)[0]
-    y_ind = _find_nearest_index(lat, arr_lat)[1]
+    # array dim, lat, lon
+    x_ind = _find_nearest_index(lon, arr_lon)
+    y_ind = _find_nearest_index(lat, arr_lat)
 
     return x_ind, y_ind
 
-def extract_data_from_grib2(fn:str, lon:float, lat:float, radius:Union[int,Tuple[int, int, int, int]], paras:List[str], 
-return_latlon:bool=False, 
-is_utah=False)->np.ndarray:
+
+def _extract_a_group(fn:str, group:str, paras: List[str], exatract_latlon:bool=False):
+    # group of 2m, 10m, and surface
+    backend_kwargs={'filter_by_keys': {'typeOfLevel': 'heightAboveGround', 'level': 10}}
+
+    if group=='2m':
+        backend_kwargs['filter_by_keys']['level'] = 2
+    if group=='surface':
+        backend_kwargs['filter_by_keys'] = {'stepType': 'instant',                                    'typeOfLevel': 'surface'}
+    dat = xr.open_dataset(fn, engine='cfgrib', backend_kwargs=backend_kwargs)
+    dr = xr.Dataset()
+    lat = HRRR_lat_name
+    lon = HRRR_lon_name
+    if exatract_latlon:
+        return dat[lon].data - 360 if dat[lon].data.max()> 180 else dat[lon].data, dat[lat].data
+    for p in paras:
+        dr[p] = dat[p]
+    return dr
+
+
+def _get_evelope_ind(lon:float,lat:float, radius, arr_lon, arr_lat):
+    proj_latlon = ccrs.PlateCarree()
+    projection = get_LCC_proj()
+    coords = projection.transform_points(src_crs=proj_latlon, x=arr_lon, y=arr_lat)
+    arr_lat_to_lcc = coords[:,0,1]
+    arr_lon_to_lcc = coords[0,:,0] 
+    coord = projection.transform_point(x=lon, y=lat, src_crs=proj_latlon)
+    lat_to_lcc = coord[1]
+    lon_to_lcc = coord[0]
+    delta_x = HRRR_DX
+    delta_y = HRRR_DY
+
+    if isinstance(radius, int):
+        east_dist = radius
+        west_dist = radius 
+        north_dist = radius 
+        south_dist = radius
+    else:
+        east_dist, west_dist, south_dist, north_dist = radius
+    
+    center_x_ind, center_y_ind = find_ind_fromlatlon(lat=lat_to_lcc, lon=lon_to_lcc, arr_lon=arr_lon_to_lcc, arr_lat=arr_lat_to_lcc)
+    east_ind = ceil(center_x_ind+east_dist/delta_x)
+    west_ind = floor(center_x_ind-west_dist/delta_x)
+    south_ind = floor(center_y_ind-south_dist/delta_y)
+    north_ind = ceil(center_y_ind+north_dist/delta_y) 
+    return west_ind, east_ind, south_ind, north_ind
+
+
+def extract_data_from_grib2(fn:str, lon:float, lat:float, radius:Union[int,Tuple[int, int, int, int]], 
+    paras:Dict, return_latlon:bool=False, envelope:List=None)->np.ndarray:
     """
     Extract a subset, based on a rectangle area. We assume all paras share the same grid. 
     Both lat/lon are increasing in the grid. The hrrr data has a grid of 1799 by 1059
@@ -71,49 +138,52 @@ is_utah=False)->np.ndarray:
     Returns:
         np.ndarray: 3D tensor extracted np array, west->east:south->north:parameter
     """
-    if fn.endswith('.grib2'):
-        print(f'process...{fn}')
-        ds = xr.load_dataset(fn, engine="pynio")
-    elif fn.endswith('.nc'):
-        ds = xr.load_dataset(fn, engine="scipy")
-    else:
-        raise Exception('only pynio and scipy are supported for engine')
+    ds_data = {}
+    for k in paras:
+        ds_data[k] = _extract_a_group(fn, k, paras[k])
 
-    delta_x = ds['gridlon_0'].Dx
-    delta_y = ds['gridlat_0'].Dy
-    if isinstance(radius, int):
-        east_dist = radius
-        west_dist = radius 
-        north_dist = radius 
-        south_dist = radius
-    else:
-        east_dist, west_dist, south_dist, north_dist = radius
- 
-    arr_lat = ds['gridlat_0'].data 
-    arr_lon = ds['gridlon_0'].data 
-    center_x_ind, center_y_ind = find_ind_fromlatlon(lat=lat, lon=lon, arr_lon=arr_lon, arr_lat=arr_lat)
-    east_ind = ceil(center_x_ind+east_dist/delta_x)
-    west_ind = floor(center_x_ind-west_dist/delta_x)
-    south_ind = floor(center_y_ind-south_dist/delta_y)
-    north_ind = ceil(center_y_ind+north_dist/delta_y) 
+    group='2m'
+    arr_lon, arr_lat = _extract_a_group(fn, k, paras[group], exatract_latlon=True)
+    if not envelope:
+        envelope = _get_evelope_ind(lon=lon, lat=lat, radius=radius, arr_lon=arr_lon, arr_lat=arr_lat) 
+
+    west_ind, east_ind, south_ind, north_ind = envelope[0], envelope[1], envelope[2], envelope[3] 
+
     arr_list = []
     # for u, v wind, the 3 dim, dim 0 for 10 and 80 m
     ground_2m_dim=0
   
-    for p in paras:
-        x = ds[p].data[west_ind:(east_ind+1), south_ind:(north_ind+1)]
-        if len(x.shape)>2:
-            x = ds[p].data[ground_2m_dim, west_ind:(east_ind+1), south_ind:(north_ind+1)]
-            
-        arr_list.append(x)
+    for k in paras:
+        for p in paras[k]:
+            ds = ds_data[k]
+            x = ds[p].data[south_ind:(north_ind+1), west_ind:(east_ind+1)]
+            if len(x.shape)>2:
+                x = ds[p].data[ground_2m_dim, south_ind:(north_ind+1), west_ind:(east_ind+1)]
+                
+            arr_list.append(x)
 
     if return_latlon:
-        return (np.stack(arr_list, axis=2), 
-                ds['gridlon_0'][west_ind:east_ind+1, south_ind:north_ind+1], 
-                ds['gridlat_0'][west_ind:east_ind+1, south_ind:north_ind+1])
+        return (np.stack(arr_list, axis=2), envelope,
+                ds[HRRR_lon_name][south_ind:north_ind+1, west_ind:east_ind+1], 
+                ds[HRRR_lat_name][south_ind:north_ind+1, west_ind:east_ind+1])
     else:
-        return np.stack(arr_list, axis=2)
+        return np.stack(arr_list, axis=2), envelope
+    
+def get_paras_from_cfgrib_file(paras_file:str)->Dict:
+    with open(paras_file) as f:
+        f.readline() #skip the header row
+        p_dict = {'2m': list(), '10m': list(), 'surface': list()}
+        for line in f:
+            kv = line.strip().split(',')
+            flag = kv[0].strip()
+            k = kv[4].strip()
+            v = kv[1].strip()
+            if flag=='1':
+                p_dict[k].append(v) 
 
+    return p_dict
+
+@DeprecationWarning
 def get_paras_from_pynio_file(para_file:str, is_utah=False) -> Dict:
     a = {}
     # It is possible to use file size to decide whether it is a utah file, >100 mb
@@ -121,7 +191,8 @@ def get_paras_from_pynio_file(para_file:str, is_utah=False) -> Dict:
     with open(para_file) as f:
         for line in f:
             kv = line.strip().split(',')
-            k = kv[0].strip(); v = kv[1].strip()
+            k = kv[0].strip()
+            v = kv[1].strip()
             # use 1h precipitation for Utah data
             if is_utah:
                 if k == 'APCP_P8_L1_GLC0_acc':

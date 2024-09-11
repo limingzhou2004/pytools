@@ -1,4 +1,6 @@
 import os
+import os.path as osp
+from pathlib import Path
 from typing import Dict, List, Tuple, Union
 
 import numpy as np
@@ -6,6 +8,8 @@ import pandas as pd
 from pydantic import BaseModel, FilePath, field_validator, validator
 import toml
 import envtoml
+
+from pytools.utilities import get_absolute_path, get_file_path
 
 US_state_abbvs=['AL',
 'AK',
@@ -74,6 +78,9 @@ US_timezones=['US/Alaska',
  'US/Samoa']
 
 
+
+
+
 class Site(BaseModel):
     timezone:str
     state:str
@@ -105,7 +112,8 @@ class Site(BaseModel):
 
 
 class Load(BaseModel):
-    schema:str
+    db_name:str
+    db_schema:str
     table:str #for hist
     table_iso_fst: str
     table_our_fst: str
@@ -117,16 +125,18 @@ class Load(BaseModel):
     limit: Tuple[float,float]
     lag_hours:int
     utc_to_local_hours:int 
-    load_lag_start:int
+    #load_lag_start:int # to delete
+    fst_hours: List[int]
 
 
 class Weather(BaseModel):
     hist_weather_pickle: str
     folder_col_name: str 
     filename_col_name: str 
+    hrrr_paras_file: str
     type_col_name: str 
     hrrr_hist: List[str]
-    hrrr_predict: List[str] 
+    hrrr_predict: str
 
 
 class Config:
@@ -134,11 +144,16 @@ class Config:
         self.filename = filename
         self.toml_dict = envtoml.load(filename)
         base_folder = self.toml_dict["site"].get("base_folder")
+        home = str(Path.home())
+        base_folder = base_folder.replace('~', home)
         self._base_folder = (
             base_folder if base_folder.endswith("/") else base_folder + "/"
         )
         # validate the settings via pydantic
-        self._add_base_folder(self.toml_dict["site"], "hrrr_paras_file")
+        if not self.toml_dict["site"].get('hrrr_paras_file', None):
+            self.toml_dict['site']['hrrr_paras_file']= get_absolute_path(__file__, 'data_prep/hrrr_paras_pynio.txt')
+        else:
+            self._add_base_folder(self.toml_dict["site"], "hrrr_paras_file")
         # use pydantic to validate the config
         self.site_pdt = Site(**self.toml_dict['site'])
         self.load_pdt = Load(**self.toml_dict['load'])
@@ -173,7 +188,7 @@ class Config:
 
         """
         return os.path.join(
-            self._base_folder,
+            #self._base_folder,
             self.site_parent_folder,
             prefix + self.site_pdt.alias + class_name + suffix + extension,
         )
@@ -198,14 +213,30 @@ class Config:
     @property
     def category(self):
         return self.toml_dict["category"]
+    
+    def automate_path(self, fn:str)->str:
+        """
+        Automatically decide the absolute path, for the three situations.
+        - absolute path
+        - relative to data_prep folder
+        - within the site folder
+
+        Args:
+            fn (str): file path in the config, relative or absolute
+
+        Returns:
+            str: Absolute path
+        """
+        if fn.startswith('/'): 
+            return fn
+        if fn.startswith('data_prep'):
+            return get_file_path(fn=fn, this_file_path=__file__)
+        
+        return osp.join(self.site_pdt.base_folder, fn)
 
     @property
     def load(self):
         return self.toml_dict["load"]
-
-    # @property
-    # def jar_config(self):
-    #     return self._join(self._base_folder, self.toml_dict["jar_config"]["address"])
 
     @property
     def model(self):

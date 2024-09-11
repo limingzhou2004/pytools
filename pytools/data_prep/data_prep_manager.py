@@ -60,8 +60,8 @@ class DataPrepManager:
         t1: str,
         load_data: ldp.LoadData,
         load_limit: Tuple[float, float],
-        max_load_lag_start: int = 1,
-        load_lag_order: int = 168,
+       # max_load_lag_start: int = 1,
+       # load_lag_order: int = 168,
         utc_to_local_hours: int = -5,
         load_name: str = "load",
         timestamp_name: str = "timestamp",
@@ -118,12 +118,12 @@ class DataPrepManager:
         )
         del raw_load_data[load_name]
         self.data_calendar = raw_load_data
-        self.max_load_lag_start = max_load_lag_start
-        self.load_lag_order = load_lag_order
+      #  self.max_load_lag_start = max_load_lag_start
+      #  self.load_lag_order = load_lag_order
         self.utc_to_local_hours = utc_to_local_hours
-        self.data_standard_load_lag = self.add_lag(
-            self.data_standard_load, start=max_load_lag_start, order=load_lag_order
-        )
+        # self.data_standard_load_lag = self.add_lag(
+        #     self.data_standard_load, start=max_load_lag_start, order=load_lag_order
+        # )
         self.weather: wp.WeatherDataPrep = None
         self.center = None
         self.rect = None
@@ -138,10 +138,11 @@ class DataPrepManager:
         self.para_num = para_num
 
     def process_load_data(
-        self, load_data: ldp.LoadData, max_lag_start=None
-    ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+        self, load_data: ldp.LoadData, lag_hours=168, fst_horizon:List[int]=None
+    ) -> tuple[Dict, pd.DataFrame, pd.DataFrame]:
         """
-        Process the LoadData to generate lag load, calendar, and target load
+        Process the LoadData to generate lag load, calendar, and target load. 
+        Return lag load as a dict, the key looks like `f_1`, and the value as a DF
 
         Args:
             load_data: LoadData.train_data
@@ -158,12 +159,22 @@ class DataPrepManager:
         )
         data_standard_load, _ = self.standardize(raw_load_data, field=self.load_name)
         del raw_load_data[self.load_name]
+
         calendar_data = raw_load_data
-        lag_start = self.max_load_lag_start if not max_lag_start else max_lag_start
+
+        # load data are complete for lagged data
         lag_data = self.add_lag(
-            self.data_standard_load, start=lag_start, order=self.load_lag_order
-        )
+        self.data_standard_load, start=1, order=lag_hours+max(fst_horizon))
+
         return lag_data, calendar_data, data_standard_load
+
+    def clear_lag_load(self):
+        self.data_standard_load_lag = None
+
+    def set_lag_load(self, start, order):
+        self.data_standard_load_lag = self.add_lag(
+            self.data_standard_load, start=start, order=order
+         )
 
     def add_lag(self, df: pd.DataFrame, start, order):
         """
@@ -180,10 +191,10 @@ class DataPrepManager:
         mean = df.mean()
         col_name = list(df)[0]
         df_lag = (
-            df.shift(1).fillna(value=mean).rename(columns={col_name: col_name + "_1"})
+            df.shift(start).fillna(value=mean).rename(columns={col_name: col_name + f'_{start}'})
         )
-        for i in range(2, start + order):
-            df_lag["load_" + str(i)] = df.shift(i).fillna(value=mean)
+        for i in range(start, start+order):
+            df_lag[f'load_{i}'] = df.shift(i).fillna(value=mean).copy()
         return df_lag
 
     def build_weather(
@@ -211,7 +222,6 @@ class DataPrepManager:
         w = self.build_hist_weather(
             weather=weather,
             weather_para_file=weather_para_file,
-            para_num=self.para_num,
         )
         w.set_utc_to_local_hours(self.utc_to_local_hours)
         self.weather = w
@@ -324,7 +334,6 @@ class DataPrepManager:
         self,
         weather: Dict,
         weather_para_file=None,
-        para_num=None,
     ) -> wp.WeatherDataPrep:
         """
         Build a WeatherDataPrep object
@@ -342,7 +351,6 @@ class DataPrepManager:
             dest_npy_folder=self.get_npy_folder(),
             weather_para_file=weather_para_file,
             utc_hour_offset=self.utc_to_local_hours,
-            para_num=para_num,
         )
 
         return self.weather
@@ -398,7 +406,7 @@ class DataPrepManager:
         self, df: pd.DataFrame, field: str, min_val: float, max_val: float
     ) -> pd.DataFrame:  # load data have to be checked
         df.loc[(df[field] < min_val) | (df[field] > max_val)] = np.nan
-        return df.fillna(method="backfill")
+        return df.bfill() #fillna(method="backfill")
 
     def reconcile(
         self, load_df: pd.DataFrame, date_column: str, w_data: wd.WeatherData

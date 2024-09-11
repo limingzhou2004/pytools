@@ -17,7 +17,7 @@ from pytools.utilities import get_absolute_path
 
 
 class TestWeatherTask:
-    config_file = get_absolute_path(__file__, "../../pytools/config/albany_test.toml")
+    config_file = get_absolute_path(__file__, "../pytools/config/albany_test.toml")
 
     def test_hist_load(self, ):
         #monkeypatch.setattr(LoadData, "query_train_data", mock_train_load)
@@ -26,14 +26,14 @@ class TestWeatherTask:
         assert res.load_data.train_data.shape[0] >= 2
 
     def test_hist_weather_from_inventory(self):
-        dm = hist_weather_prepare_from_report(config_file=self.config_file, n_cores=8)
-        assert dm.weather.weather_train_data.standardized_data.shape[0]>1
+        dm = hist_weather_prepare_from_report(config_file=self.config_file, n_cores=1)
+        assert dm.weather.weather_train_data.standardized_data.shape==(73, 35, 35, 16)
 
 
     @pytest.mark.parametrize(
         "shape_cal, shape_weather",
         [
-            ((68, 7), (68, 35, 35, 1)),
+            ((68, 7), (68, 35, 35, 16)),
         ],
     )
     def test_train_data_assemble(self, shape_cal, shape_weather):

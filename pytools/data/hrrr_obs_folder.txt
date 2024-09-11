@@ -9,3 +9,11 @@
 "/Users/limingzhou/zhoul/work/energy/utah_2",0
 "/Users/limingzhou/zhoul/work/energy/utah_3",0
 "/Volumes/T7 Gray/hrrr_obs_2023",0
+"/Volumes/T7 Shield/noaa_obs_data/grib2_2018",1
+"/Volumes/T7 Shield/noaa_obs_data/grib2_2018b",1
+"/Volumes/T7 Shield/noaa_obs_data/hrrr_obs_2023",1
+"/Volumes/T7 Shield/noaa_obs_data/grib2_2023",1
+"/Volumes/T7 Shield/noaa_obs_data/utah",1
+"/Volumes/T7 Shield/noaa_obs_data/utah1",1
+"/Volumes/T7 Shield/noaa_obs_data/utah_2",1
+"/Volumes/T7 Shield/noaa_obs_data/utah_3",1

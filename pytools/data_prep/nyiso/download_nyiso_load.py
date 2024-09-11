@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import pytz
 from zipfile import ZipFile
 
@@ -64,12 +64,12 @@ def get_forecast_load(client, t0, cur_time):
 def get_hist_load(client, t0, t1):
     c = client_factory('NYISO')
 
-    now = pytz.utc.localize(datetime.utcnow())
+    #now = pytz.utc.localize(datetime.utcnow())
+    now = datetime.now(timezone.utc)
     today = now.astimezone(pytz.timezone(c.TZ_NAME)).date()
     content_list = c.fetch_csvs(today, 'pal')
-    assert(len(content_list), 1)
-    assert(content_list[0].split('\r\n')[0],
-                        '"Time Stamp","Time Zone","Name","PTID","Load"')
+    assert len(content_list) == 1
+    assert content_list[0].split('\r\n')[0]=='"Time Stamp","Time Zone","Name","PTID","Load"'
     return 
 
 

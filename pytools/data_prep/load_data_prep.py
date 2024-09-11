@@ -34,6 +34,8 @@ class LoadData:
         self,
         timezone:str,
         state:str,
+        db_name:str,
+        db_schema:str,
         table_name: str,
         site_name: str,
         date_col: str,
@@ -63,6 +65,8 @@ class LoadData:
         """
         self.timezone=timezone
         self.state=state
+        self.db_name=db_name
+        self.db_schema=db_schema
         self.table_name = table_name
         self.site_name = site_name
         self.date_col = date_col
@@ -232,7 +236,7 @@ class LoadData:
         if not isinstance(date_col, List):
             date_col = [date_col]
         return Ps.read_sql_timeseries(
-            pu.get_pg_conn(), qstr=qstr, date_col=date_col
+            pu.get_pg_conn(db=self.db_name, schema=self.db_schema), qstr=qstr, date_col=date_col
         )
 
 
@@ -255,6 +259,8 @@ def build_from_toml(config_file: Union[str, Config], t0: str, t1: str) -> LoadDa
     ld = LoadData(
         timezone=config.site_pdt.timezone,
         state = config.site_pdt.state,
+        db_name=config.load_pdt.db_name,
+        db_schema=config.load_pdt.db_schema,
         table_name=config.load["table"],
         site_name=config.site["sql_location"],
         date_col=config.load["datetime_column"],

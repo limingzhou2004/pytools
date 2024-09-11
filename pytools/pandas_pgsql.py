@@ -108,5 +108,6 @@ class PandasSql:
         df.to_sql(tbl_name, engine, schema=schema, if_exists=if_exists, dtype=new_dtype)
 
     @staticmethod
-    def read_sql_timeseries(engine, qstr, date_col, chunk_size=20000):
-        return pd.read_sql(qstr, engine, parse_dates=date_col)  # chunksize=chunk_size)
+    def read_sql_timeseries(engine, qstr, date_col): #, chunk_size=20000):
+        with engine.connect() as conn:
+            return pd.read_sql(qstr, conn.connection, parse_dates=date_col)  

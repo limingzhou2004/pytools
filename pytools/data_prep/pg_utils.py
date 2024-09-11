@@ -16,6 +16,7 @@ def get_pg_conn(port=5432, db='daf', schema='iso', para_airflow=None):
             server = os.getenv(db_config['server'])
             user = os.getenv(db_config['user'])
             pwd = os.getenv(db_config['password'])
+            
     else:
         server=para_airflow['pg_server']
         user=para_airflow['pg_user']
