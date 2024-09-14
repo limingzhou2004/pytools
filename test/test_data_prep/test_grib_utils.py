@@ -9,7 +9,7 @@ import xarray as xr
 # import rioxarray
 
 
-from pytools.data_prep.grib_utils import download_hrrr, download_utah_file_extract, extract_data_from_grib2, find_missing_grib2, get_paras_from_cfgrib_file, print_grib2_info, find_ind_fromlatlon, extract_a_file, decide_grib_type
+from pytools.data_prep.grib_utils import download_hrrr, download_utah_file_extract, extract_data_from_grib2, find_missing_grib2, get_herbie_str_from_cfgrib_file, get_paras_from_cfgrib_file, print_grib2_info, find_ind_fromlatlon, extract_a_file, decide_grib_type
 
 
 hrrr_obs_path = '/Users/limingzhou/zhoul/work/energy/grib2/hrrrdata'
@@ -40,6 +40,14 @@ def test_extract_data_from_grib2():
     ret, envelope = extract_data_from_grib2(fn=fn, lat=43, lon=-73, radius=30, paras=paras,return_latlon=False)
     #south-north, west-east, paras
     assert ret.shape==(21,21,16)
+
+
+def test_():
+    ret = get_herbie_str_from_cfgrib_file(cfgrib_paras_file)
+
+    assert ret.startswith(':TMP')
+    assert ret.endswith('10 m')
+
 
 def test_get_paras_from_cfgrib_file():
     ret= get_paras_from_cfgrib_file(cfgrib_paras_file)

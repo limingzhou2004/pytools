@@ -1,19 +1,19 @@
-used,key,name,unit,layer,utah
-1,t2m,2 metre temperature,k,2m,yes
-1,sh2,2 metre specific humidity,kg kg**-1,2m,yes
-1,d2m,2 metre dewpoint temperature,K,2m,yes
-1,r2,2 metre relative humidity,%,2m,yes
-1,vis,Visibility,m,surface,yes
-1,gust,Wind speed (gust),m s-1,surface,yes
-1,sp,Surface pressure,Pa,surface,yes
-1,t,Temperature,K,surface,yes
-1,snowc,snow cover,%,surface,yes
-0,sde,Snow depth,m,surface,yes
-0,tp,Total Precipitation,kg m -2,surface,no
-1,dswrf,Downward short-wave radiation flux,W m**-2,surface,yes
-1,vbdsf,Visible Beam Downward Solar Flux,W m**-2,surface,yes
-1,vddsf,Visible Diffuse Downward Solar Flux,W m**-2,surface,yes
-1,blh,Boundary layer height,m,surface,yes
-1,u10,10 metre U wind component,m s-1,10m,yes
-1,v10,10 metre V wind component,m s-1,10m,yes
-1,si10,10 metre wind speed,m s-1,10m,yes
+used,key,name,unit,layer,utah,code
+1,t2m,2 metre temperature,k,2m,yes,TMP
+1,sh2,2 metre specific humidity,kg kg**-1,2m,yes,SPFH
+1,d2m,2 metre dewpoint temperature,K,2m,yes,DPT
+1,r2,2 metre relative humidity,%,2m,yes, RH
+1,vis,Visibility,m,surface,yes,VIS
+1,gust,Wind speed (gust),m s-1,surface,yes,GUST
+1,sp,Surface pressure,Pa,surface,yes,PRES
+1,t,Temperature,K,surface,yes,TMP
+1,snowc,snow cover,%,surface,yes,SNOWC
+0,sde,Snow depth,m,surface,yes,SNOD
+0,tp,Total Precipitation,kg m -2,surface,no,ARCP
+1,dswrf,Downward short-wave radiation flux,W m**-2,surface,yes,DSWRF
+1,vbdsf,Visible Beam Downward Solar Flux,W m**-2,surface,yes,VBDSF
+1,vddsf,Visible Diffuse Downward Solar Flux,W m**-2,surface,yes,VDDSF
+1,blh,Boundary layer height,m,surface,yes,HPBL
+1,u10,10 metre U wind component,m s-1,10m,yes,UGRD
+1,v10,10 metre V wind component,m s-1,10m,yes,VGRD
+1,si10,10 metre wind speed,m s-1,10m,yes,WIND

@@ -169,7 +169,23 @@ def extract_data_from_grib2(fn:str, lon:float, lat:float, radius:Union[int,Tuple
     else:
         return np.stack(arr_list, axis=2), envelope
     
-def get_paras_from_cfgrib_file(paras_file:str)->Dict:
+
+def get_herbie_str_from_cfgrib_file(paras_file:str):
+    qstr = ':'
+    with open(paras_file) as f:
+        f.readline() #skip the header row
+        for line in f:
+            kv = line.strip().split(',')
+            code= kv[6].strip()
+            layer=kv[4].strip()
+            if layer.endswith('m'):
+                layer = layer.replace('m',' m').replace('  ', ' ')
+            qstr = qstr + code + ':' + layer + '|'        
+    # important to remove the last |; otherwise, all parameters will be included!
+    return qstr[:-1]
+
+
+def get_paras_from_cfgrib_file(paras_file:str, get_herbie_str:bool=False)->Dict:
     with open(paras_file) as f:
         f.readline() #skip the header row
         p_dict = {'2m': list(), '10m': list(), 'surface': list()}
@@ -182,26 +198,6 @@ def get_paras_from_cfgrib_file(paras_file:str)->Dict:
                 p_dict[k].append(v) 
 
     return p_dict
-
-@DeprecationWarning
-def get_paras_from_pynio_file(para_file:str, is_utah=False) -> Dict:
-    a = {}
-    # It is possible to use file size to decide whether it is a utah file, >100 mb
-
-    with open(para_file) as f:
-        for line in f:
-            kv = line.strip().split(',')
-            k = kv[0].strip()
-            v = kv[1].strip()
-            # use 1h precipitation for Utah data
-            if is_utah:
-                if k == 'APCP_P8_L1_GLC0_acc':
-                    k = k + '_1h'
-            # 1 to use;        
-            if int(v) == 1:
-                a[k] = int(v)
-
-    return a
 
 
 def extract_a_file(fn:str, para_file:str, lon:float, lat:float, radius:Union[int, Tuple[int, int, int, int]], min_utah_size_mb=100) -> np.ndarray:
@@ -270,7 +266,7 @@ def get_all_files(folders: Union[str, Tuple[str]], exclude_small_files=False, si
     return filenames
 
 
-def get_all_files_iter(folders: Union[str, Tuple[str]], exclude_small_files=False, size_kb_fileter=1024) -> List[str]:
+def get_all_files_iter(folders: Union[str, Tuple[str]], exclude_small_files=False, size_kb_fileter=1024):
     file_iter = iter([])
     if isinstance(folders, str):
         file_iter = chain(file_iter, os.scandir(folders))
@@ -412,13 +408,6 @@ def decide_grib_type(fn:str):
         return 'utah_grib'
     raise ValueError(f'{fn} unrecognized!')
     
-
-# def extract_datetime_from_utah_files(fn:str) -> np.datetime64:
-#     # TODO
-#     # convert string to datetime with regex
-    
-#     return
-
 
 def download_hrrr(cur_date:pu.datetime, fst_hour:int, tgt_folder:str):
     """
