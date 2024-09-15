@@ -185,7 +185,7 @@ def get_herbie_str_from_cfgrib_file(paras_file:str):
     return qstr[:-1]
 
 
-def get_paras_from_cfgrib_file(paras_file:str, get_herbie_str:bool=False)->Dict:
+def get_paras_from_cfgrib_file(paras_file:str)->Dict:
     with open(paras_file) as f:
         f.readline() #skip the header row
         p_dict = {'2m': list(), '10m': list(), 'surface': list()}
