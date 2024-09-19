@@ -175,7 +175,10 @@ def get_herbie_str_from_cfgrib_file(paras_file:str):
     with open(paras_file) as f:
         f.readline() #skip the header row
         for line in f:
+
             kv = line.strip().split(',')
+            if kv[0].strip()=='0':
+                continue
             code= kv[6].strip()
             layer=kv[4].strip()
             if layer.endswith('m'):
@@ -198,50 +201,6 @@ def get_paras_from_cfgrib_file(paras_file:str)->Dict:
                 p_dict[k].append(v) 
 
     return p_dict
-
-
-def extract_a_file(fn:str, para_file:str, lon:float, lat:float, radius:Union[int, Tuple[int, int, int, int]], min_utah_size_mb=100) -> np.ndarray:
-    """
-    Extract a grib2 file
-
-    Args:
-        fn (str): full file name
-        para_file (str): pamaremeter file
-        lon (float): center longitute
-        lat (float): center latitude
-        radius (Union[int, Tuple[int, int, int, int]]): distance from the center
-        min_utah_file_size: a utah file is larger than this size in mb
-
-    Returns:
-        np.ndarray: dimension of x, y, channel
-    """
-
-    # get the size of the file
-    file_size_mb=os.path.getsize(fn)/1e6
-    is_utah=True if file_size_mb>min_utah_size_mb else False
-    para_list = get_paras_from_pynio_file(fn, is_utah=is_utah)
-    data = extract_data_from_grib2(fn=fn, lon=lon, lat=lat, radius=radius, paras=para_list, is_utah=is_utah)
-    return data
-
-
-def read_utah_file_and_save_a_subset(fn:str, para_file:str, tgt_folder:str,
- rename_var:Dict={'APCP_P8_L1_GLC0_acc_1h':'APCP_P8_L1_GLC0_acc'}
- ):
-    # a = []
-    # with open(para_file) as f:
-    #     for line in f:
-    #         kv = line.strip().split(',')
-    #         k = kv[0]; v = kv[1]
-    #         # use 1h precipitation for Utah data
-    #         if k == 'APCP_P8_L1_GLC0_acc':
-    #             k = k + '_1h'
-    #         if int(v) == 1:
-    #             a.append(int(v))
-    a = get_paras_from_pynio_file(is_utah=True)
-    ds = xr.load_dataset(fn, engine='pynio')
-    ds2 = ds[a]
-    ds2 = ds2.rename_vars(rename_var)
-    ds2.to_netcdf(path=os.path.join(tgt_folder, fn.replace('grib2', 'nc')), engine='scipy')
 
 
 def get_all_files(folders: Union[str, Tuple[str]], exclude_small_files=False, size_kb_fileter=1024) -> List[str]:
