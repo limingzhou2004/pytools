@@ -5,7 +5,7 @@ from herbie import Herbie, FastHerbie, HerbieLatest  #, HerbieWait
 import pandas as pd
 import xarray as xr
 
-from pytools.data_prep.grib_utils import get_herbie_str_from_cfgrib_file
+from pytools.data_prep.grib_utils import get_herbie_str_from_cfgrib_file, get_paras_from_cfgrib_file
 
 
 
@@ -27,9 +27,17 @@ def download_obs_data_as_files(t0:str, t1:str, paras_file:str, save_dir:str, thr
             h.download(paras_str, verbose=False, overwrite=True)
                
 
+def process_xarray(keys:List[str], arr:xr.DataArray)->OrderedDict:
+    for k in keys:
+        for a in arr:
+            if k in a.variables:
+                
+    return
+
+
 def download_latest_data_file(paras_file:str, max_hrs)->List[xr.DataArray]:
     paras_str = get_herbie_str_from_cfgrib_file(paras_file=paras_file)
-
+    _, keys = get_paras_from_cfgrib_file(paras_file=paras_file)
     if isinstance(max_hrs, int):
         max_hrs = range(1, max_hrs+1)
     ret = OrderedDict()
@@ -37,6 +45,10 @@ def download_latest_data_file(paras_file:str, max_hrs)->List[xr.DataArray]:
         try: 
             H = HerbieLatest(model="hrrr", product='sfc', fxx=i)
             dt = H.xarray(search=paras_str,verbose=False,)
+
+            for d in dt:
+                list(dt[0].keys())
+
             ret[H.date + pd.to_timedelta(i, unit='h')] = dt
         except TimeoutError as ex:
             print(ex.strerror)

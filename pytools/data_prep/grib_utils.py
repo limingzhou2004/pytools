@@ -142,7 +142,7 @@ def extract_data_from_grib2(fn:str, lon:float, lat:float, radius:Union[int,Tuple
     for k in paras:
         ds_data[k] = _extract_a_group(fn, k, paras[k])
 
-    group='2m'
+    group='2 m'
     arr_lon, arr_lat = _extract_a_group(fn, k, paras[group], exatract_latlon=True)
     if not envelope:
         envelope = _get_evelope_ind(lon=lon, lat=lat, radius=radius, arr_lon=arr_lon, arr_lat=arr_lat) 
@@ -188,19 +188,24 @@ def get_herbie_str_from_cfgrib_file(paras_file:str):
     return qstr[:-1]
 
 
-def get_paras_from_cfgrib_file(paras_file:str)->Dict:
+def get_paras_from_cfgrib_file(paras_file:str)->Tuple[Dict, List[str]]:
     with open(paras_file) as f:
         f.readline() #skip the header row
-        p_dict = {'2m': list(), '10m': list(), 'surface': list()}
+        #p_dict = OrderedDict([('2m', list()), ('10m', list()), ('surface', list())])
+        p_dict = OrderedDict()
+        keys = list()
         for line in f:
             kv = line.strip().split(',')
             flag = kv[0].strip()
             k = kv[4].strip()
+            if k not in p_dict:
+                p_dict[k] = list()
             v = kv[1].strip()
+            keys.append(v)
             if flag=='1':
                 p_dict[k].append(v) 
 
-    return p_dict
+    return p_dict, keys
 
 
 def get_all_files(folders: Union[str, Tuple[str]], exclude_small_files=False, size_kb_fileter=1024) -> List[str]:
