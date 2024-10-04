@@ -47,27 +47,30 @@ def download_latest_data(paras_file:str, max_hrs, envelopes:List )->List[Ordered
         max_hrs = range(1, max_hrs+1)
     arr_list = []
     for t in max_hrs:
-        H = HerbieLatest(model="hrrr", product='sfc', fxx=t)
-        arr = H.xarray(search=paras_str,verbose=False,)
-        arr_list.append({H.date + pd.to_timedelta(t, unit='h'): arr})
+        try:
+            H = HerbieLatest(model="hrrr", product='sfc', fxx=t)
+            #arr is a list of three, 10 m, 2 m and surface
+            arr = H.xarray(search=paras_str,verbose=False,)
+            arr_list.append(arr)
+        except TimeoutError as ex:
+            print(ex.strerror)
+            break
 
     ret_timestamp = None
     ret_array = []
     for ev in envelopes:
         time_stamps = []
         dat_list = []
-        for hrs, arr in zip(max_hrs,arr_list):
-            try: 
-                dat = extract_data_from_grib2(fn_arr=arr,paras=group_paras,envelope=ev, return_latlon=False)
-                if ret_timestamp is None:
-                    t = H.date + pd.to_timedelta(hrs, unit='h')
-                    time_stamps.append(t)
-                dat_list.append(dat)               
-            except TimeoutError as ex:
-                print(ex.strerror)
+        for hrs, arr in zip(max_hrs[:len(arr_list)],arr_list):
+
+            dat, _ = extract_data_from_grib2(fn_arr=arr,paras=group_paras,envelope=ev, return_latlon=False)
+            if ret_timestamp is None:
+                t = H.date + pd.to_timedelta(hrs, unit='h')
+                time_stamps.append(t)
+            dat_list.append(dat)               
 
         if ret_timestamp is None:
-            ret_timestamp = np.ndarray(time_stamps)
+            ret_timestamp = time_stamps
         ret_array.append(np.stack(dat_list,axis=0))
 
     return ret_timestamp, ret_array

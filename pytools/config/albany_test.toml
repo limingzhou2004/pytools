@@ -13,7 +13,7 @@
  #center[lon, lat]
  center = [-73.0, 43.0]
  #[east, west, south, north]
- rect = [50.0, 50.0, 50.0, 50.0]
+ rect = [30.0, 30.0, 30.0, 30.0]
  t0="2018-01-01"
  t1="2018-01-04"
  description = "Zone Capital of NYISO"
@@ -40,6 +40,7 @@
  fst_hours =[1, 6, 24]
 
 [weather]
+envelope = [1548, 1568, 774, 794]
 hist_weather_pickle = "../data/grib2_folder_1.pkl"
 folder_col_name = "folder"
 filename_col_name = "filename"

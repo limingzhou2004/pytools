@@ -93,7 +93,7 @@ def _extract_a_group(fn:str, group:str, paras: List[str], extract_latlon:bool=Fa
     return dr
 
 
-def _extract_xrray(arr_ds:xr.Dataset, paras:List[str], extract_latlon=False):
+def _extract_xrray(arr_ds:List[xr.Dataset], paras:List[str], extract_latlon=False):
     dr = xr.Dataset()
     lat = HRRR_lat_name
     lon = HRRR_lon_name
@@ -104,14 +104,14 @@ def _extract_xrray(arr_ds:xr.Dataset, paras:List[str], extract_latlon=False):
         for d in arr_ds:
             if p in d:
                 dr[p] = d[p]
-    return
+    return dr
 
 
 def _extract_fn_arr(fn_arr, group, paras, extract_latlon=False):
     if isinstance(fn_arr, str):
         return _extract_a_group(fn=fn_arr, group=group, paras=paras, extract_latlon=extract_latlon)
     elif isinstance(fn_arr, List):    
-        return _extract_xrray(arr_ds=fn_arr, paras=paras[group], extract_latlon=extract_latlon)
+        return _extract_xrray(arr_ds=fn_arr, paras=paras, extract_latlon=extract_latlon)
     else:
         raise ValueError('the fn_arr must be a string of a file name, or a list of xr.Dataset')
 
@@ -144,8 +144,8 @@ def _get_evelope_ind(lon:float,lat:float, radius, arr_lon, arr_lat):
     return west_ind, east_ind, south_ind, north_ind
 
 
-def extract_data_from_grib2(fn_arr:str, lon:float, lat:float, radius:Union[int,Tuple[int, int, int, int]], 
-    paras:OrderedDict, return_latlon:bool=False, envelope:List=None)->np.ndarray:
+def extract_data_from_grib2(fn_arr:str, lon:float=None, lat:float=None, radius:Union[int,Tuple[int, int, int, int]]=None, 
+    paras:OrderedDict=None, return_latlon:bool=False, envelope:List=None)->np.ndarray:
     """
     Extract a subset, based on a rectangle area. We assume all paras share the same grid. 
     Both lat/lon are increasing in the grid. The hrrr data has a grid of 1799 by 1059
@@ -163,17 +163,21 @@ def extract_data_from_grib2(fn_arr:str, lon:float, lat:float, radius:Union[int,T
         np.ndarray: 3D tensor extracted np array, west->east:south->north:parameter
     """
 
+    if paras is None:
+        raise ValueError('paras cannot be none!')
     ds_data = {}
+    # for each paras group
     for k in paras:
         ds_data[k] = _extract_fn_arr(fn_arr, k, paras[k])
 
     group='2 m'
     arr_lon, arr_lat = _extract_fn_arr(fn_arr, k, paras[group], extract_latlon=True)
-    if not envelope:
+    if envelope is None:
+        if lon is None or lat is None or radius is None:
+            raise ValueError('lon, lat, radius cannot be all Nones if envelope is None!')
         envelope = _get_evelope_ind(lon=lon, lat=lat, radius=radius, arr_lon=arr_lon, arr_lat=arr_lat) 
 
     west_ind, east_ind, south_ind, north_ind = envelope[0], envelope[1], envelope[2], envelope[3] 
-
     arr_list = []
     # for u, v wind, the 3 dim, dim 0 for 10 and 80 m
     ground_2m_dim = 0

@@ -9,12 +9,15 @@ def test_download_obs_data_as_files(config):
 
 def test_download_latest_data_file(config):
     pfile = config.automate_path(config.weather_pdt.hrrr_paras_file)
+    t1, data1 = download_latest_data(paras_file=pfile, max_hrs=[3, 5, 78], envelopes=[[1548, 1568, 774, 794]])
+    assert len(t1) == 2 
+    assert len(data1) == 1
+    assert data1[0].shape==(2, 21, 21, 16)
 
-    data = download_latest_data(paras_file=pfile, max_hrs=3,envelopes=[])
-    assert len(data)==3 
-
-    data = download_latest_data(paras_file=pfile, max_hrs=[3, 78])
-
+    t, data = download_latest_data(paras_file=pfile, max_hrs=3, envelopes=[[1548, 1568, 774, 794]])
+    assert len(t) == 3 
+    assert len(data) == 1
+    assert data[0].shape==(3, 21, 21, 16)
 
 
 
