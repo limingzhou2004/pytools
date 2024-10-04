@@ -2,10 +2,11 @@
 from collections import OrderedDict
 from typing import List
 from herbie import Herbie, FastHerbie, HerbieLatest  #, HerbieWait
+import numpy as np
 import pandas as pd
 import xarray as xr
 
-from pytools.data_prep.grib_utils import get_herbie_str_from_cfgrib_file, get_paras_from_cfgrib_file
+from pytools.data_prep.grib_utils import extract_data_from_grib2, get_herbie_str_from_cfgrib_file, get_paras_from_cfgrib_file
 
 
 
@@ -27,33 +28,49 @@ def download_obs_data_as_files(t0:str, t1:str, paras_file:str, save_dir:str, thr
             h.download(paras_str, verbose=False, overwrite=True)
                
 
-def process_xarray(keys:List[str], arr:xr.DataArray)->OrderedDict:
-    for k in keys:
-        for a in arr:
-            if k in a.variables:
-                
-    return
+def download_latest_data(paras_file:str, max_hrs, envelopes:List )->List[OrderedDict]:
+    """
+    returns the tuple (timestamp array, list of weather arrays for each envlope)
 
+    Args:
+        paras_file (str): _description_
+        max_hrs (_type_): _description_
+        envelopes (List): _description_
 
-def download_latest_data_file(paras_file:str, max_hrs)->List[xr.DataArray]:
+    Returns:
+        List[OrderedDict]: timestamp array, weather array
+    """
     paras_str = get_herbie_str_from_cfgrib_file(paras_file=paras_file)
-    _, keys = get_paras_from_cfgrib_file(paras_file=paras_file)
+    group_paras, _ = get_paras_from_cfgrib_file(paras_file=paras_file)
+
     if isinstance(max_hrs, int):
         max_hrs = range(1, max_hrs+1)
-    ret = OrderedDict()
-    for i in max_hrs:
-        try: 
-            H = HerbieLatest(model="hrrr", product='sfc', fxx=i)
-            dt = H.xarray(search=paras_str,verbose=False,)
+    arr_list = []
+    for t in max_hrs:
+        H = HerbieLatest(model="hrrr", product='sfc', fxx=t)
+        arr = H.xarray(search=paras_str,verbose=False,)
+        arr_list.append({H.date + pd.to_timedelta(t, unit='h'): arr})
 
-            for d in dt:
-                list(dt[0].keys())
+    ret_timestamp = None
+    ret_array = []
+    for ev in envelopes:
+        time_stamps = []
+        dat_list = []
+        for hrs, arr in zip(max_hrs,arr_list):
+            try: 
+                dat = extract_data_from_grib2(fn_arr=arr,paras=group_paras,envelope=ev, return_latlon=False)
+                if ret_timestamp is None:
+                    t = H.date + pd.to_timedelta(hrs, unit='h')
+                    time_stamps.append(t)
+                dat_list.append(dat)               
+            except TimeoutError as ex:
+                print(ex.strerror)
 
-            ret[H.date + pd.to_timedelta(i, unit='h')] = dt
-        except TimeoutError as ex:
-            print(ex.strerror)
+        if ret_timestamp is None:
+            ret_timestamp = np.ndarray(time_stamps)
+        ret_array.append(np.stack(dat_list,axis=0))
 
-    return ret
+    return ret_timestamp, ret_array
 
 
 def download_hist_fst_data(dt:str, fst_hr):

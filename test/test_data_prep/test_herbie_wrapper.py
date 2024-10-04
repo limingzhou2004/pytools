@@ -1,6 +1,6 @@
 
 
-from pytools.data_prep.herbie_wrapper import download_latest_data_file, download_obs_data_as_files
+from pytools.data_prep.herbie_wrapper import download_latest_data, download_obs_data_as_files
 
 
 def test_download_obs_data_as_files(config):
@@ -10,11 +10,11 @@ def test_download_obs_data_as_files(config):
 def test_download_latest_data_file(config):
     pfile = config.automate_path(config.weather_pdt.hrrr_paras_file)
 
-    data = download_latest_data_file(paras_file=pfile, max_hrs=3)
+    data = download_latest_data(paras_file=pfile, max_hrs=3,envelopes=[])
     assert len(data)==3 
 
-    data = download_latest_data_file(paras_file=pfile, max_hrs=[3, 78])
-    
+    data = download_latest_data(paras_file=pfile, max_hrs=[3, 78])
+
 
 
 

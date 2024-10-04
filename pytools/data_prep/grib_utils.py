@@ -74,11 +74,11 @@ def find_ind_fromlatlon(lon:float, lat:float, arr_lon:np.ndarray, arr_lat:np.nda
     return x_ind, y_ind
 
 
-def _extract_a_group(fn:str, group:str, paras: List[str], exatract_latlon:bool=False):
-    # group of 2m, 10m, and surface
+def _extract_a_group(fn:str, group:str, paras: List[str], extract_latlon:bool=False):
+    # group of 2 m, 10 m, and surface
     backend_kwargs={'filter_by_keys': {'typeOfLevel': 'heightAboveGround', 'level': 10}}
 
-    if group=='2m':
+    if group=='2 m':
         backend_kwargs['filter_by_keys']['level'] = 2
     if group=='surface':
         backend_kwargs['filter_by_keys'] = {'stepType': 'instant',                                    'typeOfLevel': 'surface'}
@@ -86,11 +86,34 @@ def _extract_a_group(fn:str, group:str, paras: List[str], exatract_latlon:bool=F
     dr = xr.Dataset()
     lat = HRRR_lat_name
     lon = HRRR_lon_name
-    if exatract_latlon:
+    if extract_latlon:
         return dat[lon].data - 360 if dat[lon].data.max()> 180 else dat[lon].data, dat[lat].data
     for p in paras:
         dr[p] = dat[p]
     return dr
+
+
+def _extract_xrray(arr_ds:xr.Dataset, paras:List[str], extract_latlon=False):
+    dr = xr.Dataset()
+    lat = HRRR_lat_name
+    lon = HRRR_lon_name
+    if extract_latlon:
+        dat =arr_ds[0]
+        return dat[lon].data - 360 if dat[lon].data.max()> 180 else dat[lon].data, dat[lat].data
+    for p in paras:
+        for d in arr_ds:
+            if p in d:
+                dr[p] = d[p]
+    return
+
+
+def _extract_fn_arr(fn_arr, group, paras, extract_latlon=False):
+    if isinstance(fn_arr, str):
+        return _extract_a_group(fn=fn_arr, group=group, paras=paras, extract_latlon=extract_latlon)
+    elif isinstance(fn_arr, List):    
+        return _extract_xrray(arr_ds=fn_arr, paras=paras[group], extract_latlon=extract_latlon)
+    else:
+        raise ValueError('the fn_arr must be a string of a file name, or a list of xr.Dataset')
 
 
 def _get_evelope_ind(lon:float,lat:float, radius, arr_lon, arr_lat):
@@ -121,29 +144,31 @@ def _get_evelope_ind(lon:float,lat:float, radius, arr_lon, arr_lat):
     return west_ind, east_ind, south_ind, north_ind
 
 
-def extract_data_from_grib2(fn:str, lon:float, lat:float, radius:Union[int,Tuple[int, int, int, int]], 
-    paras:Dict, return_latlon:bool=False, envelope:List=None)->np.ndarray:
+def extract_data_from_grib2(fn_arr:str, lon:float, lat:float, radius:Union[int,Tuple[int, int, int, int]], 
+    paras:OrderedDict, return_latlon:bool=False, envelope:List=None)->np.ndarray:
     """
     Extract a subset, based on a rectangle area. We assume all paras share the same grid. 
     Both lat/lon are increasing in the grid. The hrrr data has a grid of 1799 by 1059
     The order of the paras is decided by the paras file. 
     Args:
-        fn (str): file name of the grib2 file.
+        fn (str): file name of the grib2 file. Or a list of xr.Dataset
         lon (float): longitude, as x
         lat (float): latitutde, as y
         radius (Union[int,Tuple[int, int, int, int]]): distance in kms from the center
-        paras (List[str]): the weather parameters
+        paras (OrderedDict): the weather parameters by layers
         return_latlon (bool): wheter to return lat lon as the second item
+        envelope (List): index [left-west, right-east, lower-south, upper-north] 
 
     Returns:
         np.ndarray: 3D tensor extracted np array, west->east:south->north:parameter
     """
+
     ds_data = {}
     for k in paras:
-        ds_data[k] = _extract_a_group(fn, k, paras[k])
+        ds_data[k] = _extract_fn_arr(fn_arr, k, paras[k])
 
     group='2 m'
-    arr_lon, arr_lat = _extract_a_group(fn, k, paras[group], exatract_latlon=True)
+    arr_lon, arr_lat = _extract_fn_arr(fn_arr, k, paras[group], extract_latlon=True)
     if not envelope:
         envelope = _get_evelope_ind(lon=lon, lat=lat, radius=radius, arr_lon=arr_lon, arr_lat=arr_lat) 
 
@@ -151,7 +176,7 @@ def extract_data_from_grib2(fn:str, lon:float, lat:float, radius:Union[int,Tuple
 
     arr_list = []
     # for u, v wind, the 3 dim, dim 0 for 10 and 80 m
-    ground_2m_dim=0
+    ground_2m_dim = 0
   
     for k in paras:
         for p in paras[k]:
