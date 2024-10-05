@@ -76,7 +76,7 @@ def download_latest_data(paras_file:str, max_hrs, envelopes:List )->List[Ordered
     return ret_timestamp, ret_array
 
 
-def download_hist_fst_data(dt:str, fst_hr):
+def download_hist_fst_data(cur_dt:str, fst_hr, envelopes):
     """
     Get historical forecast, or get the most recent obs weather
 
