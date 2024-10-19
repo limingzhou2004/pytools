@@ -1,5 +1,6 @@
 
 from collections import OrderedDict
+from datetime import timedelta
 from typing import List
 from herbie import Herbie, FastHerbie, HerbieLatest  #, HerbieWait
 import numpy as np
@@ -28,7 +29,7 @@ def download_obs_data_as_files(t0:str, t1:str, paras_file:str, save_dir:str, thr
             h.download(paras_str, verbose=False, overwrite=True)
                
 
-def download_latest_data(paras_file:str, max_hrs, envelopes:List )->List[OrderedDict]:
+def download_latest_data(paras_file:str, max_hrs, envelopes:List)->List[OrderedDict]:
     """
     returns the tuple (timestamp array, list of weather arrays for each envlope)
 
@@ -36,9 +37,10 @@ def download_latest_data(paras_file:str, max_hrs, envelopes:List )->List[Ordered
         paras_file (str): _description_
         max_hrs (_type_): _description_
         envelopes (List): _description_
+        save_dir (string): directory to save the data
 
     Returns:
-        List[OrderedDict]: timestamp array, weather array
+        List[OrderedDict]: timestamp array, the envelope list of weather array
     """
     paras_str = get_herbie_str_from_cfgrib_file(paras_file=paras_file)
     group_paras, _ = get_paras_from_cfgrib_file(paras_file=paras_file)
@@ -57,7 +59,7 @@ def download_latest_data(paras_file:str, max_hrs, envelopes:List )->List[Ordered
             break
 
     ret_timestamp = None
-    ret_array = []
+    ret_array_list = []
     for ev in envelopes:
         time_stamps = []
         dat_list = []
@@ -71,21 +73,46 @@ def download_latest_data(paras_file:str, max_hrs, envelopes:List )->List[Ordered
 
         if ret_timestamp is None:
             ret_timestamp = time_stamps
-        ret_array.append(np.stack(dat_list,axis=0))
+        ret_array_list.append(np.stack(dat_list,axis=0))
 
-    return ret_timestamp, ret_array
+    return ret_timestamp, ret_array_list
 
 
-def download_hist_fst_data(cur_dt:str, fst_hr, envelopes):
+def download_hist_fst_data(t_start, t_end, fst_hr:int,  paras_file:str, envelopes:List, freq='D', save_dir='~/tmp_data'):
     """
-    Get historical forecast, or get the most recent obs weather
+    Get historical forecast, or get the most recent obs weather. It will be a large size, 
+    so we only extract a subset based on the envelopes, and save them locally.
 
     Args:
-        dt (str): _description_
-        fst_hr (_type_): _description_
-    """
+        dt (str): current timestamp
+        fst_hr (_type_): time horizon, hours
+        envelopes: 
+        freq str: frequency, d for day
+        save_dir: directory to save the weather data.
 
-    return
+    Returns: 
+        spot timestamp list, list of envelopes with elements of [fst timestamp list, weather array list]
+    """
+    paras_str = get_herbie_str_from_cfgrib_file(paras_file=paras_file)
+    group_paras, _ = get_paras_from_cfgrib_file(paras_file=paras_file)
+    spot_time_list = []
+    envelope_arr_list = [[[], []] for i in range(len(envelopes))]    
+
+    for cur_t in pd.date_range(start=t_start, end=t_end, freq=freq):
+        for h in range(fst_hr):
+            try:    
+                H = Herbie(cur_t, model="hrrr", fxx=h, save_dir=save_dir)
+                arr = H.xarray(search=paras_str, remove_grib=True)
+                for i in range(len(envelopes)):
+                    ev = envelopes[i]
+                    dat, _ = extract_data_from_grib2(fn_arr=arr,paras=group_paras,envelope=ev, return_latlon=False)
+                    envelope_arr_list[i][0].append(cur_t + pd.Timedelta(h, unit='h'))
+                    envelope_arr_list[i][1].append(dat)
+            except Exception as ex:
+                print(ex.strerror)  
+        spot_time_list.append(cur_t)          
+
+    return spot_time_list, envelope_arr_list
 
 
 def extract_data_from_file(fn):

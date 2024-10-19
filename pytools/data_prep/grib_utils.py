@@ -145,7 +145,7 @@ def _get_evelope_ind(lon:float,lat:float, radius, arr_lon, arr_lat):
 
 
 def extract_data_from_grib2(fn_arr:str, lon:float=None, lat:float=None, radius:Union[int,Tuple[int, int, int, int]]=None, 
-    paras:OrderedDict=None, return_latlon:bool=False, envelope:List=None)->np.ndarray:
+    paras:OrderedDict=None, return_latlon:bool=False, envelope:List=None)->Tuple[np.ndarray,]:
     """
     Extract a subset, based on a rectangle area. We assume all paras share the same grid. 
     Both lat/lon are increasing in the grid. The hrrr data has a grid of 1799 by 1059
@@ -160,7 +160,7 @@ def extract_data_from_grib2(fn_arr:str, lon:float=None, lat:float=None, radius:U
         envelope (List): index [left-west, right-east, lower-south, upper-north] 
 
     Returns:
-        np.ndarray: 3D tensor extracted np array, west->east:south->north:parameter
+        np.ndarray: 3D tensor extracted np array, envelopes, west->east:south->north:parameter 
     """
 
     if paras is None:
