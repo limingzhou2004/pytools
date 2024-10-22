@@ -1,4 +1,4 @@
-
+import sys
 from collections import OrderedDict
 from datetime import timedelta
 from typing import List
@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
+from pytools.config import Config
 from pytools.data_prep.grib_utils import extract_data_from_grib2, get_herbie_str_from_cfgrib_file, get_paras_from_cfgrib_file
 
 
@@ -119,3 +120,33 @@ def extract_data_from_file(fn):
 
     return
 
+
+def main(args):
+
+    config_file='pytools/config/albany_test.toml'
+
+    for i, p in enumerate(args):
+        if p == '-config_file':
+            config_file = args[i+1]
+        if p == '-save_dir':
+            save_dir = args[i+1]
+        if p == '-t0':
+            t0 = args[i+1]
+        if p == '-t1':
+            t1 = args[i+1]
+        if p == '-fst_hr':
+            fst_hr = int(args[i+1])    
+    c = Config(config_file)
+    envs = c.weather_pdt.envelope
+
+    if args[1] == '-obs':
+        pass
+    elif args[1] == '-fst':
+        pass 
+    else:
+        raise ValueError('has to be -obs|-fst')
+
+
+if __name__ == '__main__':
+
+    main(sys.argv.split(','))

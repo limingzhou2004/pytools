@@ -447,25 +447,7 @@ def download_hrrr_by_hour(exe_date:pu.datetime, fst_hour:int, tgt_folder):
     
 
 
-    """
-import re 
-from datetime import datetime 
-  
-# Input string 
-string = '2020-07-17T14:30:00'
-  
-# Using regex expression to match the pattern 
-regex = r'(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})'
-  
-# Finding all the matches 
-matches = re.findall(regex, string) 
-  
-# Converting the string into datetime object 
-date_time_obj = datetime(*[int(i) for i in matches[0]]) 
-  
-# Printing the datetime object 
-print(date_time_obj)    """
-
+ 
 if __name__ == "__main__":
     # fillmissing(*sys.argv[1:])
     # python -m pytools.data_prep.grib_utils 

@@ -34,3 +34,9 @@ def test_download_hist_fst_data(config):
 
     assert len(timestamp) == 1
     assert len(data[0][1]) == 2
+
+
+def test_main():
+    arg_str_obs = '-obs -t0 2020-01-01 -t1 2020-01-01 02:00'
+    arg_str_fst = '-fst -t0 2020-01-01 -t1 2020-01-01 02:00 -fst_hr 3'
+    main()
