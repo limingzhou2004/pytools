@@ -1,3 +1,4 @@
+import pickle
 import sys
 from collections import OrderedDict
 from datetime import timedelta
@@ -97,7 +98,7 @@ def download_hist_fst_data(t_start, t_end, fst_hr:int,  paras_file:str, envelope
     paras_str = get_herbie_str_from_cfgrib_file(paras_file=paras_file)
     group_paras, _ = get_paras_from_cfgrib_file(paras_file=paras_file)
     spot_time_list = []
-    envelope_arr_list = [[[], []] for i in range(len(envelopes))]    
+    envelope_arr_list = [[[], []] for _ in range(len(envelopes))]    
 
     for cur_t in pd.date_range(start=t_start, end=t_end, freq=freq):
         for h in range(fst_hr):
@@ -140,9 +141,10 @@ def main(args):
     envs = c.weather_pdt.envelope
 
     if args[1] == '-obs':
-        pass
+        download_obs_data_as_files(t0=t0, t1=t1, paras_file=c.weather_pdt.hrrr_paras_file,save_dir=save_dir)
     elif args[1] == '-fst':
-        pass 
+        res = download_hist_fst_data(t_start=t0, t_end=t1,fst_hr=fst_hr)
+        pickle.save(res,)
     else:
         raise ValueError('has to be -obs|-fst')
 

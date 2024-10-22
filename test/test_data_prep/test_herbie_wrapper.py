@@ -1,7 +1,7 @@
 
 
 from pytools.data_prep.herbie_wrapper import download_hist_fst_data, download_latest_data, download_obs_data_as_files
-
+from pytools.data_prep.herbie_wrapper import main
 
 def test_download_obs_data_as_files(config):
     pfile = config.automate_path(config.weather_pdt.hrrr_paras_file)
@@ -37,6 +37,9 @@ def test_download_hist_fst_data(config):
 
 
 def test_main():
-    arg_str_obs = '-obs -t0 2020-01-01 -t1 2020-01-01 02:00'
-    arg_str_fst = '-fst -t0 2020-01-01 -t1 2020-01-01 02:00 -fst_hr 3'
-    main()
+    arg_str_obs = '-obs -t0 2020-01-01 -t1 2020-01-01 02:00 -save-dor ~/tmp'
+    arg_str_fst = '-fst -t0 2020-01-01 -t1 2020-01-01 02:00 -fst_hr 3 -save-dir ~/tmp'
+    main(arg_str_obs)
+    main(arg_str_fst)
+
+    assert 1==1
