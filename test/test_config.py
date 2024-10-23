@@ -27,8 +27,9 @@ class TestConfig:
         assert config.site["envtest"] == "test an env"
 
     def test_center_radias(self, config):
-        assert config.site['center'] == [43.0, -73.0]
-        assert config.site['radius'] == [100.0, 100.0, 100.0, 100.0]
+        assert config.site['center'] == [-73.0, 43.0]
+        assert config.site['rect'] == [30.0, 30.0, 30.0, 30.0]
+        assert config.weather_pdt.envelope == [1548, 1568, 774, 794]
 
     def test_get_fst_hours(self, config):
 

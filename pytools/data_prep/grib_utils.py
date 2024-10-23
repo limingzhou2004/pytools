@@ -74,11 +74,11 @@ def find_ind_fromlatlon(lon:float, lat:float, arr_lon:np.ndarray, arr_lat:np.nda
     return x_ind, y_ind
 
 
-def _extract_a_group(fn:str, group:str, paras: List[str], exatract_latlon:bool=False):
-    # group of 2m, 10m, and surface
+def _extract_a_group(fn:str, group:str, paras: List[str], extract_latlon:bool=False):
+    # group of 2 m, 10 m, and surface
     backend_kwargs={'filter_by_keys': {'typeOfLevel': 'heightAboveGround', 'level': 10}}
 
-    if group=='2m':
+    if group=='2 m':
         backend_kwargs['filter_by_keys']['level'] = 2
     if group=='surface':
         backend_kwargs['filter_by_keys'] = {'stepType': 'instant',                                    'typeOfLevel': 'surface'}
@@ -86,11 +86,34 @@ def _extract_a_group(fn:str, group:str, paras: List[str], exatract_latlon:bool=F
     dr = xr.Dataset()
     lat = HRRR_lat_name
     lon = HRRR_lon_name
-    if exatract_latlon:
+    if extract_latlon:
         return dat[lon].data - 360 if dat[lon].data.max()> 180 else dat[lon].data, dat[lat].data
     for p in paras:
         dr[p] = dat[p]
     return dr
+
+
+def _extract_xrray(arr_ds:List[xr.Dataset], paras:List[str], extract_latlon=False):
+    dr = xr.Dataset()
+    lat = HRRR_lat_name
+    lon = HRRR_lon_name
+    if extract_latlon:
+        dat =arr_ds[0]
+        return dat[lon].data - 360 if dat[lon].data.max()> 180 else dat[lon].data, dat[lat].data
+    for p in paras:
+        for d in arr_ds:
+            if p in d:
+                dr[p] = d[p]
+    return dr
+
+
+def _extract_fn_arr(fn_arr, group, paras, extract_latlon=False):
+    if isinstance(fn_arr, str):
+        return _extract_a_group(fn=fn_arr, group=group, paras=paras, extract_latlon=extract_latlon)
+    elif isinstance(fn_arr, List):    
+        return _extract_xrray(arr_ds=fn_arr, paras=paras, extract_latlon=extract_latlon)
+    else:
+        raise ValueError('the fn_arr must be a string of a file name, or a list of xr.Dataset')
 
 
 def _get_evelope_ind(lon:float,lat:float, radius, arr_lon, arr_lat):
@@ -121,37 +144,43 @@ def _get_evelope_ind(lon:float,lat:float, radius, arr_lon, arr_lat):
     return west_ind, east_ind, south_ind, north_ind
 
 
-def extract_data_from_grib2(fn:str, lon:float, lat:float, radius:Union[int,Tuple[int, int, int, int]], 
-    paras:Dict, return_latlon:bool=False, envelope:List=None)->np.ndarray:
+def extract_data_from_grib2(fn_arr:str, lon:float=None, lat:float=None, radius:Union[int,Tuple[int, int, int, int]]=None, 
+    paras:OrderedDict=None, return_latlon:bool=False, envelope:List=None)->Tuple[np.ndarray,]:
     """
     Extract a subset, based on a rectangle area. We assume all paras share the same grid. 
     Both lat/lon are increasing in the grid. The hrrr data has a grid of 1799 by 1059
     The order of the paras is decided by the paras file. 
     Args:
-        fn (str): file name of the grib2 file.
+        fn (str): file name of the grib2 file. Or a list of xr.Dataset
         lon (float): longitude, as x
         lat (float): latitutde, as y
         radius (Union[int,Tuple[int, int, int, int]]): distance in kms from the center
-        paras (List[str]): the weather parameters
+        paras (OrderedDict): the weather parameters by layers
         return_latlon (bool): wheter to return lat lon as the second item
+        envelope (List): index [left-west, right-east, lower-south, upper-north] 
 
     Returns:
-        np.ndarray: 3D tensor extracted np array, west->east:south->north:parameter
+        np.ndarray: 3D tensor extracted np array, envelopes, west->east:south->north:parameter 
     """
-    ds_data = {}
-    for k in paras:
-        ds_data[k] = _extract_a_group(fn, k, paras[k])
 
-    group='2m'
-    arr_lon, arr_lat = _extract_a_group(fn, k, paras[group], exatract_latlon=True)
-    if not envelope:
+    if paras is None:
+        raise ValueError('paras cannot be none!')
+    ds_data = {}
+    # for each paras group
+    for k in paras:
+        ds_data[k] = _extract_fn_arr(fn_arr, k, paras[k])
+
+    group='2 m'
+    arr_lon, arr_lat = _extract_fn_arr(fn_arr, k, paras[group], extract_latlon=True)
+    if envelope is None:
+        if lon is None or lat is None or radius is None:
+            raise ValueError('lon, lat, radius cannot be all Nones if envelope is None!')
         envelope = _get_evelope_ind(lon=lon, lat=lat, radius=radius, arr_lon=arr_lon, arr_lat=arr_lat) 
 
     west_ind, east_ind, south_ind, north_ind = envelope[0], envelope[1], envelope[2], envelope[3] 
-
     arr_list = []
     # for u, v wind, the 3 dim, dim 0 for 10 and 80 m
-    ground_2m_dim=0
+    ground_2m_dim = 0
   
     for k in paras:
         for p in paras[k]:
@@ -169,83 +198,43 @@ def extract_data_from_grib2(fn:str, lon:float, lat:float, radius:Union[int,Tuple
     else:
         return np.stack(arr_list, axis=2), envelope
     
-def get_paras_from_cfgrib_file(paras_file:str)->Dict:
+
+def get_herbie_str_from_cfgrib_file(paras_file:str):
+    qstr = ':'
     with open(paras_file) as f:
         f.readline() #skip the header row
-        p_dict = {'2m': list(), '10m': list(), 'surface': list()}
+        for line in f:
+
+            kv = line.strip().split(',')
+            if kv[0].strip()=='0':
+                continue
+            code= kv[6].strip()
+            layer=kv[4].strip()
+            if layer.endswith('m'):
+                layer = layer.replace('m',' m').replace('  ', ' ')
+            qstr = qstr + code + ':' + layer + '|'        
+    # important to remove the last |; otherwise, all parameters will be included!
+    return qstr[:-1]
+
+
+def get_paras_from_cfgrib_file(paras_file:str)->Tuple[Dict, List[str]]:
+    with open(paras_file) as f:
+        f.readline() #skip the header row
+        #p_dict = OrderedDict([('2m', list()), ('10m', list()), ('surface', list())])
+        p_dict = OrderedDict()
+        keys = list()
         for line in f:
             kv = line.strip().split(',')
             flag = kv[0].strip()
             k = kv[4].strip()
+            if k not in p_dict:
+                p_dict[k] = list()
             v = kv[1].strip()
+            keys.append(v)
             if flag=='1':
                 p_dict[k].append(v) 
 
-    return p_dict
-
-@DeprecationWarning
-def get_paras_from_pynio_file(para_file:str, is_utah=False) -> Dict:
-    a = {}
-    # It is possible to use file size to decide whether it is a utah file, >100 mb
-
-    with open(para_file) as f:
-        for line in f:
-            kv = line.strip().split(',')
-            k = kv[0].strip()
-            v = kv[1].strip()
-            # use 1h precipitation for Utah data
-            if is_utah:
-                if k == 'APCP_P8_L1_GLC0_acc':
-                    k = k + '_1h'
-            # 1 to use;        
-            if int(v) == 1:
-                a[k] = int(v)
-
-    return a
-
-
-def extract_a_file(fn:str, para_file:str, lon:float, lat:float, radius:Union[int, Tuple[int, int, int, int]], min_utah_size_mb=100) -> np.ndarray:
-    """
-    Extract a grib2 file
-
-    Args:
-        fn (str): full file name
-        para_file (str): pamaremeter file
-        lon (float): center longitute
-        lat (float): center latitude
-        radius (Union[int, Tuple[int, int, int, int]]): distance from the center
-        min_utah_file_size: a utah file is larger than this size in mb
-
-    Returns:
-        np.ndarray: dimension of x, y, channel
-    """
-
-    # get the size of the file
-    file_size_mb=os.path.getsize(fn)/1e6
-    is_utah=True if file_size_mb>min_utah_size_mb else False
-    para_list = get_paras_from_pynio_file(fn, is_utah=is_utah)
-    data = extract_data_from_grib2(fn=fn, lon=lon, lat=lat, radius=radius, paras=para_list, is_utah=is_utah)
-    return data
-
-
-def read_utah_file_and_save_a_subset(fn:str, para_file:str, tgt_folder:str,
- rename_var:Dict={'APCP_P8_L1_GLC0_acc_1h':'APCP_P8_L1_GLC0_acc'}
- ):
-    # a = []
-    # with open(para_file) as f:
-    #     for line in f:
-    #         kv = line.strip().split(',')
-    #         k = kv[0]; v = kv[1]
-    #         # use 1h precipitation for Utah data
-    #         if k == 'APCP_P8_L1_GLC0_acc':
-    #             k = k + '_1h'
-    #         if int(v) == 1:
-    #             a.append(int(v))
-    a = get_paras_from_pynio_file(is_utah=True)
-    ds = xr.load_dataset(fn, engine='pynio')
-    ds2 = ds[a]
-    ds2 = ds2.rename_vars(rename_var)
-    ds2.to_netcdf(path=os.path.join(tgt_folder, fn.replace('grib2', 'nc')), engine='scipy')
+    return p_dict, keys
 
 
 def get_all_files(folders: Union[str, Tuple[str]], exclude_small_files=False, size_kb_fileter=1024) -> List[str]:
@@ -270,7 +259,7 @@ def get_all_files(folders: Union[str, Tuple[str]], exclude_small_files=False, si
     return filenames
 
 
-def get_all_files_iter(folders: Union[str, Tuple[str]], exclude_small_files=False, size_kb_fileter=1024) -> List[str]:
+def get_all_files_iter(folders: Union[str, Tuple[str]], exclude_small_files=False, size_kb_fileter=1024):
     file_iter = iter([])
     if isinstance(folders, str):
         file_iter = chain(file_iter, os.scandir(folders))
@@ -413,13 +402,6 @@ def decide_grib_type(fn:str):
     raise ValueError(f'{fn} unrecognized!')
     
 
-# def extract_datetime_from_utah_files(fn:str) -> np.datetime64:
-#     # TODO
-#     # convert string to datetime with regex
-    
-#     return
-
-
 def download_hrrr(cur_date:pu.datetime, fst_hour:int, tgt_folder:str):
     """
     Download hrrr data
@@ -465,25 +447,7 @@ def download_hrrr_by_hour(exe_date:pu.datetime, fst_hour:int, tgt_folder):
     
 
 
-    """
-import re 
-from datetime import datetime 
-  
-# Input string 
-string = '2020-07-17T14:30:00'
-  
-# Using regex expression to match the pattern 
-regex = r'(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})'
-  
-# Finding all the matches 
-matches = re.findall(regex, string) 
-  
-# Converting the string into datetime object 
-date_time_obj = datetime(*[int(i) for i in matches[0]]) 
-  
-# Printing the datetime object 
-print(date_time_obj)    """
-
+ 
 if __name__ == "__main__":
     # fillmissing(*sys.argv[1:])
     # python -m pytools.data_prep.grib_utils 

@@ -79,8 +79,6 @@ US_timezones=['US/Alaska',
 
 
 
-
-
 class Site(BaseModel):
     timezone:str
     state:str
@@ -130,6 +128,7 @@ class Load(BaseModel):
 
 
 class Weather(BaseModel):
+    envelope: List[int]
     hist_weather_pickle: str
     folder_col_name: str 
     filename_col_name: str 

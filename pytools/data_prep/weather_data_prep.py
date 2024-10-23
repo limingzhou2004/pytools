@@ -193,7 +193,7 @@ class WeatherDataPrep:
         self.utc_to_local_hours = utc_hour_offset
         self.check_grib_name_filter = None
         self.min_filename_length = 20
-        self.hrrr_paras:Dict = get_paras_from_cfgrib_file(para_file)
+        self.hrrr_paras:Dict = get_paras_from_cfgrib_file(para_file)[0]
         #self.hrrr_paras:Dict = get_paras_from_pynio_file(para_file,False)
         #self.utah_paras:Dict = get_paras_from_pynio_file(para_file,True)
         # lon 2D

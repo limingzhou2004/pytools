@@ -9,7 +9,7 @@ import xarray as xr
 # import rioxarray
 
 
-from pytools.data_prep.grib_utils import download_hrrr, download_utah_file_extract, extract_data_from_grib2, find_missing_grib2, get_paras_from_cfgrib_file, print_grib2_info, find_ind_fromlatlon, extract_a_file, decide_grib_type
+from pytools.data_prep.grib_utils import download_hrrr, download_utah_file_extract, extract_data_from_grib2, find_missing_grib2, get_herbie_str_from_cfgrib_file, get_paras_from_cfgrib_file, find_ind_fromlatlon, decide_grib_type
 
 
 hrrr_obs_path = '/Users/limingzhou/zhoul/work/energy/grib2/hrrrdata'
@@ -36,16 +36,24 @@ paras = """
 
 
 def test_extract_data_from_grib2():
-    paras = get_paras_from_cfgrib_file(cfgrib_paras_file)
-    ret, envelope = extract_data_from_grib2(fn=fn, lat=43, lon=-73, radius=30, paras=paras,return_latlon=False)
+    paras, keys = get_paras_from_cfgrib_file(cfgrib_paras_file)
+    ret, envelope = extract_data_from_grib2(fn_arr=fn, lat=43, lon=-73, radius=30, paras=paras,return_latlon=False)
     #south-north, west-east, paras
     assert ret.shape==(21,21,16)
 
-def test_get_paras_from_cfgrib_file():
-    ret= get_paras_from_cfgrib_file(cfgrib_paras_file)
 
-    assert len(ret['2m'])==4
-    assert len(ret['10m'])==3
+def test_():
+    ret = get_herbie_str_from_cfgrib_file(cfgrib_paras_file)
+
+    assert ret.startswith(':TMP')
+    assert ret.endswith('10 m')
+
+
+def test_get_paras_from_cfgrib_file():
+    ret, keys= get_paras_from_cfgrib_file(cfgrib_paras_file)
+
+    assert len(ret['2 m'])==4
+    assert len(ret['10 m'])==3
     assert len(ret['surface'])==9
 
 @pytest.mark.skip(reason='large binary files needed for the test')
@@ -83,12 +91,6 @@ def test_read_write_grib2():
     ds2 = ds[a]
     ds2 = ds2.rename_vars({'APCP_P8_L1_GLC0_acc1h':'APCP_P8_L1_GLC0_acc'})
     ds2.to_netcdf(path='newdata.nc', engine='scipy')
-    assert 1==1
-
-
-@pytest.mark.skip(reason='large binary files needed for the test')
-def test_read_nc():
-    ds = xr.load_dataset('newdata.nc',engine='scipy')
     assert 1==1
 
 
