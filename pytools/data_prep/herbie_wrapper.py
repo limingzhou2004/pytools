@@ -1,5 +1,7 @@
 import pickle
 import sys
+import os.path as osp
+from pathlib import Path
 from collections import OrderedDict
 from datetime import timedelta
 from typing import List
@@ -100,6 +102,9 @@ def download_hist_fst_data(t_start, t_end, fst_hr:int,  paras_file:str, envelope
     spot_time_list = []
     envelope_arr_list = [[[], []] for _ in range(len(envelopes))]    
 
+    if not isinstance(envelopes[0], List):
+        envelopes = [envelopes]
+
     for cur_t in pd.date_range(start=t_start, end=t_end, freq=freq):
         for h in range(fst_hr):
             try:    
@@ -126,10 +131,13 @@ def main(args):
 
     config_file='pytools/config/albany_test.toml'
 
+    fn = None
+    save_dir = None
+
     for i, p in enumerate(args):
         if p == '-config_file':
             config_file = args[i+1]
-        if p == '-save_dir':
+        if p == '-save-dir':
             save_dir = args[i+1]
         if p == '-t0':
             t0 = args[i+1]
@@ -137,14 +145,27 @@ def main(args):
             t1 = args[i+1]
         if p == '-fst_hr':
             fst_hr = int(args[i+1])    
+        if p == '-fn':
+            fn = args[i+1]
+        
+    if save_dir is None:
+        raise ValueError('-save-dir cannot be empty!')
+
+    Path(save_dir).mkdir(parents=True, exist_ok=True)
+
     c = Config(config_file)
     envs = c.weather_pdt.envelope
+    paras_file = c.automate_path(c.weather_pdt.hrrr_paras_file)
 
     if args[1] == '-obs':
-        download_obs_data_as_files(t0=t0, t1=t1, paras_file=c.weather_pdt.hrrr_paras_file,save_dir=save_dir)
+        download_obs_data_as_files(t0=t0, t1=t1, paras_file=paras_file,save_dir=save_dir)
     elif args[1] == '-fst':
-        res = download_hist_fst_data(t_start=t0, t_end=t1,fst_hr=fst_hr)
-        pickle.save(res,)
+        if fn is None:
+            raise ValueError('-fn cannot be empty!')
+        res = download_hist_fst_data(t_start=t0, t_end=t1,fst_hr=fst_hr, paras_file=paras_file,envelopes=envs )
+        path_full = osp.join(save_dir, fn)
+        with open(path_full, 'wb') as h:
+            pickle.dump(res, h, protocol=pickle.HIGHEST_PROTOCOL)
     else:
         raise ValueError('has to be -obs|-fst')
 

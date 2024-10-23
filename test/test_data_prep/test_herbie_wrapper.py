@@ -37,9 +37,9 @@ def test_download_hist_fst_data(config):
 
 
 def test_main():
-    arg_str_obs = '-obs -t0 2020-01-01 -t1 2020-01-01 02:00 -save-dor ~/tmp'
-    arg_str_fst = '-fst -t0 2020-01-01 -t1 2020-01-01 02:00 -fst_hr 3 -save-dir ~/tmp'
-    main(arg_str_obs)
-    main(arg_str_fst)
+    arg_str_obs = '*.py -obs -t0 2020-01-01 -t1 2020-01-01 02:00 -save-dir /Users/limingzhou/zhoul/tmp/hist'
+    arg_str_fst = '*.py -fst -t0 2020-01-01 -t1 2020-01-01 02:00 -fst_hr 3 -save-dir /Users/limingzhou/tmp/fst -fn albany-test'
+    main(arg_str_obs.split(' '))
+    main(arg_str_fst.split(' '))
 
     assert 1==1
