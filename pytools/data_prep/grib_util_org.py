@@ -3,6 +3,7 @@ This module summarize the hrrr data folders. Make the list of all file names, da
 """
 
 
+from datetime import timedelta
 from functools import partial
 import glob
 from itertools import chain
@@ -20,11 +21,13 @@ import numpy as np
 import pendulum as pu
 #import polars as pl
 from tqdm import tqdm
+from pytools.config import Config
 from pytools.data_prep.get_datetime_from_grib_file_name import get_datetime_from_utah_file_name
 
 from pytools.data_prep.grib_utils import decide_grib_type, get_all_files_iter, produce_full_timestamp
 from pytools.data_prep.get_datetime_from_grib_file_name import get_datetime_from_grib_file_name
-from pytools.data_prep.herbie_wrapper import get_timestamp_from_herbie_folder_filename
+from pytools.data_prep.herbie_wrapper import download_obs_data_as_files, get_timestamp_from_herbie_folder_filename
+from pytools.retry.api import retry
 
 
 folder_table_name = 'hrrr_folder_info'
@@ -110,6 +113,34 @@ def load_files(batch_no=0):
 
     fo.to_pickle(os.path.join(cur_path, f'../data/grib2_folder_{batch_no}.pkl'))
 
+
+@retry(tries=5, delay=20)
+def download_herbie_file_extract(cur_date:np.datetime64, tgt_folder:str):
+    time.sleep(3)
+    config_file='pytools/config/albany_test.toml'
+    c = Config(config_file)
+    paras_file = c.automate_path(c.weather_pdt.hrrr_paras_file)
+    download_obs_data_as_files(t0=str(cur_date), t1=str(cur_date + np.timedelta64(1,'h')), paras_file=paras_file,save_dir=tgt_folder)
+
+
+def fillmissing_from_pickle(batch_no, tgt_folder:str):
+    """
+    The batch no indicates the latest pickle file, to include previous batches
+
+    Args:
+        batch_no (int): start from 0. 
+        tgt_folder (str): target folder
+    """
+    forecast_hour = 0
+    fn = os.path.join(os.path.dirname(__file__), f'../data/grib2_folder_{batch_no}.pkl')
+    df = pd.read_pickle(fn)
+    df = df[df['timestamp'].isna()]
+    print('start processing...\n')
+    for t in tqdm(df['cplt_timestamp']):
+        if t.to_datetime64()<np.datetime64('2020-01-01'):
+            continue
+        download_herbie_file_extract(cur_date=t, tgt_folder=tgt_folder)
+
     
 def main():
     return
@@ -120,6 +151,11 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         if sys.argv[1]=='summary':
             make_stats(i=int(sys.argv[2]))
+
+        elif sys.argv[1] == '-fill':
+            tgt_folder = sys.argv[2]
+            batch_no = int(sys.argv[3])
+            fillmissing_from_pickle(batch_no=batch_no, tgt_folder=tgt_folder)
 
         else:
             load_files(batch_no=int(sys.argv[1]))
