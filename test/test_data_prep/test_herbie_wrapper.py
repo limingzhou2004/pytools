@@ -5,9 +5,9 @@ from pytools.data_prep.herbie_wrapper import main
 
 def test_download_obs_data_as_files(config):
     pfile = config.automate_path(config.weather_pdt.hrrr_paras_file)
-    download_obs_data_as_files(t0='2020-12-01 3:00',t1='2020-12-01 05:00',paras_file=pfile,save_dir='~/tmp_data', threads=2)
+    download_obs_data_as_files(t0='2024-10-25 3:00',t1='2024-10-25 04:00',paras_file=pfile,save_dir='~/tmp_data', threads=2)
 
-    download_obs_data_as_files(t0='2020-12-01 3:00',t1='2020-12-01 05:00',paras_file=pfile,save_dir='~/tmp_data')
+    #download_obs_data_as_files(t0='2020-12-01 3:00',t1='2020-12-01 05:00',paras_file=pfile,save_dir='~/tmp_data')
 
 def test_download_latest_data_file(config):
     pfile = config.automate_path(config.weather_pdt.hrrr_paras_file)

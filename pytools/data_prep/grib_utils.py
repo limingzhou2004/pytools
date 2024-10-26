@@ -14,11 +14,9 @@ from typing import List, Tuple, Union, Dict
 import cartopy.crs as ccrs
 import pandas as pd
 import pendulum as pu
-import geopandas
 import requests
 import numpy as np
 from tqdm import tqdm
-from shapely.geometry import Point
 import xarray as xr
 
 from pytools.retry.api import retry
@@ -259,10 +257,21 @@ def get_all_files(folders: Union[str, Tuple[str]], exclude_small_files=False, si
     return filenames
 
 
-def get_all_files_iter(folders: Union[str, Tuple[str]], exclude_small_files=False, size_kb_fileter=1024):
+def scantree(path):
+    """Recursively yield DirEntry objects for given directory."""
+    for entry in os.scandir(path):
+        if entry.is_dir(follow_symlinks=False):
+            yield from scantree(entry.path)  # see below for Python 2.x
+        else:
+            yield entry
+
+def get_all_files_iter(folders: Union[str, Tuple[str]], recursive=False, exclude_small_files=False, size_kb_fileter=1024):
     file_iter = iter([])
     if isinstance(folders, str):
-        file_iter = chain(file_iter, os.scandir(folders))
+        if recursive:
+            file_iter = chain(file_iter, scantree(folders))
+        else:
+            file_iter = chain(file_iter, os.scandir(folders))
     else:        
         for f in folders:
             file_iter = chain(file_iter, os.scandir(f))
@@ -390,6 +399,8 @@ def decide_grib_type(fn:str):
         str: hrrr_obs|hrrr_fst|utah_grib|utah_nc
     """
     import re
+    if fn.startswith('subset_'):
+        return 'herbie_obs'
     p = re.compile(r'hrrrsub_\d\d\d\d_\d\d_\d\d_\d\dF\w*')
     if p.match(fn): 
         return 'hrrr_obs'

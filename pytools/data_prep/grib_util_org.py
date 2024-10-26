@@ -24,6 +24,7 @@ from pytools.data_prep.get_datetime_from_grib_file_name import get_datetime_from
 
 from pytools.data_prep.grib_utils import decide_grib_type, get_all_files_iter, produce_full_timestamp
 from pytools.data_prep.get_datetime_from_grib_file_name import get_datetime_from_grib_file_name
+from pytools.data_prep.herbie_wrapper import get_timestamp_from_herbie_folder_filename
 
 
 folder_table_name = 'hrrr_folder_info'
@@ -34,6 +35,7 @@ col_folder = 'folder'
 col_type = 'type'
 col_batch = 'batch'
 col_filename = 'filename'
+folder_name = 'folder'
 col_timestamp = 'timestamp'
 col_complete_timestamp = 'cplt_timestamp'
 
@@ -78,22 +80,25 @@ def load_files(batch_no=0):
     df = df[df[col_batch] ==batch_no]
     ds = []
 
-    def get_timestamp(fn:str, grib_type:str):
+    def get_timestamp(fn:str, grib_type:str, folder_name:str=''):
         # automatically decide wheter it is hrrr-obs, hrrr-fst, or nc-obs
         # grib_type = decide_grib_type(fn)
         if grib_type.startswith('hrrr'):
             return get_datetime_from_grib_file_name(hour_offset=0, filename=fn,nptime=True)
+        elif grib_type.startswith('herbie'):
+            return get_timestamp_from_herbie_folder_filename(folder=folder_name, fn=fn)
         else:
             return get_datetime_from_utah_file_name(filename=fn)
     
     tqdm.pandas()
     for f in df['folder']:
-        df0 = pd.DataFrame(data={col_filename:[v.name for v in get_all_files_iter(f, exclude_small_files=True)]})
-        df0[col_folder] = f
+        fs = list(get_all_files_iter(f, recursive=True, exclude_small_files=True))
+        df0 = pd.DataFrame(data={col_filename:[v.name for v in fs ]})
+        df0[col_folder] = pd.DataFrame(data={col_filename:[v.path for v in fs ]})
         df0[col_type] = df0[col_filename].apply(decide_grib_type)
         # generate timestamp from filename
         print(f'processing {f}...')
-        df0[col_timestamp] = df0.progress_apply(lambda x: get_timestamp(x[col_filename], x[col_type]), axis=1)
+        df0[col_timestamp] = df0.progress_apply(lambda x: get_timestamp(x[col_filename], x[col_type], x[folder_name]), axis=1)
         ds.append(df0)
 
     fo = pd.concat(ds)

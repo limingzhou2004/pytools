@@ -4,14 +4,17 @@ import os.path as osp
 from pathlib import Path
 from collections import OrderedDict
 from datetime import timedelta
+import time
 from typing import List
 from herbie import Herbie, FastHerbie, HerbieLatest  #, HerbieWait
 import numpy as np
 import pandas as pd
 import xarray as xr
 
+
 from pytools.config import Config
 from pytools.data_prep.grib_utils import extract_data_from_grib2, get_herbie_str_from_cfgrib_file, get_paras_from_cfgrib_file
+from pytools.retry.api import retry
 
 
 
@@ -122,6 +125,22 @@ def download_hist_fst_data(t_start, t_end, fst_hr:int,  paras_file:str, envelope
     return spot_time_list, envelope_arr_list
 
 
+@retry(tries=5, delay=20)
+def download_herbie_file_extract(cur_date:np.datetime64, fst_hour:int, tgt_folder:str):
+    time.sleep(3)
+    config_file='pytools/config/albany_test.toml'
+    c = Config(config_file)
+    paras_file = c.automate_path(c.weather_pdt.hrrr_paras_file)
+    download_obs_data_as_files(t0=str(cur_date), t1=str(cur_date + timedelta(1,'h')), paras_file=paras_file,save_dir=tgt_folder)
+
+
+def get_timestamp_from_herbie_folder_filename(folder, fn):
+    #  ~/tmp/hist/hrrr/20200101/subset_75ef4997__hrrr.t00z.wrfsfcf00.grib2
+    date_str = folder.split('/')[-2][-8:]
+    time_str = fn.split('.')[1][1:3]
+
+    return pd.Timestamp(date_str[0:4]+'-'+date_str[4:6]+'-'+date_str[6:8]+' '+time_str).to_numpy()
+   
 def extract_data_from_file(fn):
 
     return
