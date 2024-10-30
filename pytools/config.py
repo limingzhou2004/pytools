@@ -138,6 +138,11 @@ class Weather(BaseModel):
     hrrr_predict: str
 
 
+class Model(BaseModel):
+    cv_list: List[List]
+    final_train_model: List
+
+
 class Config:
     def __init__(self, filename: str = ""):
         self.filename = filename
