@@ -6,6 +6,7 @@ from zipfile import ZipFile
 
 import pandas as pd
 from pyiso import client_factory
+from tqdm import tqdm
 
 
 from pytools.data_prep.pg_utils import get_pg_conn, upsert_df
@@ -32,15 +33,16 @@ nyiso_fst_index = ['timestamp_utc']
 def read_a_fst_zip_file(fn):
 
     zip_file = ZipFile(fn)
-    spot_date_str = osp.split(fn)[1]
-    spot_date = pd.to_datetime(spot_date_str[0:4] + '-' + spot_date_str[4:6] + '-' + spot_date_str[6:8])
-    dfs = [pd.read_csv(zip_file.open(text_file.filename))
-        for text_file in zip_file.infolist()
-        if text_file.filename.endswith('.csv')]
+    dfs = []
+    for text_file in zip_file.infolist():
+        if text_file.filename.endswith('.csv'):
+            df = pd.read_csv(zip_file.open(text_file.filename))
+            df['timestamp_spot'] = pd.to_datetime(text_file.filename[0:4] + '-' + text_file.filename[4:6] + '-' + text_file.filename[6:8])
+            dfs.append(df)
+    
     if dfs:
         rdf = pd.concat(dfs) #Time Stamp is local time
         rdf['Time Stamp'] = pd.to_datetime(rdf['Time Stamp'])
-        rdf['timestamp_spot'] = spot_date
         return  rdf
 
 
@@ -48,14 +50,15 @@ def read_a_fst_zip_folder(fd:str):
     files = get_files_from_a_folder(fd)
     dfs = []
     #c = client_factory('NYISO')
-    for f in files:
+    for f in tqdm(files):
+        print(f)
         if f:
             dfs = dfs + [read_a_fst_zip_file(f)]
     # rename to match the timestamp name from API calls
     df_all = pd.concat(dfs).rename(columns={'Time Stamp':'timestamp'})
     df_all.drop_duplicates(subset=['timestamp','timestamp_spot'],inplace=True)
 
-    return df_all.set_index('timestamp')
+    return df_all.set_index(['timestamp', 'timestamp_spot'])
 
 
 def read_a_hist_zip_file(fn):
@@ -78,14 +81,13 @@ def read_a_hist_zip_folder(fd: str):
     """
     files = get_files_from_a_folder(fd)
     dfs = []
-    #c = client_factory('NYISO')
-    for f in files:
+    for f in tqdm(files):
         if f:
+            print(f)
             dfs = dfs + [read_a_hist_zip_file(f)]
     # rename to match the timestamp name from API calls
     df_all = pd.concat(dfs).rename(columns={'Time Stamp':'timestamp'})[nyiso_cols]
     return df_all.set_index(nyiso_index)
-
 
 
 
@@ -142,7 +144,7 @@ def upload_load_data(args):
 
 
 if __name__ == '__main__':
-    # python -m pytools.data_prep.nyiso.download_nyiso_load -option hist -dest_table nyiso_hist_load -db limingzhou -folder "/Users/limingzhou/zhoul/work/energy/iso-load/test/hist" -dest_table nyiso_hist_load -password $pass
+    # python -m pytools.data_prep.nyiso.download_nyiso_load -option hist -dest_table nyiso_hist_load -db limingzhou -folder "/Users/limingzhou/zhoul/work/energy/iso-load/nyiso-load-hist" -dest_table nyiso_hist_load -password $pass
 
-    # python -m pytools.data_prep.nyiso.download_nyiso_load -option fst  -db limingzhou -dest_table nyiso_fst_load -folder "/Users/limingzhou/zhoul/work/energy/iso-load/test/hist" -dest_table nyiso_fst_load -password $pass
+    # python -m pytools.data_prep.nyiso.download_nyiso_load -option fst  -db limingzhou -dest_table nyiso_fst_load -folder "/Users/limingzhou/zhoul/work/energy/iso-load/nyiso-load-fst" -dest_table nyiso_fst_load -password $pass
     upload_load_data(sys.argv[1:])

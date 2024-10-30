@@ -88,6 +88,8 @@ def test_get_nyiso_fst_load():
     
 def test_upload_load_data():
     args = '-option hist  -db limingzhou -folder /Users/limingzhou/zhoul/work/energy/iso-load/test/hist -dest_table nyiso_hist_load -password $password'
+
+    # args = '-option hist  -db limingzhou -folder /Users/limingzhou/zhoul/work/energy/iso-load/nyiso-load-hist -dest_table nyiso_hist_load -password $password'
     #upload_load_data(args.split(' '))
 
 

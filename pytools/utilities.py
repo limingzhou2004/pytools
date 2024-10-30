@@ -39,10 +39,10 @@ def get_absolute_path(cur_path: str, file_name) -> str:
     return osp.join(os.path.dirname(cur_path), file_name)
 
 
-def get_files_from_a_folder(fd:str):
+def get_files_from_a_folder(fd:str, min_size=1000):
     from os import listdir
-    from os.path import isfile, join
-    onlyfiles = [join(fd, f) for f in listdir(fd) if isfile(join(fd, f))]
+    from os.path import isfile, join, getsize
+    onlyfiles = [join(fd, f) for f in listdir(fd) if isfile(join(fd, f)) if getsize(join(fd,f )) > min_size and not f.startswith('.')]
     return onlyfiles
 
 
