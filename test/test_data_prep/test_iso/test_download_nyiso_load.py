@@ -5,7 +5,7 @@ import pytz
 
 from pyiso import client_factory
 
-from pytools.data_prep.nyiso.download_nyiso_load import read_a_hist_zip_folder
+from pytools.data_prep.nyiso.download_nyiso_load import read_a_hist_zip_folder, upload_load_data
 from pytools.data_prep.nyiso.download_nyiso_load import nyiso_cols, nyiso_index, nyiso_fst_cols,nyiso_fst_index
 from pytools.data_prep.pg_utils import get_pg_conn, upsert_df
 
@@ -86,6 +86,15 @@ def test_get_nyiso_fst_load():
     assert df.shape[0] >1
 
     
+def test_upload_load_data():
+    args = '-option hist  -db limingzhou -folder /Users/limingzhou/zhoul/work/energy/iso-load/test/hist -dest_table nyiso_hist_load -password $password'
 
+    # args = '-option hist  -db limingzhou -folder /Users/limingzhou/zhoul/work/energy/iso-load/nyiso-load-hist -dest_table nyiso_hist_load -password $password'
+    #upload_load_data(args.split(' '))
+
+
+    args = '-option fst  -db limingzhou -folder /Users/limingzhou/zhoul/work/energy/iso-load/test/fst -dest_table nyiso_fst_load -password $password'
+    upload_load_data(args.split(' '))
+    assert 1==1
 
  

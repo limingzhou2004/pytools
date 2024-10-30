@@ -6,7 +6,6 @@ from itertools import chain
 import os
 from math import ceil, floor
 import shutil
-import sys
 import time
 from typing import List, Tuple, Union, Dict
 
@@ -14,11 +13,9 @@ from typing import List, Tuple, Union, Dict
 import cartopy.crs as ccrs
 import pandas as pd
 import pendulum as pu
-import geopandas
 import requests
 import numpy as np
 from tqdm import tqdm
-from shapely.geometry import Point
 import xarray as xr
 
 from pytools.retry.api import retry
@@ -259,10 +256,21 @@ def get_all_files(folders: Union[str, Tuple[str]], exclude_small_files=False, si
     return filenames
 
 
-def get_all_files_iter(folders: Union[str, Tuple[str]], exclude_small_files=False, size_kb_fileter=1024):
+def scantree(path):
+    """Recursively yield DirEntry objects for given directory."""
+    for entry in os.scandir(path):
+        if entry.is_dir(follow_symlinks=False):
+            yield from scantree(entry.path)  # see below for Python 2.x
+        else:
+            yield entry
+
+def get_all_files_iter(folders: Union[str, Tuple[str]], recursive=False, exclude_small_files=False, size_kb_fileter=1024):
     file_iter = iter([])
     if isinstance(folders, str):
-        file_iter = chain(file_iter, os.scandir(folders))
+        if recursive:
+            file_iter = chain(file_iter, scantree(folders))
+        else:
+            file_iter = chain(file_iter, os.scandir(folders))
     else:        
         for f in folders:
             file_iter = chain(file_iter, os.scandir(f))
@@ -322,25 +330,6 @@ def find_missing_grib2(folders:Union[str, List[str]], tgt_folder:str='.', t0:str
         download_utah_file_extract(cur_date=t, fst_hour=0, tgt_folder=tgt_folder)
 
 
-def fillmissing_from_pickle(batch_no, tgt_folder:str):
-    """
-    The batch no indicates the latest pickle file, to include previous batches
-
-    Args:
-        batch_no (int): start from 0. 
-        tgt_folder (str): target folder
-    """
-    forecast_hour = 0
-    fn = os.path.join(os.path.dirname(__file__), f'../data/grib2_folder_{batch_no}.pkl')
-    df = pd.read_pickle(fn)
-    df = df[df['timestamp'].isna()]
-    print('start processing...\n')
-    for t in tqdm(df['cplt_timestamp']):
-        if t.to_datetime64()<np.datetime64('2020-01-01'):
-            continue
-        download_utah_file_extract(cur_date=t, fst_hour=forecast_hour, tgt_folder=tgt_folder)
-
-
 def produce_full_timestamp(cur_dates):
     t0 = cur_dates.min()
     t1 = cur_dates.max()
@@ -372,13 +361,15 @@ def download_utah_file_extract(cur_date:np.datetime64, fst_hour:int, tgt_folder:
         print('failure to retriee...')
 
 
-def fillmissing(sourcefolder:str, targetfolder:str, t0:str=None, t1:str=None, hourfst:int=0):
-    find_missing_grib2(folders=sourcefolder.split(','), tgt_folder=targetfolder, t0=t0, t1=t1)
-    print('start...')
+# def fillmissing(sourcefolder:str, targetfolder:str, t0:str=None, t1:str=None, hourfst:int=0):
+#     find_missing_grib2(folders=sourcefolder.split(','), tgt_folder=targetfolder, t0=t0, t1=t1)
+#     print('start...')
     
 
 def decide_grib_type(fn:str): 
     """
+
+    #     herbie_obs = 'subset_75ef4997__hrrr.t00z.wrfsfcf00.grib2'
     #     hrrr_obs = 'hrrrsub_2020_01_01_00F0.grib2'
     #     hrrr_fst = 'hrrrsub_12_2020_01_01_18F1.grib2'
     #     utah_grib = '20200105.hrrr.t14z.wrfsfcf00.grib2'
@@ -390,6 +381,8 @@ def decide_grib_type(fn:str):
         str: hrrr_obs|hrrr_fst|utah_grib|utah_nc
     """
     import re
+    if fn.startswith('subset_'):
+        return 'herbie_obs'
     p = re.compile(r'hrrrsub_\d\d\d\d_\d\d_\d\d_\d\dF\w*')
     if p.match(fn): 
         return 'hrrr_obs'
@@ -447,18 +440,3 @@ def download_hrrr_by_hour(exe_date:pu.datetime, fst_hour:int, tgt_folder):
     
 
 
- 
-if __name__ == "__main__":
-    # fillmissing(*sys.argv[1:])
-    # python -m pytools.data_prep.grib_utils 
-    if len(sys.argv)<3:
-        tgt_folder = "/Users/limingzhou/zhoul/work/energy/utah_2"
-    else:
-        tgt_folder = sys.argv[2]
-    
-    if len(sys.argv) <2:
-        batch_no=0
-    else:
-        batch_no=int(sys.argv[1])
-
-    fillmissing_from_pickle(batch_no=batch_no, tgt_folder=tgt_folder) 

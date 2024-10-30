@@ -2,6 +2,7 @@
 "/Users/limingzhou/zhoul/work/energy/grib2/hrrrdata",-1
 "/Users/limingzhou/zhoul/work/energy/grib2/utah",-1
 "/Users/limingzhou/zhoul/work/energy/grib2/hrrr_fst",-1
+"/Volumes/T7 Shield/noaa_obs_data/herbie",-1
 "/Volumes/T7 Blue/grib2_2018",0
 "/Volumes/T7 Blue/grib2_2018b",0
 "/Volumes/T7 Red/utah",0
@@ -17,3 +18,5 @@
 "/Volumes/T7 Shield/noaa_obs_data/utah1",1
 "/Volumes/T7 Shield/noaa_obs_data/utah_2",1
 "/Volumes/T7 Shield/noaa_obs_data/utah_3",1
+"/Volumes/T7 Shield/noaa_obs_data/hrrr_obs_2024",1
+"/Volumes/T7 Shield/noaa_obs_data/herbie",1
