@@ -116,7 +116,7 @@ def load_files(batch_no=0):
 
 @retry(tries=5, delay=20)
 def download_herbie_file_extract(cur_date:np.datetime64, tgt_folder:str):
-    time.sleep(3)
+    time.sleep(1)
     config_file='pytools/config/albany_test.toml'
     c = Config(config_file)
     paras_file = c.automate_path(c.weather_pdt.hrrr_paras_file)
@@ -131,7 +131,6 @@ def fillmissing_from_pickle(batch_no, tgt_folder:str):
         batch_no (int): start from 0. 
         tgt_folder (str): target folder
     """
-    forecast_hour = 0
     fn = os.path.join(os.path.dirname(__file__), f'../data/grib2_folder_{batch_no}.pkl')
     df = pd.read_pickle(fn)
     df = df[df['timestamp'].isna()]

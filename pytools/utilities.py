@@ -1,10 +1,8 @@
 import logging
-from multiprocessing import Pool
 import os
 import os.path as osp
 
 
-import xarray as xr
 import numpy as np
 import pandas as pd
 import dask.bag as bag

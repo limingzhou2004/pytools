@@ -1,5 +1,4 @@
 from datetime import timedelta
-from textwrap import dedent 
 
 from airflow import DAG
 # from airflow.operators.bash import BashOperator
@@ -9,7 +8,6 @@ from airflow.operators.latest_only import LatestOnlyOperator
 #from airflow.decorators import dag, task
 from airflow.models import Variable
 import pendulum as pu
-
 
 
 # won't work in the airflow env as pyiso not installed there
@@ -22,7 +20,7 @@ import pendulum as pu
 
 args={
     'owner' : 'liming',
-    'time_out':timedelta(hours=48),
+    'time_out':timedelta(hours=4),
     'retries': 5,
     'retry_delay': timedelta(minutes=5),
     'start_date':pu.now(tz='UTC').add(days=-2)# 1 means yesterday
@@ -46,12 +44,11 @@ with DAG(
     critical_time = int(Variable.get('critical_time_mm', default_var=50))
 
     if not py_path:
-        py_path = '/Users/limingzhou/miniforge3/envs/energy_x86/bin/python'
+        py_path = '/Users/limingzhou/miniforge3/envs/energy/bin/python'
 
 
     def download_nyiso_load_data(schema, hist_table, fst_table, pg_dict):
        # from pytools.data_prep.grib_utils import download_hrrr_by_hour
-        import pendulum as pu 
         from pyiso import client_factory
         import pandas as pd 
 
@@ -65,24 +62,21 @@ with DAG(
         data = c.get_load(latest=True, integrated_1h=True, freq='hourly')
         df = pd.DataFrame(data)[nyiso_cols] 
         df = df.set_index(nyiso_index)
-        res = upsert_df(df,table_name=f'{hist_table}', engine=eng, schema=schema)   
+        _ = upsert_df(df,table_name=f'{hist_table}', engine=eng, schema=schema)   
 
         data = c.get_load(latest=True, forecast=True, freq='hourly')
         df2 = pd.DataFrame(data)[nyiso_fst_cols]
         df2['timestamp_spot'] = pd.Timestamp.now()
         df2.set_index(nyiso_fst_index, inplace=True)
-        res = upsert_df(df2,table_name=f'{fst_table}', engine=eng, schema=schema)
+        _ = upsert_df(df2,table_name=f'{fst_table}', engine=eng, schema=schema)
         clean_tmp_tables('iso', eng)
-
-
-
 
     t1 = ExternalPythonOperator(
         python=py_path, 
         op_kwargs={
-            'schema':iso_schema,
-            'hist_table': nyiso_hist_load_table,
-            'fst_table':nyiso_fst_load_table,
+          'schema':iso_schema,
+          'hist_table': nyiso_hist_load_table,
+          'fst_table':nyiso_fst_load_table,
           'execution_date_str': '{{ ts }}',      
           'external_trigger': '{{ dag_run.external_trigger }}',
           'critical_time': critical_time,
@@ -94,8 +88,7 @@ with DAG(
         python_callable=download_nyiso_load_data, 
         expect_airflow=True, 
         expect_pendulum=True,
-        dag=dag,  
-      
+        dag=dag,        
        )  
 
     

@@ -13,8 +13,6 @@ from pytools.config import Config
 from pytools.data_prep.grib_utils import extract_data_from_grib2, get_herbie_str_from_cfgrib_file, get_paras_from_cfgrib_file
 
 
-
-
 def download_obs_data_as_files(t0:str, t1:str, paras_file:str, save_dir:str, threads:int=8):
     fst_hr = 0
     paras_str = get_herbie_str_from_cfgrib_file(paras_file=paras_file)
@@ -120,9 +118,6 @@ def download_hist_fst_data(t_start, t_end, fst_hr:int,  paras_file:str, envelope
         spot_time_list.append(cur_t)          
 
     return spot_time_list, envelope_arr_list
-
-
-
 
 
 def get_timestamp_from_herbie_folder_filename(folder, fn):

@@ -440,18 +440,3 @@ def download_hrrr_by_hour(exe_date:pu.datetime, fst_hour:int, tgt_folder):
     
 
 
- 
-# if __name__ == "__main__":
-#     # fillmissing(*sys.argv[1:])
-#     # python -m pytools.data_prep.grib_utils 
-#     if len(sys.argv)<3:
-#         tgt_folder = "/Users/limingzhou/zhoul/work/energy/utah_2"
-#     else:
-#         tgt_folder = sys.argv[2]
-    
-#     if len(sys.argv) <2:
-#         batch_no=0
-#     else:
-#         batch_no=int(sys.argv[1])
-
-    # fillmissing_from_pickle(batch_no=batch_no, tgt_folder=tgt_folder) 

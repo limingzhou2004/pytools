@@ -1,17 +1,18 @@
-
+create schema if not exists iso
 CREATE TABLE IF NOT EXISTS iso.nyiso_hist_load
 (
     "timestamp" timestamp with time zone,
     "Name" varchar(30) ,
     "Time Zone" varchar(3) ,
-    "Integrated Load" float
+    "Integrated Load" float,
+	"PTID" int,
 	
 	primary key("timestamp", "Name", "Time Zone")
 )
 
 
 create table if not exists iso.nyiso_fst_load(
-timestamp_utc timestamp with time zone,
+timestamp timestamp with time zone,
 timestamp_spot timestamp with time zone,
 	"Capitl" float,
 	"Centrl" float,
@@ -25,5 +26,5 @@ timestamp_spot timestamp with time zone,
 	"North" float,
 	"West" float,
 	"NYISO" float,
-	primary key(timestamp_utc, timestamp_spot)
+	primary key(timestamp, timestamp_spot)
 )
