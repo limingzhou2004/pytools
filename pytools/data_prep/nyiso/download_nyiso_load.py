@@ -142,7 +142,7 @@ def upload_load_data(args):
 
 
 if __name__ == '__main__':
-    # python -m pytools.data_prep.nyiso.download_nyiso_load -option hist  -db limingzhou -folder "/Users/limingzhou/zhoul/work/energy/iso-load/test/hist" -dest_table nyiso_hist_load -password $pass
+    # python -m pytools.data_prep.nyiso.download_nyiso_load -option hist -dest_table nyiso_hist_load -db limingzhou -folder "/Users/limingzhou/zhoul/work/energy/iso-load/test/hist" -dest_table nyiso_hist_load -password $pass
 
-    # python -m pytools.data_prep.nyiso.download_nyiso_load -option fst  -db limingzhou -folder "/Users/limingzhou/zhoul/work/energy/iso-load/test/hist" -dest_table nyiso_fst_load -password $pass
+    # python -m pytools.data_prep.nyiso.download_nyiso_load -option fst  -db limingzhou -dest_table nyiso_fst_load -folder "/Users/limingzhou/zhoul/work/energy/iso-load/test/hist" -dest_table nyiso_fst_load -password $pass
     upload_load_data(sys.argv[1:])

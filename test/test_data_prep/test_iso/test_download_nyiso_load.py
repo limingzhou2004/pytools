@@ -87,11 +87,11 @@ def test_get_nyiso_fst_load():
 
     
 def test_upload_load_data():
-    args = '-option hist  -db limingzhou -folder /Users/limingzhou/zhoul/work/energy/iso-load/test/hist -dest_table nyiso_hist_load -password 4545ABxy'
+    args = '-option hist  -db limingzhou -folder /Users/limingzhou/zhoul/work/energy/iso-load/test/hist -dest_table nyiso_hist_load -password $password'
     #upload_load_data(args.split(' '))
 
 
-    args = '-option fst  -db limingzhou -folder /Users/limingzhou/zhoul/work/energy/iso-load/test/fst -dest_table nyiso_fst_load -password 4545ABxy'
+    args = '-option fst  -db limingzhou -folder /Users/limingzhou/zhoul/work/energy/iso-load/test/fst -dest_table nyiso_fst_load -password $password'
     upload_load_data(args.split(' '))
     assert 1==1
 
