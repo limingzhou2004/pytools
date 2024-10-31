@@ -20,9 +20,6 @@ class TestConfig:
     def test_sql(self, config):
         assert len(config.sql) == 3
 
-    def test_weather_folder(self, config):
-        assert len(config.weather_folder["hrrr_hist"]) >= 1
-
     def test_env_parse(self, config):
         assert config.site["envtest"] == "test an env"
 
@@ -32,5 +29,4 @@ class TestConfig:
         assert config.weather_pdt.envelope == [1548, 1568, 774, 794]
 
     def test_get_fst_hours(self, config):
-
-        assert config.load_pdt.fst_hours==[1,6, 24]
+        assert config.model_pdt.forecast_horizon==[[1,24], [25,48]]

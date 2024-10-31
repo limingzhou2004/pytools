@@ -78,7 +78,6 @@ US_timezones=['US/Alaska',
  'US/Samoa']
 
 
-
 class Site(BaseModel):
     timezone:str
     state:str
@@ -124,7 +123,7 @@ class Load(BaseModel):
     lag_hours:int
     utc_to_local_hours:int 
     #load_lag_start:int # to delete
-    fst_hours: List[int]
+    #fst_hours: List[int]
 
 
 class Weather(BaseModel):
@@ -139,8 +138,11 @@ class Weather(BaseModel):
 
 
 class Model(BaseModel):
-    cv_list: List[List]
-    final_train_model: List
+    y_label: str
+    cv_settings: List[List]
+    forecast_horizon: List[List]
+    final_train_hist: List
+    models: List
 
 
 class Config:
@@ -162,6 +164,7 @@ class Config:
         self.site_pdt = Site(**self.toml_dict['site'])
         self.load_pdt = Load(**self.toml_dict['load'])
         self.weather_pdt = Weather(**self.toml_dict['weather'])
+        self.model_pdt = Model(**self.toml_dict['model'])
 
     def _add_base_folder(self, dict_to_update, key):
         dict_to_update[key] = os.path.join(self._base_folder, dict_to_update[key])
