@@ -60,8 +60,6 @@ class DataPrepManager:
         t1: str,
         load_data: ldp.LoadData,
         load_limit: Tuple[float, float],
-       # max_load_lag_start: int = 1,
-       # load_lag_order: int = 168,
         utc_to_local_hours: int = -5,
         load_name: str = "load",
         timestamp_name: str = "timestamp",
@@ -118,12 +116,9 @@ class DataPrepManager:
         )
         del raw_load_data[load_name]
         self.data_calendar = raw_load_data
-      #  self.max_load_lag_start = max_load_lag_start
-      #  self.load_lag_order = load_lag_order
+
         self.utc_to_local_hours = utc_to_local_hours
-        # self.data_standard_load_lag = self.add_lag(
-        #     self.data_standard_load, start=max_load_lag_start, order=load_lag_order
-        # )
+
         self.weather: wp.WeatherDataPrep = None
         self.center = None
         self.rect = None

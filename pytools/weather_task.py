@@ -78,14 +78,16 @@ def hist_load(
         dm = Dpmb(
             config_file=config_file, t0=t0, t1=t1
         ).build_dm_from_config_weather(config=config)
-        dm.build_weather(
-            weather=config.weather,
-            center=config.site["center"],
-            rect=config.site["rect"],
-        )
+        # dm.build_weather(
+        #     weather=config.weather,
+        #     center=config.site["center"],
+        #     rect=config.site["rect"],
+        # )
         # save the data manager with a weather object
         dpm.save(config=config, dmp=dm, prefix=prefix, suffix=suffix)
+
         # write the load data to npy 
+        
         
     else:
         logger.info("Use the existing manager...\n")
