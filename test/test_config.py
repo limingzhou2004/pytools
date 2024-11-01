@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from pytools.config import Config
-
+from pytools.config import DataType
 
 class TestConfig:
     def test_get(self, config):
@@ -30,3 +30,7 @@ class TestConfig:
 
     def test_get_fst_hours(self, config):
         assert config.model_pdt.forecast_horizon==[[1,24], [25,48]]
+
+    def test_get_full_filename(self, config):
+        fn = config.get_load_data_full_fn(DataType.load ,'npz')
+        assert fn.endswith('load.npz')

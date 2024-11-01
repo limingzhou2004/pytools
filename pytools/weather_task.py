@@ -85,6 +85,8 @@ def hist_load(
         )
         # save the data manager with a weather object
         dpm.save(config=config, dmp=dm, prefix=prefix, suffix=suffix)
+        # write the load data to npy 
+        
     else:
         logger.info("Use the existing manager...\n")
     return dm

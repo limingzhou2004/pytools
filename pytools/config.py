@@ -1,3 +1,5 @@
+
+from enum import Enum
 import os
 import os.path as osp
 from pathlib import Path
@@ -76,6 +78,13 @@ US_timezones=['US/Alaska',
  'US/Mountain',
  'US/Pacific',
  'US/Samoa']
+
+class DataType(Enum):
+    load =1 
+    calendar = 2
+    hist_weather = 3
+    past_fst_weather = 4 
+    latest_fst_weather = 5
 
 
 class Site(BaseModel):
@@ -180,6 +189,10 @@ class Config:
 
         """
         return self.toml_dict[table]
+    
+    def get_load_data_full_fn(self, data_type: DataType, extension:str):
+
+        return self.automate_path(f'data/{str(data_type.name)}.{extension}')
 
     def get_model_file_name(
         self, class_name: str = "_data_manager_", prefix: str = "", suffix: str = "", extension='.pkl'
