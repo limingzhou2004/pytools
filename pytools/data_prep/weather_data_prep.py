@@ -292,7 +292,7 @@ class WeatherDataPrep:
             if self.x_grid is None:
                 return_latlon = True
             res = extract_data_from_grib2(
-                fn=fn, lon=center[0],  
+                fn_arr=fn, lon=center[0],  
                 lat=center[1], radius=rect, paras=p, 
                 return_latlon=return_latlon, envelope=envelope)
             envelope = res[1] 
