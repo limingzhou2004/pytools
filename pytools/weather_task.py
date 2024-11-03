@@ -99,27 +99,27 @@ def hist_weather_prepare_from_report(config_file:str, n_cores=1, suffix='v0'):
     logger.info(f"Creating historical npy data from {d.t0} to {d.t1}...\n")
 
     config = Config(config_file)
-    d.build_weather(
-        weather=config.weather,
-        center=config.site["center"],
-        rect=config.site["rect"],)
+    # d.build_weather(
+    #     weather=config.weather,
+    #     center=config.site["center"],
+    #     rect=config.site["rect"],)
 
-    parallel=False
-    if n_cores > 1:
-        parallel = True
-    w_obj = d.weather.make_npy_data_from_inventory(
-        config=config,
-        parallel=parallel,
-        t0=d.t0,
-        t1=d.t1,
-        n_cores=n_cores,
-        )
+    # parallel=False
+    # if n_cores > 1:
+    #     parallel = True
+    # w_obj = d.weather.make_npy_data_from_inventory(
+    #     config=config,
+    #     parallel=parallel,
+    #     t0=d.t0,
+    #     t1=d.t1,
+    #     n_cores=n_cores,
+    #     )
     #w_obj.save_scaled_npz(osp.join(config.site_parent_folder, weather_data_file_name))
     #w_obj.save_unscaled_npz(osp.join(config.site_parent_folder, 'unscaled_'+weather_data_file_name))
     fn = config.get_load_data_full_fn(data_type=DataType.Hist_weatherData, extension='npz')
-
-    w_timestamp, wdata = d.export_data(DataType.Hist_weatherData, scaled=False)
-    np.savez_compressed(fn, **{'timestamp':w_timestamp, DataType.Hist_weatherData.name:wdata})
+    # use paras[()] to access the OrderedDict in the 0-dim paras array.
+    paras, w_timestamp, wdata = d.export_data(DataType.Hist_weatherData, scaled=False)
+    np.savez_compressed(fn, **{'paras':paras, 'timestamp':w_timestamp, DataType.Hist_weatherData.name:wdata})
     dpm.save(config=config, dmp=d, suffix=suffix)
 
     return d
