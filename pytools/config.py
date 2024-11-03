@@ -80,11 +80,11 @@ US_timezones=['US/Alaska',
  'US/Samoa']
 
 class DataType(Enum):
-    load =1 
-    calendar = 2
-    hist_weather = 3
-    past_fst_weather = 4 
-    latest_fst_weather = 5
+    LoadData =1 
+    CalendarData = 2
+    Hist_weatherData = 3
+    Past_fst_weatherData = 4 
+    Latest_fst_weatherData = 5
 
 
 class Site(BaseModel):

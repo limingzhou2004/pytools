@@ -16,6 +16,7 @@ from pytools.data_prep import weather_data as wd
 from pytools.data_prep.weather_data_prep import GribType
 from pytools.data_prep import load_data_prep as ldp
 from pytools.config import Config
+from pytools.config import DataType
 
 
 # pd.set_option('mode.chained_assignment', 'raise')
@@ -35,10 +36,10 @@ weather data
 """
 
 
-class DataType(enum.Enum):
-    LoadData = 0
-    CalendarData = 1
-    WeatherData = 2
+# class DataType(enum.Enum):
+#     LoadData = 0
+#     CalendarData = 1
+#     WeatherData = 2
 
 
 class DataPrepManager:
@@ -144,7 +145,7 @@ class DataPrepManager:
                 return self.data_standard_load
             else:
                 return self.load_data.train_data
-        elif data_type == DataType.WeatherData:
+        elif data_type == DataType.Hist_weatherData:
             if scaled:
                 return self.standardize_weather(weather_array=self.weather.weather_train_data, overwrite=False)
             else:

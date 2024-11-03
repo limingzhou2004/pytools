@@ -85,9 +85,9 @@ def hist_load(
         dpm.save(config=config, dmp=dm, prefix=prefix, suffix=suffix)
 
         # write the load data to npy 
-        fn = config.get_load_data_full_fn(data_type=DataType.load, extension='npz')
-        load = dm.export_data(DataType.load, scaled=False)
-        np.savez_compressed(fn, **{DataType.load.name:load})       
+        fn = config.get_load_data_full_fn(data_type=DataType.LoadData, extension='npz')
+        load = dm.export_data(DataType.LoadData, scaled=False)
+        np.savez_compressed(fn, **{DataType.LoadData.name:load})       
         
     else:
         logger.info("Use the existing manager...\n")
@@ -99,7 +99,6 @@ def hist_weather_prepare_from_report(config_file:str, n_cores=1, suffix='v0'):
     logger.info(f"Creating historical npy data from {d.t0} to {d.t1}...\n")
 
     config = Config(config_file)
-    #hour_offset = config.load["utc_to_local_hours"]
     d.build_weather(
         weather=config.weather,
         center=config.site["center"],
@@ -117,6 +116,8 @@ def hist_weather_prepare_from_report(config_file:str, n_cores=1, suffix='v0'):
         )
     #w_obj.save_scaled_npz(osp.join(config.site_parent_folder, weather_data_file_name))
     #w_obj.save_unscaled_npz(osp.join(config.site_parent_folder, 'unscaled_'+weather_data_file_name))
+    wdata = d.export_data(DataType.Hist_weatherData, scaled=False)
+    
     dpm.save(config=config, dmp=d, suffix=suffix)
 
     return d
