@@ -38,7 +38,7 @@ from pytools.data_prep.data_prep_manager_builder import (
 from pytools.data_prep import load_data_prep as ldp
 from pytools.data_prep.get_datetime_from_grib_file_name import get_datetime_from_grib_file_name
 from pytools.data_prep import weather_data_prep as wp
-from pytools.config import Config
+from pytools.config import Config, DataType
 
 # use hour 0-5 forecast as history to train models, also called analysis
 
@@ -49,7 +49,7 @@ logger = get_logger("weather_tasks")
 weather_data_file_name = 'weather_data.npz'
 
 
-logger = get_logger()
+logger = get_logger('weather_task')
 
 def hist_load(
     config_file: str,
@@ -85,7 +85,9 @@ def hist_load(
         dpm.save(config=config, dmp=dm, prefix=prefix, suffix=suffix)
 
         # write the load data to npy 
-        
+        fn = config.get_load_data_full_fn(data_type=DataType.load, extension='npz')
+        load = dm.export_data(DataType.load, scaled=False)
+        np.savez_compressed(fn, **{DataType.load.name:load})       
         
     else:
         logger.info("Use the existing manager...\n")

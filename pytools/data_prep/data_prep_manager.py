@@ -96,6 +96,12 @@ class DataPrepManager:
         self.site_folder = site_folder
         if not os.path.exists(self.site_folder):
             os.makedirs(self.site_folder)
+        data_subdir = os.path.join(self.site_folder,'data')
+        if not os.path.exists(data_subdir):
+            os.makedirs(data_subdir)
+        model_subdir = os.path.join(self.site_folder,'model')
+        if not os.path.exists(model_subdir):
+            os.makedirs(model_subdir)
         self._load_data: ldp.LoadData = load_data
         self.t0 = t0
         self.t1 = t1
@@ -131,6 +137,18 @@ class DataPrepManager:
         self._weather_para_file = ""
         self._weather_predict_folder = ""
         self.para_num = para_num
+
+    def export_data(self, data_type: DataType, scaled=False):
+        if data_type == DataType.LoadData:
+            if scaled:
+                return self.data_standard_load
+            else:
+                return self.load_data.train_data
+        elif data_type == DataType.WeatherData:
+            if scaled:
+                return self.standardize_weather(weather_array=self.weather.weather_train_data, overwrite=False)
+            else:
+                return self.weather.weather_train_data
 
     def process_load_data(
         self, load_data: ldp.LoadData, lag_hours=168, fst_horizon:List[int]=None

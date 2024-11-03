@@ -16,7 +16,7 @@ from pytools.data_prep.get_datetime_from_grib_file_name import get_datetime_from
 from pytools.data_prep.grib_utils import extract_data_from_grib2, get_paras_from_cfgrib_file
 from pytools.utilities import get_file_path, parallelize_dataframe
 
-logger = get_logger()
+logger = get_logger('weather_data_prep')
 
 def grib_filter_func(
     file_names: list,

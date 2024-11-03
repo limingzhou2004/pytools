@@ -99,7 +99,7 @@ class Site(BaseModel):
     t1: str
     hrrr_paras_file: FilePath
     sql_location: str 
-    site_folder: str 
+    #site_folder: str 
     description: str 
 
     @field_validator('state',mode='after')
@@ -225,9 +225,9 @@ class Config:
     def site_parent_folder(self):
         return os.path.join(
             self._base_folder,
-            self.toml_dict["site"]["site_folder"],
-            self.toml_dict["category"]["name"],
-            self.toml_dict["site"]["alias"],
+            #self.toml_dict["site"]["site_folder"],
+            # self.toml_dict["category"]["name"],
+            # self.toml_dict["site"]["alias"],
         )
 
     @property
@@ -252,7 +252,7 @@ class Config:
         if fn.startswith('data_prep'):
             return get_file_path(fn=fn, this_file_path=__file__)
         
-        return osp.join(self.site_pdt.base_folder, fn)
+        return osp.join(self.site_parent_folder, fn)
 
     @property
     def load(self):
