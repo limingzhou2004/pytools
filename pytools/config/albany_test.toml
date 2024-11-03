@@ -42,7 +42,7 @@
 [weather]
 envelope = [1548, 1568, 774, 794]
 hist_weather_pickle = "../data/grib2_folder_1.pkl"
-folder_col_name = "folder"
+fullfile_col_name = "full_file_name"
 filename_col_name = "filename"
 type_col_name = "type"
 hrrr_paras_file = "data_prep/hrrr_paras_cfgrib.txt"

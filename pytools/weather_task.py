@@ -48,6 +48,9 @@ hrrr_hist_max_fst_hour = 0
 logger = get_logger("weather_tasks")
 weather_data_file_name = 'weather_data.npz'
 
+
+logger = get_logger()
+
 def hist_load(
     config_file: str,
     t0: str = None,
@@ -78,11 +81,6 @@ def hist_load(
         dm = Dpmb(
             config_file=config_file, t0=t0, t1=t1
         ).build_dm_from_config_weather(config=config)
-        # dm.build_weather(
-        #     weather=config.weather,
-        #     center=config.site["center"],
-        #     rect=config.site["rect"],
-        # )
         # save the data manager with a weather object
         dpm.save(config=config, dmp=dm, prefix=prefix, suffix=suffix)
 
@@ -109,13 +107,8 @@ def hist_weather_prepare_from_report(config_file:str, n_cores=1, suffix='v0'):
     if n_cores > 1:
         parallel = True
     w_obj = d.weather.make_npy_data_from_inventory(
-        center=config.site['center'],
-        rect=config.site['rect'],
-        inventory_file=config.weather_pdt.hist_weather_pickle,
+        config=config,
         parallel=parallel,
-        folder_col_name=config.weather_pdt.folder_col_name,
-        filename_col_name=config.weather_pdt.filename_col_name,
-        type_col_name=config.weather_pdt.type_col_name,
         t0=d.t0,
         t1=d.t1,
         n_cores=n_cores,

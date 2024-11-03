@@ -27,7 +27,7 @@ class TestWeatherTask:
 
     def test_hist_weather_from_inventory(self):
         dm = hist_weather_prepare_from_report(config_file=self.config_file, n_cores=1)
-        assert dm.weather.weather_train_data.standardized_data.shape==(73, 35, 35, 16)
+        assert dm.weather.weather_train_data.standardized_data.shape==(73, 21, 21, 16)
 
 
     @pytest.mark.parametrize(

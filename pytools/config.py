@@ -138,7 +138,7 @@ class Load(BaseModel):
 class Weather(BaseModel):
     envelope: List[int]
     hist_weather_pickle: str
-    folder_col_name: str 
+    fullfile_col_name: str 
     filename_col_name: str 
     hrrr_paras_file: str
     type_col_name: str 
