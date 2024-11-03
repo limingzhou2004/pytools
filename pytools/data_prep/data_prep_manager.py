@@ -147,9 +147,10 @@ class DataPrepManager:
                 return self.load_data.train_data
         elif data_type == DataType.Hist_weatherData:
             if scaled:
-                return self.standardize_weather(weather_array=self.weather.weather_train_data, overwrite=False)
+                
+                return self.weather.weather_train_data.timestamp, self.standardize_weather(weather_array=self.weather.weather_train_data, overwrite=False)
             else:
-                return self.weather.weather_train_data
+                return self.weather.weather_train_data.timestamp, self.weather.weather_train_data
 
     def process_load_data(
         self, load_data: ldp.LoadData, lag_hours=168, fst_horizon:List[int]=None

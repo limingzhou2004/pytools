@@ -116,8 +116,10 @@ def hist_weather_prepare_from_report(config_file:str, n_cores=1, suffix='v0'):
         )
     #w_obj.save_scaled_npz(osp.join(config.site_parent_folder, weather_data_file_name))
     #w_obj.save_unscaled_npz(osp.join(config.site_parent_folder, 'unscaled_'+weather_data_file_name))
-    wdata = d.export_data(DataType.Hist_weatherData, scaled=False)
-    
+    fn = config.get_load_data_full_fn(data_type=DataType.Hist_weatherData, extension='npz')
+
+    w_timestamp, wdata = d.export_data(DataType.Hist_weatherData, scaled=False)
+    np.savez_compressed(fn, **{'timestamp':w_timestamp, DataType.Hist_weatherData.name:wdata})
     dpm.save(config=config, dmp=d, suffix=suffix)
 
     return d
