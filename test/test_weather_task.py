@@ -20,6 +20,12 @@ from pytools.utilities import get_absolute_path
 class TestWeatherTask:
     config_file = get_absolute_path(__file__, "../pytools/config/albany_test.toml")
 
+    def test_commandline_task1(self):
+        cmd_str =f'taskk_1 -cfg {self.config_file} --create '
+        #main(cmd_str.split(' '))
+        cmd_str = f'-cfg {self.config_file} task_2 -fh 2'
+        main(cmd_str.split(' '))
+
     def test_hist_load(self, ):
         #monkeypatch.setattr(LoadData, "query_train_data", mock_train_load)
         res = hist_load(config_file=self.config_file, create=True)

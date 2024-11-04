@@ -62,7 +62,7 @@ class ArgClass:
 
         self._add_task1(fun_list[0])
         self._add_task2(fun_list[1])
-        self._add_task3(fun_list[2])
+        #self._add_task3(fun_list[2])
         # self._add_task4()
         # self._add_task5()
         # self._add_task6()
@@ -117,7 +117,7 @@ class ArgClass:
             help="number of cores to use, default 1",
         )
         sub_parser.add_argument(
-            "-f",
+            "-fh",
             "--fst-hour",
             dest="fst_hour",
             required=False,
@@ -128,8 +128,7 @@ class ArgClass:
         sub_parser.set_defaults(func=fun)
 
     def _add_task3(self, fun):
-        sub_parser = ArgumentParser()
-        self.sub_parsers.add_subparser("task_3", sub_parser, help="Task 3")
+        sub_parser = self.sub_parsers.add_parser("task_3")
         sub_parser.add_argument(
             "-f",
             "--fst-hours",
@@ -142,7 +141,7 @@ class ArgClass:
         sub_parser.set_defaults(func=fun)
 
     def _add_task4(self, fun):
-        sub_parser = ArgumentParser()
+        sub_parser = self.sub_parsers.add_parser("task_4")
         sub_parser.add_argument(
             "-to",
             "--train-options",
@@ -200,7 +199,7 @@ class ArgClass:
         sub_parser.set_defaults(func=fun)
 
     def _add_task5(self, fun):
-        sub_parser = ArgumentParser()
+        sub_parser = self.sub_parsers.add_parser("task_5")
         sub_parser.add_argument(
             "-mha",
             "--max-hours-ahead",
@@ -229,8 +228,7 @@ class ArgClass:
         sub_parser.set_defaults(func=fun)
 
     def _add_task6(self, fun):
-        sub_parser = ArgumentParser()
-        self.sub_commands.add_subcommand("task_6", sub_parser, help="Task 6")
+        sub_parser = self.sub_parsers.add_parser("task_6")
         sub_parser.add_argument(
             "-mha",
             "--max-hours-ahead",
@@ -272,8 +270,6 @@ class ArgClass:
 
 
     def _add_task7(self, fun):
-        sub_parser = ArgumentParser()
-        self.sub_commands.add_subcommand("task_7", sub_parser, help="Task 7")
-
+        sub_parser = self.sub_parsers.add_parser("task_7")
         sub_parser.set_defaults(func=fun)
 
