@@ -8,10 +8,14 @@ from typing import List
 from herbie import Herbie, FastHerbie, HerbieLatest  #, HerbieWait
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 
+from pytools import get_logger
 from pytools.config import Config
 from pytools.data_prep.grib_utils import extract_data_from_grib2, get_herbie_str_from_cfgrib_file, get_paras_from_cfgrib_file
 
+
+logger = get_logger('herbie_log')
 
 def download_obs_data_as_files(t0:str, t1:str, paras_file:str, save_dir:str, threads:int=8):
     fst_hr = 0
@@ -103,8 +107,10 @@ def download_hist_fst_data(t_start, t_end, fst_hr:int,  paras_file:str, envelope
     if not isinstance(envelopes[0], List):
         envelopes = [envelopes]
 
-    for cur_t in pd.date_range(start=t_start, end=t_end, freq=freq):
+    for cur_t in tqdm(pd.date_range(start=t_start, end=t_end, freq=freq)):
+        logger.info(cur_t)
         for h in range(fst_hr):
+            logger.info(f'forecast hour...{h}')
             try:    
                 H = Herbie(cur_t, model="hrrr", fxx=h, save_dir=save_dir)
                 arr = H.xarray(search=paras_str, remove_grib=True)
@@ -114,7 +120,7 @@ def download_hist_fst_data(t_start, t_end, fst_hr:int,  paras_file:str, envelope
                     envelope_arr_list[i][0].append(cur_t + pd.Timedelta(h, unit='h'))
                     envelope_arr_list[i][1].append(dat)
             except Exception as ex:
-                print(ex.strerror)  
+                logger.error(str(ex))
         spot_time_list.append(cur_t)          
 
     return spot_time_list, envelope_arr_list

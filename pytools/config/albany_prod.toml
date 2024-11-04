@@ -9,13 +9,13 @@
  name = "Albany-NY"
  alias = "albany-prod"
  sql_location = "CAPITL"
- site_folder = "nyiso"
+ #site_folder = "nyiso"
  #center[lon, lat]
  center = [-73.0, 43.0]
  #[east, west, south, north]
  rect = [30.0, 30.0, 30.0, 30.0]
- t0="2018-01-01"
- t1="2025-01-04"
+ t0="2019-01-01"
+ t1="2025-01-01"
  description = "Zone Capital of NYISO"
  comments = """name is used for database query and must match what the database use; while alias is used for setting up
   the folder structure"""
@@ -42,16 +42,20 @@
 [weather]
 envelope = [1548, 1568, 774, 794]
 hist_weather_pickle = "../data/grib2_folder_1.pkl"
-folder_col_name = "folder"
+fullfile_col_name = "full_file_name"
 filename_col_name = "filename"
 type_col_name = "type"
 hrrr_paras_file = "data_prep/hrrr_paras_cfgrib.txt"
 
-hrrr_hist = ["utah"] #["hrrr2", "utah"]
+#hrrr_hist = ["utah"] #["hrrr2", "utah"]
 hrrr_predict = "hrrr_fst"
 
 [model]
 y_label = "load"
+forecast_horizon = [
+    [1, 24],
+    [25,48]
+]
 cv_settings = [
     ["2018-01-01", "2020-01-01", "2020-01-01", "2021-01-01"],
     ["2020-01-01", "2021-01-01", "2021-01-01","2022-01-01"],
@@ -60,5 +64,4 @@ cv_settings = [
     ["2023-01-01", "2024-01-01", "2024-01-01","2025-01-01"]
 ]
 final_train_hist = ["2021-01-01", "2025-01-01"]
-models = [ {ahead=1, uri="file:///Users/limingzhou/zhoul/work/me/xaog_proj/src/python/pytools/pytools/modeling/mlruns/7831ce8125a240cdb0c7769ab0b92311/artifacts/Albany-NY-fst-1-full"},
- {ahead=6, uri="file:///Users/limingzhou/zhoul/work/me/xaog_proj/src/python/pytools/pytools/modeling/mlruns/b4aaa0b068404188865c289d270a0b80/artifacts/Albany-NY-fst-6"} ]
+models = [ ]

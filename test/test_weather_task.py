@@ -9,6 +9,7 @@ from pytools.weather_task import (
    # hist_weather_prepare,
     hist_weather_prepare_from_report,
     main,
+    past_fst_weather_prepare,
     train_data_assemble,
     train_model,
 )
@@ -26,9 +27,13 @@ class TestWeatherTask:
         assert res.load_data.train_data.shape[0] >= 2
 
     def test_hist_weather_from_inventory(self):
-        dm = hist_weather_prepare_from_report(config_file=self.config_file, n_cores=1)
+        dm = hist_weather_prepare_from_report(config_file=self.config_file, n_cores=4)
         assert dm.weather.weather_train_data.standardized_data.shape==(73, 21, 21, 16)
 
+    def test_past_weather_fst(self):
+        past_fst_weather_prepare(self.config_file, fst_hour=4)
+
+        assert 1==1
 
     @pytest.mark.parametrize(
         "shape_cal, shape_weather",

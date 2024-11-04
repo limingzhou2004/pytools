@@ -1,3 +1,4 @@
+import pickle
 import sys
 import datetime as dt
 from functools import partial
@@ -17,6 +18,7 @@ from pytorch_lightning.callbacks import EarlyStopping
 from torch.utils.data import DataLoader
 
 from pytools.arg_class import ArgClass
+from pytools.data_prep.herbie_wrapper import download_hist_fst_data
 from pytools.modeling.rolling_forecast import RollingForecast
 from pytools.modeling.utilities import extract_model_settings
 from pytools.modeling.weather_net import WeatherNet, default_layer_sizes, ModelSettings
@@ -99,21 +101,21 @@ def hist_weather_prepare_from_report(config_file:str, n_cores=1, suffix='v0'):
     logger.info(f"Creating historical npy data from {d.t0} to {d.t1}...\n")
 
     config = Config(config_file)
-    # d.build_weather(
-    #     weather=config.weather,
-    #     center=config.site["center"],
-    #     rect=config.site["rect"],)
+    d.build_weather(
+        weather=config.weather,
+        center=config.site["center"],
+        rect=config.site["rect"],)
 
-    # parallel=False
-    # if n_cores > 1:
-    #     parallel = True
-    # w_obj = d.weather.make_npy_data_from_inventory(
-    #     config=config,
-    #     parallel=parallel,
-    #     t0=d.t0,
-    #     t1=d.t1,
-    #     n_cores=n_cores,
-    #     )
+    parallel=False
+    if n_cores > 1:
+        parallel = True
+    w_obj = d.weather.make_npy_data_from_inventory(
+        config=config,
+        parallel=parallel,
+        t0=d.t0,
+        t1=d.t1,
+        n_cores=n_cores,
+        )
     #w_obj.save_scaled_npz(osp.join(config.site_parent_folder, weather_data_file_name))
     #w_obj.save_unscaled_npz(osp.join(config.site_parent_folder, 'unscaled_'+weather_data_file_name))
     fn = config.get_load_data_full_fn(data_type=DataType.Hist_weatherData, extension='npz')
@@ -124,6 +126,17 @@ def hist_weather_prepare_from_report(config_file:str, n_cores=1, suffix='v0'):
 
     return d
 
+
+def past_fst_weather_prepare(config_file:str, fst_hour=48):
+    # d = hist_load(config_file=config_file, create=False)
+    c = Config(config_file)
+    paras_file = c.automate_path(c.weather_pdt.hrrr_paras_file)
+    spot_time, weather_arr = download_hist_fst_data(t_start=c.site_pdt.t0, t_end=c.site_pdt.t1, fst_hr=fst_hour, 
+    paras_file=paras_file,envelopes=c.weather_pdt.envelope)
+    fn = c.get_load_data_full_fn(DataType.Past_fst_weatherData, extension='pkl')
+    with open(fn, 'wb') as f:
+        pickle.dump([spot_time, weather_arr],f)
+    
 
 def train_data_assemble(
     config_file: str, suffix='v0', 

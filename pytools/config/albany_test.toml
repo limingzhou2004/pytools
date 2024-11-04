@@ -47,7 +47,7 @@ filename_col_name = "filename"
 type_col_name = "type"
 hrrr_paras_file = "data_prep/hrrr_paras_cfgrib.txt"
 
-hrrr_hist = ["utah"] #["hrrr2", "utah"]
+#hrrr_hist = ["utah"] #["hrrr2", "utah"]
 hrrr_predict = "hrrr_fst"
 
 [model]

@@ -142,7 +142,7 @@ class Weather(BaseModel):
     filename_col_name: str 
     hrrr_paras_file: str
     type_col_name: str 
-    hrrr_hist: List[str]
+    #hrrr_hist: List[str]
     hrrr_predict: str
 
 
