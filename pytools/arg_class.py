@@ -116,6 +116,15 @@ class ArgClass:
             type=int,
             help="number of cores to use, default 1",
         )
+        sub_parser.add_argument(
+            "-f",
+            "--fst-hour",
+            dest="fst_hour",
+            required=False,
+            default=48,
+            type=int,
+            help="max weather forecast hours, default 48",
+        )
         sub_parser.set_defaults(func=fun)
 
     def _add_task3(self, fun):

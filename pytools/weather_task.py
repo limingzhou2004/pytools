@@ -48,10 +48,8 @@ from pytools.config import Config, DataType
 #nam_hist_max_fst_hour = 5
 hrrr_hist_max_fst_hour = 0
 logger = get_logger("weather_tasks")
-weather_data_file_name = 'weather_data.npz'
+#weather_data_file_name = 'weather_data.npz'
 
-
-logger = get_logger('weather_task')
 
 def hist_load(
     config_file: str,
@@ -97,7 +95,7 @@ def hist_load(
 
 
 def hist_weather_prepare_from_report(config_file:str, n_cores=1, suffix='v0'):
-    d = hist_load(config_file=config_file, create=False)
+    d = hist_load(config_file=config_file, create=False, fst_hour=48)
     logger.info(f"Creating historical npy data from {d.t0} to {d.t1}...\n")
 
     config = Config(config_file)
@@ -374,6 +372,7 @@ def task_1(**args):
 
 def task_2(**args):
     dm = hist_weather_prepare_from_report(**args)
+    past_fst_weather_prepare(config_file=args.config_file, fst_hour=args.fst_hour)
     return dm
 
 
@@ -443,4 +442,5 @@ def task_7(**args):
 
 
 if __name__ == "__main__":
+# python -m pytools.data_prep.weather_task -cfg pytools/config/albany_test.toml --create 
     main(sys.argv[1:])
