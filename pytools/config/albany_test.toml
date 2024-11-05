@@ -14,8 +14,8 @@
  center = [-73.0, 43.0]
  #[east, west, south, north]
  rect = [30.0, 30.0, 30.0, 30.0]
- t0="2018-01-01"
- t1="2018-01-04"
+ t0="2018-11-03"
+ t1="2018-11-05"
  description = "Zone Capital of NYISO"
  comments = """name is used for database query and must match what the database use; while alias is used for setting up
   the folder structure"""

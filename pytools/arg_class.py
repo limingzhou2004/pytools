@@ -62,7 +62,7 @@ class ArgClass:
 
         self._add_task1(fun_list[0])
         self._add_task2(fun_list[1])
-        #self._add_task3(fun_list[2])
+        self._add_task3(fun_list[2])
         # self._add_task4()
         # self._add_task5()
         # self._add_task6()

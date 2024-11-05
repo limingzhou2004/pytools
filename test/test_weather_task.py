@@ -34,10 +34,10 @@ class TestWeatherTask:
 
     def test_hist_weather_from_inventory(self):
         dm = hist_weather_prepare_from_report(config_file=self.config_file, n_cores=4)
-        assert dm.weather.weather_train_data.standardized_data.shape==(73, 21, 21, 16)
+        assert dm.weather.weather_train_data.standardized_data.shape==(49, 21, 21, 16)
 
     def test_past_weather_fst(self):
-        past_fst_weather_prepare(self.config_file, fst_hour=4)
+        past_fst_weather_prepare(self.config_file, fst_hour=2)
 
         assert 1==1
 

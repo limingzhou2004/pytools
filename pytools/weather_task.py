@@ -96,7 +96,7 @@ def hist_load(
 
 def hist_weather_prepare_from_report(config_file:str, n_cores=1, suffix='v0', create=False, fst_hour=48):
     d = hist_load(config_file=config_file, create=create)
-    logger.info(f"Creating historical npy data from {d.t0} to {d.t1}, with forecast horizon of {fst_hour}...\n")
+    logger.info(f"Creating historical npy data from {d.t0} to {d.t1}\n")
 
     config = Config(config_file)
     d.build_weather(
@@ -127,6 +127,7 @@ def hist_weather_prepare_from_report(config_file:str, n_cores=1, suffix='v0', cr
 
 def past_fst_weather_prepare(config_file:str, fst_hour=48):
     # d = hist_load(config_file=config_file, create=False)
+    logger.info('Create past weather forecast, with forecast horizon of {fst_hour}...\n')
     c = Config(config_file)
     paras_file = c.automate_path(c.weather_pdt.hrrr_paras_file)
     spot_time, weather_arr = download_hist_fst_data(t_start=c.site_pdt.t0, t_end=c.site_pdt.t1, fst_hr=fst_hour, 
@@ -443,5 +444,5 @@ def task_7(**args):
 
 if __name__ == "__main__":
 # python -m pytools.weather_task -cfg pytools/config/albany_test.toml --create task_1
-# python -m pytools.weather_task -cfg pytools/config/albany_test.toml task_2 -fh 2
+# python -m pytools.weather_task -cfg pytools/config/albany_test.toml task_2 -fh 2 --n-cores 6
     main(sys.argv[1:])

@@ -8,6 +8,7 @@ import uuid
 import numpy as np
 import pandas as pd
 import dask.bag as bag
+from tqdm import tqdm
 
 from pytools import get_logger
 from pytools.config import Config
@@ -308,11 +309,13 @@ class WeatherDataPrep:
         
         def df_block_process(df_sub):
             data_dict={}
-            for row in df_sub.itertuples():
-                k, v = single_row_process(row)
-                data_dict[k] = v
+            with tqdm(total=df_sub.shape[0]) as pbar:
+                for row in tqdm(df_sub.itertuples()):
+                    k, v = single_row_process(row)
+                    pbar.update(1)
+                    data_dict[k] = v
 
-            return data_dict  #np.stack(arr, axis=0)
+            return data_dict  
         
         if parallel:
             dict_list = parallelize_dataframe(df, df_block_process, n_cores=n_cores )

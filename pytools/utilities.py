@@ -79,8 +79,10 @@ def get_logger(level=logging.INFO, file_name=f"{get_now_str()}.log"):
 
 def parallelize_dataframe(df, func, n_cores=7, partition_size=1):
     # usage train = parallelize_dataframe(train_df, add_features)
+    from dask.diagnostics import ProgressBar
     df_split = np.array_split(df, n_cores)
     file_bag = bag.from_sequence(df_split, partition_size=partition_size)
-    res = file_bag.map(func).compute()
+    with ProgressBar():
+        res = file_bag.map(func).compute()
 
     return res

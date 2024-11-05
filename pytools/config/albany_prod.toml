@@ -5,7 +5,7 @@
 [site]
  timezone = "US/Eastern"
  state = "NY"
- base_folder = "~/zhoul/work/energy/sites/albany-test"
+ base_folder = "~/zhoul/work/energy/sites/albany-prod"
  name = "Albany-NY"
  alias = "albany-prod"
  sql_location = "CAPITL"
@@ -14,7 +14,7 @@
  center = [-73.0, 43.0]
  #[east, west, south, north]
  rect = [30.0, 30.0, 30.0, 30.0]
- t0="2019-01-01"
+ t0="2018-01-01"
  t1="2025-01-01"
  description = "Zone Capital of NYISO"
  comments = """name is used for database query and must match what the database use; while alias is used for setting up
