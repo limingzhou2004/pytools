@@ -121,7 +121,7 @@ def download_herbie_file_extract(cur_date:np.datetime64, tgt_folder:str):
     config_file='pytools/config/albany_test.toml'
     c = Config(config_file)
     paras_file = c.automate_path(c.weather_pdt.hrrr_paras_file)
-    download_obs_data_as_files(t0=str(cur_date), t1=str(cur_date + np.timedelta64(1,'h')), paras_file=paras_file,save_dir=tgt_folder)
+    download_obs_data_as_files(t0=str(cur_date), t1=str(cur_date + np.timedelta64(0,'h')), paras_file=paras_file,save_dir=tgt_folder)
 
 
 def fillmissing_from_pickle(batch_no, tgt_folder:str):

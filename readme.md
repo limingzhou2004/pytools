@@ -111,8 +111,7 @@ pip install "apache-airflow[celery]==2.10.2" --constraint "https://raw.githubuse
 The folders included are listed in pytools/data/hrrr_obs_folder.txt file, with stages ==0 for prod and <0 for test.
 1. Create the pickle file to list each file for each hour, including missing hours, `python -m  pytools.data_prep.grib_util_org 1` The min and max timestamp are determined fromt he exising files. You may need to manually download the last hour data to expand the max timestamp.
 2. Run the report of statistics, by not using additional args, `python -m  pytools.data_prep.grib_util_org summary 1` . __Remember__ to run step 1 to update the pickle file.
-3. Run the Utah downloading to fill missing hours, 
-4. `python -m pytools.data_prep.grib_util_org -fill "/Users/limingzhou/zhoul/work/energy/herbie" 1`
+3. Run the Herbie downloading to fill missing hours,  `python -m pytools.data_prep.grib_util_org -fill "/Users/limingzhou/zhoul/work/energy/herbie" 1`
    
    After the missings are filled, rerun the statisitcal report, there should be no missings.
 
