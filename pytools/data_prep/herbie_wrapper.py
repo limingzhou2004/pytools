@@ -84,7 +84,7 @@ def download_latest_data(paras_file:str, max_hrs, envelopes:List)->List[OrderedD
     return ret_timestamp, ret_array_list
 
 
-def download_hist_fst_data(t_start, t_end, fst_hr:int,  paras_file:str, envelopes:List, freq='D', save_dir='~/tmp_data'):
+def download_hist_fst_data(t_start, t_end, fst_hr:int,  paras_file:str, envelopes:List, freq='D', save_dir='~/tmp_data', year=-1):
     """
     Get historical forecast, or get the most recent obs weather. It will be a large size, 
     so we only extract a subset based on the envelopes, and save them locally.
@@ -95,6 +95,7 @@ def download_hist_fst_data(t_start, t_end, fst_hr:int,  paras_file:str, envelope
         envelopes: 
         freq str: frequency, d for day
         save_dir: directory to save the weather data.
+        year: -1 for all years.
 
     Returns: 
         spot timestamp list, list of envelopes with elements of [fst timestamp list, weather array list]
@@ -108,6 +109,8 @@ def download_hist_fst_data(t_start, t_end, fst_hr:int,  paras_file:str, envelope
         envelopes = [envelopes]
 
     for cur_t in tqdm(pd.date_range(start=t_start, end=t_end, freq=freq)):
+        if cur_t.year > 0 and cur_t.year == year:
+            continue
         logger.info(cur_t)
         for h in range(fst_hr):
             logger.info(f'forecast hour...{h}')

@@ -262,12 +262,15 @@ class WeatherDataPrep:
             t0: np.datetime64=np.datetime64('2018-01-01'),
             t1: np.datetime64=np.datetime64('2018-01-03'),
             n_cores=7,
+            year=-1,
             )->wd.WeatherData:
         
         center = config.site_pdt.center
         rect = config.site_pdt.rect
         df = pd.read_pickle(get_file_path(fn=config.weather_pdt.hist_weather_pickle, this_file_path=__file__))
         df = df[(df['timestamp']>=t0) & (df['timestamp']<=t1)]
+        if year>0:
+            df = df[df['timestamp'].dt.year == year]
         envelope = []
         if not config.weather_pdt.envelope:
             logger.info(f'Construct the envelope {config.weather_pdt.envelope} from center and the rect...')
@@ -280,19 +283,21 @@ class WeatherDataPrep:
             nonlocal envelope
             filename = getattr(row,config.weather_pdt.filename_col_name)
             fn = getattr(row, config.weather_pdt.fullfile_col_name)
-            if getattr(row, config.weather_pdt.type_col_name).startswith('hrrr'):
+            file_type = getattr(row, config.weather_pdt.type_col_name)
+            if file_type.startswith('hrrr') or file_type.startswith('herbie'):
                 is_utah=False
                 p=self.hrrr_paras
             else:
                 is_utah=True
                 p=self.utah_paras
 
-            timestamp = get_datetime_from_grib_file_name_utah(filename,hour_offset=0, nptime=True, get_fst_hour=False)  if is_utah \
-                else get_datetime_from_grib_file_name(
-                filename=filename, 
-                hour_offset=0,
-                nptime=True, 
-                get_fst_hour=False)
+            timestamp = getattr(row,'timestamp')
+            # timestamp = get_datetime_from_grib_file_name_utah(filename,hour_offset=0, nptime=True, get_fst_hour=False)  if is_utah \
+            #     else get_datetime_from_grib_file_name(
+            #     filename=filename, 
+            #     hour_offset=0,
+            #     nptime=True, 
+            #     get_fst_hour=False)
             
             return_latlon = False
             if self.x_grid is None:

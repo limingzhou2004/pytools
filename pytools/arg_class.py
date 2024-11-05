@@ -125,6 +125,25 @@ class ArgClass:
             type=int,
             help="max weather forecast hours, default 48",
         )
+        sub_parser.add_argument(
+            "-flag",
+            "--flag",
+            dest="flag",
+            required=False,
+            default='hf',
+            type=str,
+            help='f-forecast, h-historical, use together as fh or separate as f or h',
+        )
+        sub_parser.add_argument(
+            "-year",
+            "--year",
+            dest="year",
+            required=False,
+            default=-1,
+            type=int,
+            help='year, -1 for all years, 2020-',
+        )
+
         sub_parser.set_defaults(func=fun)
 
     def _add_task3(self, fun):

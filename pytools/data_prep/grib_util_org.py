@@ -135,6 +135,7 @@ def fillmissing_from_pickle(batch_no, tgt_folder:str):
     fn = os.path.join(os.path.dirname(__file__), f'../data/grib2_folder_{batch_no}.pkl')
     df = pd.read_pickle(fn)
     df = df[df['timestamp'].isna()]
+   
     print('start processing...\n')
     for t in tqdm(df['cplt_timestamp']):
         if t.to_datetime64()<np.datetime64('2020-01-01'):

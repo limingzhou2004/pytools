@@ -94,7 +94,7 @@ def hist_load(
     return dm
 
 
-def hist_weather_prepare_from_report(config_file:str, n_cores=1, suffix='v0', create=False, fst_hour=48):
+def hist_weather_prepare_from_report(config_file:str, n_cores=1, suffix='v0', create=False, fst_hour=48,year=-1):
     d = hist_load(config_file=config_file, create=create)
     logger.info(f"Creating historical npy data from {d.t0} to {d.t1}\n")
 
@@ -113,10 +113,13 @@ def hist_weather_prepare_from_report(config_file:str, n_cores=1, suffix='v0', cr
         t0=d.t0,
         t1=d.t1,
         n_cores=n_cores,
+        year=year
         )
     #w_obj.save_scaled_npz(osp.join(config.site_parent_folder, weather_data_file_name))
     #w_obj.save_unscaled_npz(osp.join(config.site_parent_folder, 'unscaled_'+weather_data_file_name))
     fn = config.get_load_data_full_fn(data_type=DataType.Hist_weatherData, extension='npz')
+    if year>0:
+        fn = f'{fn}_{year}'
     # use paras[()] to access the OrderedDict in the 0-dim paras array.
     paras, w_timestamp, wdata = d.export_data(DataType.Hist_weatherData, scaled=False)
     np.savez_compressed(fn, **{'paras':paras, 'timestamp':w_timestamp, DataType.Hist_weatherData.name:wdata})
@@ -125,13 +128,13 @@ def hist_weather_prepare_from_report(config_file:str, n_cores=1, suffix='v0', cr
     return d
 
 
-def past_fst_weather_prepare(config_file:str, fst_hour=48):
+def past_fst_weather_prepare(config_file:str, fst_hour=48, year=-1):
     # d = hist_load(config_file=config_file, create=False)
     logger.info('Create past weather forecast, with forecast horizon of {fst_hour}...\n')
     c = Config(config_file)
     paras_file = c.automate_path(c.weather_pdt.hrrr_paras_file)
     spot_time, weather_arr = download_hist_fst_data(t_start=c.site_pdt.t0, t_end=c.site_pdt.t1, fst_hr=fst_hour, 
-    paras_file=paras_file,envelopes=c.weather_pdt.envelope)
+    paras_file=paras_file,envelopes=c.weather_pdt.envelope, year=year)
     fn = c.get_load_data_full_fn(DataType.Past_fst_weatherData, extension='pkl')
     with open(fn, 'wb') as f:
         pickle.dump([spot_time, weather_arr],f)
@@ -372,8 +375,12 @@ def task_1(**args):
 
 
 def task_2(**args):
-    dm = hist_weather_prepare_from_report(**args)
-    past_fst_weather_prepare(config_file=args['config_file'], fst_hour=args['fst_hour'])
+    flag = args['flag']
+    del args['flag']
+    if 'h' in flag:
+        dm = hist_weather_prepare_from_report(**args)
+    if 'f' in flag:
+        past_fst_weather_prepare(config_file=args['config_file'], fst_hour=args['fst_hour'], year=args['year'])
     return dm
 
 
@@ -443,6 +450,8 @@ def task_7(**args):
 
 
 if __name__ == "__main__":
-# python -m pytools.weather_task -cfg pytools/config/albany_test.toml --create task_1
-# python -m pytools.weather_task -cfg pytools/config/albany_test.toml task_2 -fh 2 --n-cores 6
+# python -m pytools.weather_task -cfg pytools/config/albany_test.toml --create task_1 
+# python -m pytools.weather_task -cfg pytools/config/albany_test.toml task_2 -fh 2 --n-cores 1 -year 2020 -flag hf
+
+# python -m pytools.weather_task -cfg pytools/config/albany_prod.toml task_2 -fh 2 --n-cores 1 -year 2018 -flag h
     main(sys.argv[1:])
