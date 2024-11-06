@@ -9,6 +9,7 @@
  name = "Albany-NY"
  alias = "albany-test"
  sql_location = "CAPITL"
+ back_fst_window = ["2020-01-01 00:00", "2025-01-01 00:00"]
  #site_folder = "nyiso"
  #center[lon, lat]
  center = [-73.0, 43.0]

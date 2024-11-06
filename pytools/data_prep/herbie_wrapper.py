@@ -109,10 +109,10 @@ def download_hist_fst_data(t_start, t_end, fst_hr:int,  paras_file:str, envelope
         envelopes = [envelopes]
 
     for cur_t in tqdm(pd.date_range(start=t_start, end=t_end, freq=freq)):
-        if cur_t.year > 0 and cur_t.year == year:
+        if year > 0 and cur_t.year != year:
             continue
         logger.info(cur_t)
-        for h in range(fst_hr):
+        for h in range(fst_hr+1):
             logger.info(f'forecast hour...{h}')
             try:    
                 H = Herbie(cur_t, model="hrrr", fxx=h, save_dir=save_dir)

@@ -7,6 +7,7 @@
  state = "NY"
  base_folder = "~/zhoul/work/energy/sites/albany-prod"
  name = "Albany-NY"
+ back_fst_window = ["2020-01-01 00:00", "2025-01-01 00:00"]
  alias = "albany-prod"
  sql_location = "CAPITL"
  #site_folder = "nyiso"

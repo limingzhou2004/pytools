@@ -95,6 +95,7 @@ class Site(BaseModel):
     base_folder: str
     center: Tuple[float, float]
     rect: Tuple[float, float, float, float]
+    back_fst_window: List[str]
     t0: str
     t1: str
     hrrr_paras_file: FilePath

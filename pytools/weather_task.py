@@ -97,6 +97,8 @@ def hist_load(
 def hist_weather_prepare_from_report(config_file:str, n_cores=1, suffix='v0', create=False, fst_hour=48,year=-1):
     d = hist_load(config_file=config_file, create=create)
     logger.info(f"Creating historical npy data from {d.t0} to {d.t1}\n")
+    if year>0:
+        logger.info(f'process year {year} only...')
 
     config = Config(config_file)
     d.build_weather(
@@ -131,9 +133,11 @@ def hist_weather_prepare_from_report(config_file:str, n_cores=1, suffix='v0', cr
 def past_fst_weather_prepare(config_file:str, fst_hour=48, year=-1):
     # d = hist_load(config_file=config_file, create=False)
     logger.info('Create past weather forecast, with forecast horizon of {fst_hour}...\n')
+    if year>0:
+        logger.info(f'Process year {year} only...')
     c = Config(config_file)
     paras_file = c.automate_path(c.weather_pdt.hrrr_paras_file)
-    spot_time, weather_arr = download_hist_fst_data(t_start=c.site_pdt.t0, t_end=c.site_pdt.t1, fst_hr=fst_hour, 
+    spot_time, weather_arr = download_hist_fst_data(t_start=c.site_pdt.back_fst_window[0], t_end=c.site_pdt.back_fst_window[1], fst_hr=fst_hour, 
     paras_file=paras_file,envelopes=c.weather_pdt.envelope, year=year)
     fn = c.get_load_data_full_fn(DataType.Past_fst_weatherData, extension='pkl')
     with open(fn, 'wb') as f:
@@ -453,5 +457,5 @@ if __name__ == "__main__":
 # python -m pytools.weather_task -cfg pytools/config/albany_test.toml --create task_1 
 # python -m pytools.weather_task -cfg pytools/config/albany_test.toml task_2 -fh 2 --n-cores 1 -year 2020 -flag hf
 
-# python -m pytools.weather_task -cfg pytools/config/albany_prod.toml task_2 -fh 2 --n-cores 1 -year 2018 -flag h
+# python -m pytools.weather_task -cfg pytools/config/albany_prod.toml task_2 -fh 48 --n-cores 1 -year 2024 -flag f
     main(sys.argv[1:])
