@@ -123,7 +123,7 @@ def hist_weather_prepare_from_report(config_file:str, n_cores=1, suffix='v0', cr
     # if year>0:
     #     fn = f'{fn}_{year}'
     # use paras[()] to access the OrderedDict in the 0-dim paras array.
-    paras, w_timestamp, wdata = d.export_data(DataType.Hist_weatherData, scaled=False)
+    paras, w_timestamp, wdata = d.export_data(DataType.Hist_weatherData)
     np.savez_compressed(fn, **{'paras':paras, 'timestamp':w_timestamp, DataType.Hist_weatherData.name:wdata})
     #dpm.save(config=config, dmp=d, suffix=suffix)
 

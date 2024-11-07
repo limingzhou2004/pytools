@@ -31,6 +31,7 @@ def test_build_from_config(config):
     load_data, w_paras, w_timestamp, w_data = read_weather_data_from_config(config, year=-1)
 
     assert load_data.shape[1]>1
+    assert w_data.shape == (49,21,21,16)
 
 
 @pytest.mark.parametrize(
