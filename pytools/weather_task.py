@@ -131,7 +131,6 @@ def hist_weather_prepare_from_report(config_file:str, n_cores=1, suffix='v0', cr
 
 
 def past_fst_weather_prepare(config_file:str, fst_hour=48, year=-1):
-    # d = hist_load(config_file=config_file, create=False)
     logger.info('Create past weather forecast, with forecast horizon of {fst_hour}...\n')
     if year>0:
         logger.info(f'Process year {year} only...')

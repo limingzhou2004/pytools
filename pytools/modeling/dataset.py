@@ -69,13 +69,22 @@ def check_fix_missings(df_load, dat_wea):
 
     return
 
-def build_weather_data_from_config(config:Config, year=-1):
+def read_weather_data_from_config(config:Config, year=-1):
+    np_load_old = np.load
+    np.load = lambda *a,**k: np_load_old(*a, allow_pickle=True, **k)
+
     fn_load = config.get_load_data_full_fn(DataType.LoadData, 'npz', year=year)
     fn_wea = config.get_load_data_full_fn(DataType.Hist_weatherData, 'npz', year=year)
-    load_data = np.load(fn_load)
-    wea_data = np.laod(fn_wea)
+    with np.load(fn_load) as dat:
+        load_data = dat[DataType.LoadData.name]
 
-    return
+    with np.load(fn_wea) as dat:
+        paras = dat['paras']
+        w_timestamp = dat['timestamp']
+        w_data = dat[DataType.Hist_weatherData.name]
+
+
+    return load_data, paras, w_timestamp, w_data
 
 class WeatherDataSetBuilder:
     """

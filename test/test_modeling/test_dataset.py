@@ -3,7 +3,7 @@ import torch
 #from torch.utils import data
 import numpy as np
 
-from pytools.modeling.dataset import WeatherDataSetBuilder, build_weather_data_from_config
+from pytools.modeling.dataset import WeatherDataSetBuilder, read_weather_data_from_config
 
 
 # CUDA for PyTorch
@@ -28,9 +28,9 @@ target = np.roll(embed_load[:, 0], shift=-1, axis=0)
 
 
 def test_build_from_config(config):
-    build_weather_data_from_config(config, year=-1)
+    load_data, w_paras, w_timestamp, w_data = read_weather_data_from_config(config, year=-1)
 
-    assert 1==1
+    assert load_data.shape[1]>1
 
 
 @pytest.mark.parametrize(

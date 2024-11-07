@@ -139,18 +139,11 @@ class DataPrepManager:
         self._weather_predict_folder = ""
         self.para_num = para_num
 
-    def export_data(self, data_type: DataType, scaled=False):
+    def export_data(self, data_type: DataType):
         if data_type == DataType.LoadData:
-            if scaled:
-                return self.data_standard_load
-            else:
-                return self.load_data.train_data
+            return self.load_data.train_data
         elif data_type == DataType.Hist_weatherData:
-            if scaled:                
-                return np.array(self.weather.hrrr_paras), self.weather.weather_train_data.timestamp, self.standardize_weather(
-                    weather_array=self.weather.weather_train_data, overwrite=False)
-            else:
-                return np.array(self.weather.hrrr_paras), self.weather.weather_train_data.timestamp, self.weather.weather_train_data
+            return np.array(self.weather.hrrr_paras), self.weather.weather_train_data.timestamp, self.weather.weather_train_data.get_unscaled_weather_arr()
 
     def process_load_data(
         self, load_data: ldp.LoadData, lag_hours=168, fst_horizon:List[int]=None
