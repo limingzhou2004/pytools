@@ -32,5 +32,12 @@ class TestConfig:
         assert config.model_pdt.forecast_horizon==[[1,24], [25,48]]
 
     def test_get_full_filename(self, config):
-        fn = config.get_load_data_full_fn(DataType.load ,'npz')
-        assert fn.endswith('load.npz')
+        fn = config.get_load_data_full_fn(DataType.LoadData ,'npz')
+        assert fn.endswith('LoadData.npz')
+        fn = config.get_load_data_full_fn(DataType.LoadData ,'npz', year=2020)
+        assert '_2020' in fn
+        fn = config.get_load_data_full_fn(DataType.LoadData ,'npz', year=2021, month=2)
+        assert '_2021_2' in fn
+
+
+

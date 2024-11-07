@@ -191,9 +191,10 @@ class Config:
         """
         return self.toml_dict[table]
     
-    def get_load_data_full_fn(self, data_type: DataType, extension:str):
-
-        return self.automate_path(f'data/{str(data_type.name)}.{extension}')
+    def get_load_data_full_fn(self, data_type: DataType, extension:str, year=-1, month=-1):
+        year_str = '' if year < 0 else f'_{year}'
+        mon_str = '' if month < 0 else f'_{month}'
+        return self.automate_path(f'data/{str(data_type.name)}{year_str}{mon_str}.{extension}')
 
     def get_model_file_name(
         self, class_name: str = "_data_manager_", prefix: str = "", suffix: str = "", extension='.pkl'
@@ -209,7 +210,6 @@ class Config:
 
         """
         return os.path.join(
-            #self._base_folder,
             self.site_parent_folder,
             prefix + self.site_pdt.alias + class_name + suffix + extension,
         )

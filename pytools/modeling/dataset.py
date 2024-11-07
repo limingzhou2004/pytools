@@ -6,6 +6,8 @@ import torch
 from torch import Tensor
 from torch.utils import data
 
+from pytools.config import Config
+from pytools.config import DataType
 from pytools.modeling.weather_net import WeatherPara
 
 
@@ -62,6 +64,18 @@ class WeatherDataSet(data.Dataset):
             self._target[index, :],
         )
 
+
+def check_fix_missings(df_load, dat_wea):
+
+    return
+
+def build_weather_data_from_config(config:Config, year=-1):
+    fn_load = config.get_load_data_full_fn(DataType.LoadData, 'npz', year=year)
+    fn_wea = config.get_load_data_full_fn(DataType.Hist_weatherData, 'npz', year=year)
+    load_data = np.load(fn_load)
+    wea_data = np.laod(fn_wea)
+
+    return
 
 class WeatherDataSetBuilder:
     """

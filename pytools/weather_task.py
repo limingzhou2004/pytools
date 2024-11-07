@@ -119,13 +119,13 @@ def hist_weather_prepare_from_report(config_file:str, n_cores=1, suffix='v0', cr
         )
     #w_obj.save_scaled_npz(osp.join(config.site_parent_folder, weather_data_file_name))
     #w_obj.save_unscaled_npz(osp.join(config.site_parent_folder, 'unscaled_'+weather_data_file_name))
-    fn = config.get_load_data_full_fn(data_type=DataType.Hist_weatherData, extension='npz')
-    if year>0:
-        fn = f'{fn}_{year}'
+    fn = config.get_load_data_full_fn(data_type=DataType.Hist_weatherData, extension='npz', year=year)
+    # if year>0:
+    #     fn = f'{fn}_{year}'
     # use paras[()] to access the OrderedDict in the 0-dim paras array.
     paras, w_timestamp, wdata = d.export_data(DataType.Hist_weatherData, scaled=False)
     np.savez_compressed(fn, **{'paras':paras, 'timestamp':w_timestamp, DataType.Hist_weatherData.name:wdata})
-    dpm.save(config=config, dmp=d, suffix=suffix)
+    #dpm.save(config=config, dmp=d, suffix=suffix)
 
     return d
 
@@ -148,7 +148,7 @@ def train_data_assemble(
     config_file: str, suffix='v0', 
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
-    Assemble training data. Save to a npz file.
+    Assemble training data. Fill missing load and/or weather data.
 
     Args:
         config_file:
@@ -158,10 +158,10 @@ def train_data_assemble(
     Returns: DataPrepManager with load and hist weather organized for training
 
     """
-    d: DataPrepManager = hist_load(config_file=config_file, create=False)
-
-    h_weather = d.weather.get_weather_train()  
+    #d: DataPrepManager = hist_load(config_file=config_file, create=False)
+    #h_weather = d.weather.get_weather_train()  
     c: Config = Config(config_file)
+
     
     lag_data, calendar_data, data_standard_load = d.process_load_data(
         d.load_data, lag_hours=c.load_pdt.lag_hours, fst_horizon=c.load_pdt.fst_hours

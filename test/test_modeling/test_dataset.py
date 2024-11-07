@@ -1,9 +1,9 @@
 import pytest
 import torch
-from torch.utils import data
+#from torch.utils import data
 import numpy as np
 
-from pytools.modeling.dataset import WeatherDataSetBuilder
+from pytools.modeling.dataset import WeatherDataSetBuilder, build_weather_data_from_config
 
 
 # CUDA for PyTorch
@@ -25,6 +25,12 @@ wea = torch.randn(sample_size, 34, 34, 13, dtype=torch.float).numpy()
 embed_load = torch.randn(sample_size, 168, dtype=torch.float).numpy()
 calendar = torch.randn(sample_size, 7, dtype=torch.float).numpy()
 target = np.roll(embed_load[:, 0], shift=-1, axis=0)
+
+
+def test_build_from_config(config):
+    build_weather_data_from_config(config, year=-1)
+
+    assert 1==1
 
 
 @pytest.mark.parametrize(
