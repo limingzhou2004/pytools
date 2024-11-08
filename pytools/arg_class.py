@@ -143,7 +143,16 @@ class ArgClass:
             type=int,
             help='year, -1 for all years, 2020-',
         )
-
+        
+        sub_parser.add_argument(
+            "-month",
+            "--month",
+            dest="month",
+            required=False,
+            default=-1,
+            type=int,
+            help='month, -1 for all months, 1-12',
+        )
         sub_parser.set_defaults(func=fun)
 
     def _add_task3(self, fun):

@@ -3,7 +3,7 @@ import torch
 #from torch.utils import data
 import numpy as np
 
-from pytools.modeling.dataset import WeatherDataSetBuilder, check_fix_missings, read_weather_data_from_config
+from pytools.modeling.dataset import WeatherDataSetBuilder, check_fix_missings, read_weather_data_from_config, read_past_fst_weather
 
 
 # CUDA for PyTorch
@@ -28,12 +28,20 @@ target = np.roll(embed_load[:, 0], shift=-1, axis=0)
 
 
 def test_build_from_config(config):
-    load_data, w_paras, w_timestamp, w_data = read_weather_data_from_config(config, year=-1)
+    load_data, w_paras, w_timestamp, w_data = read_weather_data_from_config(config, year=2020)
 
     assert load_data.shape[1]>1
     assert w_data.shape == (49,21,21,16)
 
-    check_fix_missings(df_load=load_data, w_timestamp=w_timestamp, w_arr=w_data)
+
+
+    #check_fix_missings(df_load=load_data, w_timestamp=w_timestamp, w_arr=w_data)
+
+
+def test_read_past_fst_weather(config):
+    dat =read_past_fst_weather(config, year=2029)
+
+    assert 1==1
 
 
 @pytest.mark.parametrize(

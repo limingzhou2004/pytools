@@ -1,3 +1,4 @@
+import pickle
 from typing import Tuple, List
 
 import numpy as np
@@ -66,6 +67,19 @@ class WeatherDataSet(data.Dataset):
         )
 
 
+def read_past_fst_weather(config:Config, year=-1, month=-1):
+    fnw = config.get_load_data_full_fn(DataType.Past_fst_weatherData, 'pkl', year=year)
+    with open(fnw, 'rb') as file:
+        dat = pickle.load(file) 
+
+    #[spot_time, envlopes[fst_timestamp, array[x,y,channel]]]
+
+    
+    with open(fnw, 'wb') as file:
+        #pickle.dump()
+        pass
+    return
+
 def check_fix_missings(df_load:np.ndarray, w_timestamp:np.ndarray, w_arr:np.ndarray)->Tuple[np.ndarray, np.ndarray]:
     # sync data, fill missings
     t0 = max(df_load[0][0], w_timestamp[0])
@@ -78,7 +92,7 @@ def check_fix_missings(df_load:np.ndarray, w_timestamp:np.ndarray, w_arr:np.ndar
 def read_weather_data_from_config(config:Config, year=-1):
     np_load_old = np.load
     np.load = lambda *a,**k: np_load_old(*a, allow_pickle=True, **k)
-    fn_load = config.get_load_data_full_fn(DataType.LoadData, 'npz', year=year)
+    fn_load = config.get_load_data_full_fn(DataType.LoadData, 'npz', year=-1)
     fn_wea = config.get_load_data_full_fn(DataType.Hist_weatherData, 'npz', year=year)
     with np.load(fn_load) as dat:
         load_data = dat[DataType.LoadData.name]
@@ -86,6 +100,8 @@ def read_weather_data_from_config(config:Config, year=-1):
         paras = dat['paras']
         w_timestamp = dat['timestamp']
         w_data = dat[DataType.Hist_weatherData.name]
+
+    np.savez_compressed(fn_wea, **{'paras':paras, 'timestamp':w_timestamp, DataType.Hist_weatherData.name:w_data})
     return load_data, paras, w_timestamp, w_data
 
 class WeatherDataSetBuilder:

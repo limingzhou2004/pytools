@@ -381,6 +381,7 @@ def task_2(**args):
     flag = args['flag']
     del args['flag']
     if 'h' in flag:
+        del args['month']
         hist_weather_prepare_from_report(**args)
     if 'f' in flag:
         past_fst_weather_prepare(config_file=args['config_file'], fst_hour=args['fst_hour'], year=args['year'])
@@ -454,6 +455,6 @@ def task_7(**args):
 if __name__ == "__main__":
 # python -m pytools.weather_task -cfg pytools/config/albany_test.toml --create task_1 
 # python -m pytools.weather_task -cfg pytools/config/albany_test.toml task_2 -fh 2 --n-cores 1 -year 2020 -flag hf
-
+# python -m pytools.weather_task -cfg pytools/config/albany_prod.toml task_2 --n-cores 1 -year 2018 -flag h
 # python -m pytools.weather_task -cfg pytools/config/albany_prod.toml task_2 -fh 48 --n-cores 1 -year 2024 -flag f
     main(sys.argv[1:])
