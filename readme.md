@@ -118,7 +118,7 @@ The folders included are listed in pytools/data/hrrr_obs_folder.txt file, with s
 ### Integration
 #### Weather prep
 The weather steps include:
-- For obs weather, extract grib2 files based on the pickle report file, data/grib2_folder_1.pkl.  `python -m pytools.data_pre`
-- Get load data
-- Combine npy weather data.
+1. Task 1, `python -m pytools.weather_task -cfg pytools/config/albany_test.toml --create task_1 `
+2. Task 2, get historical weather `python -m pytools.weather_task -cfg pytools/config/albany_prod.toml task_2 --n-cores 1 -year 2018 -flag h`. To get past forecast weather, `python -m pytools.weather_task -cfg pytools/config/albany_prod.toml task_2 -fh 48 --n-cores 1 -year 2024 -flag f`
+3. Task 3, sync load and weather data.
 - 
