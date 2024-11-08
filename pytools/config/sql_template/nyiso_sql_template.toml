@@ -8,7 +8,6 @@ query_max_date = """
 
 query_train = """
  SELECT timestamp, \
- case when "Time Zone" = 'EDT' then 1 else 0 end daylightsaving, \
  "Integrated Load" "load" \
  FROM {table_name} l \
  where "Name"='{site_name}' and timestamp between '{t0}' and '{t1}' \

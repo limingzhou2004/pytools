@@ -141,7 +141,7 @@ class DataPrepManager:
 
     def export_data(self, data_type: DataType):
         if data_type == DataType.LoadData:
-            return self.load_data.train_data
+            return np.array(self.load_data.train_data.columns), self.load_data.train_data
         elif data_type == DataType.Hist_weatherData:
             return np.array(self.weather.hrrr_paras), self.weather.weather_train_data.timestamp, self.weather.weather_train_data.get_unscaled_weather_arr()
 

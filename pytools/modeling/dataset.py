@@ -1,6 +1,7 @@
 from typing import Tuple, List
 
 import numpy as np
+import pandas as pd
 from sklearn.model_selection import train_test_split
 import torch
 from torch import Tensor
@@ -65,25 +66,26 @@ class WeatherDataSet(data.Dataset):
         )
 
 
-def check_fix_missings(df_load, dat_wea):
+def check_fix_missings(df_load:np.ndarray, w_timestamp:np.ndarray, w_arr:np.ndarray)->Tuple[np.ndarray, np.ndarray]:
+    # sync data, fill missings
+    t0 = max(df_load[0][0], w_timestamp[0])
+    t1 = min(df_load['timestamp'][-1], w_timestamp[-1])
+    t = pd.date_range(start=t0, end=t1, freq='h')
+
 
     return
 
 def read_weather_data_from_config(config:Config, year=-1):
     np_load_old = np.load
     np.load = lambda *a,**k: np_load_old(*a, allow_pickle=True, **k)
-
     fn_load = config.get_load_data_full_fn(DataType.LoadData, 'npz', year=year)
     fn_wea = config.get_load_data_full_fn(DataType.Hist_weatherData, 'npz', year=year)
     with np.load(fn_load) as dat:
         load_data = dat[DataType.LoadData.name]
-
     with np.load(fn_wea) as dat:
         paras = dat['paras']
         w_timestamp = dat['timestamp']
         w_data = dat[DataType.Hist_weatherData.name]
-
-
     return load_data, paras, w_timestamp, w_data
 
 class WeatherDataSetBuilder:

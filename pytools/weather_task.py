@@ -86,8 +86,8 @@ def hist_load(
 
         # write the load data to npy 
         fn = config.get_load_data_full_fn(data_type=DataType.LoadData, extension='npz')
-        load = dm.export_data(DataType.LoadData, scaled=False)
-        np.savez_compressed(fn, **{DataType.LoadData.name:load})       
+        cols, load = dm.export_data(DataType.LoadData)
+        np.savez_compressed(fn, **{DataType.LoadData.name:load, 'columns':cols})       
         
     else:
         logger.info("Use the existing manager...\n")
@@ -130,7 +130,7 @@ def hist_weather_prepare_from_report(config_file:str, n_cores=1, suffix='v0', cr
     return d
 
 
-def past_fst_weather_prepare(config_file:str, fst_hour=48, year=-1):
+def past_fst_weather_prepare(config_file:str, fst_hour=48, year=-1, month=-1):
     logger.info('Create past weather forecast, with forecast horizon of {fst_hour}...\n')
     if year>0:
         logger.info(f'Process year {year} only...')
@@ -138,7 +138,7 @@ def past_fst_weather_prepare(config_file:str, fst_hour=48, year=-1):
     paras_file = c.automate_path(c.weather_pdt.hrrr_paras_file)
     spot_time, weather_arr = download_hist_fst_data(t_start=c.site_pdt.back_fst_window[0], t_end=c.site_pdt.back_fst_window[1], fst_hr=fst_hour, 
     paras_file=paras_file,envelopes=c.weather_pdt.envelope, year=year)
-    fn = c.get_load_data_full_fn(DataType.Past_fst_weatherData, extension='pkl')
+    fn = c.get_load_data_full_fn(DataType.Past_fst_weatherData, extension='pkl', year=year, month=month)
     with open(fn, 'wb') as f:
         pickle.dump([spot_time, weather_arr],f)
     
@@ -381,10 +381,9 @@ def task_2(**args):
     flag = args['flag']
     del args['flag']
     if 'h' in flag:
-        dm = hist_weather_prepare_from_report(**args)
+        hist_weather_prepare_from_report(**args)
     if 'f' in flag:
         past_fst_weather_prepare(config_file=args['config_file'], fst_hour=args['fst_hour'], year=args['year'])
-    return dm
 
 
 def task_3(**args):

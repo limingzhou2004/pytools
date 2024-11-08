@@ -28,8 +28,8 @@ class TestWeatherTask:
 
     def test_hist_load(self, ):
         #monkeypatch.setattr(LoadData, "query_train_data", mock_train_load)
-        res = hist_load(config_file=self.config_file, create=True)
-        assert res.load_data.train_data.shape[1] == 9
+        res = hist_load(config_file=self.config_file,create=True)
+        assert res.load_data.train_data.shape[1] == 8
         assert res.load_data.train_data.shape[0] >= 2
 
     def test_hist_weather_from_inventory(self):
@@ -37,7 +37,7 @@ class TestWeatherTask:
         assert dm.weather.weather_train_data.standardized_data.shape==(49, 21, 21, 16)
 
     def test_past_weather_fst(self):
-        past_fst_weather_prepare(self.config_file, fst_hour=2)
+        past_fst_weather_prepare(self.config_file, fst_hour=2, year=2020)
 
         assert 1==1
 
