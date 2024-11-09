@@ -82,11 +82,15 @@ def read_past_fst_weather(config:Config, year=-1, month=-1):
 
 def check_fix_missings(df_load:np.ndarray, w_timestamp:np.ndarray, w_arr:np.ndarray)->Tuple[np.ndarray, np.ndarray]:
     # sync data, fill missings
+    w_timestamp = pd.DatetimeIndex(list(w_timestamp)).tz_localize('UTC')
+    t_str = 'timestamp'
+
     t0 = max(df_load[0][0], w_timestamp[0])
-    t1 = min(df_load['timestamp'][-1], w_timestamp[-1])
-    t = pd.DataFrame(pd.date_range(start=t0, end=t1, freq='h'), columns=['timestamp'])
-    df_tt = t.join(df_load, on='timestamp', how='left'  )
-    df_tw = t.join(pd.DataFrame(w_timestamp, columns=['timestamp']), on='timestamp', how='left' ) 
+    t1 = min(df_load[0][-1], w_timestamp[-1])
+    t = pd.DataFrame(pd.date_range(start=t0, end=t1, freq='h'), columns=[t_str])
+    df_tl = t.join(df_load, on=t_str, how='left')
+    df_tl.interpolate(inplace=True)
+    df_tw = t.join(pd.DataFrame(w_timestamp, columns=[t_str]), on=t_str, how='left' ) 
 
     return
 
