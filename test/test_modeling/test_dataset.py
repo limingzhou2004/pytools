@@ -28,14 +28,13 @@ target = np.roll(embed_load[:, 0], shift=-1, axis=0)
 
 
 def test_build_from_config(config):
-    load_data, w_paras, w_timestamp, w_data = read_weather_data_from_config(config, year=2020)
+    load_data, w_paras, w_timestamp, w_data = read_weather_data_from_config(config, year=-1)
 
     assert load_data.shape[1]>1
     assert w_data.shape == (49,21,21,16)
+    assert w_timestamp.shape[0] == 49
 
-
-
-    #check_fix_missings(df_load=load_data, w_timestamp=w_timestamp, w_arr=w_data)
+    check_fix_missings(df_load=load_data, w_timestamp=w_timestamp, w_arr=w_data)
 
 
 def test_read_past_fst_weather(config):

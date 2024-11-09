@@ -84,8 +84,9 @@ def check_fix_missings(df_load:np.ndarray, w_timestamp:np.ndarray, w_arr:np.ndar
     # sync data, fill missings
     t0 = max(df_load[0][0], w_timestamp[0])
     t1 = min(df_load['timestamp'][-1], w_timestamp[-1])
-    t = pd.date_range(start=t0, end=t1, freq='h')
-
+    t = pd.DataFrame(pd.date_range(start=t0, end=t1, freq='h'), columns=['timestamp'])
+    df_tt = t.join(df_load, on='timestamp', how='left'  )
+    df_tw = t.join(pd.DataFrame(w_timestamp, columns=['timestamp']), on='timestamp', how='left' ) 
 
     return
 
@@ -101,8 +102,8 @@ def read_weather_data_from_config(config:Config, year=-1):
         w_timestamp = dat['timestamp']
         w_data = dat[DataType.Hist_weatherData.name]
 
-    np.savez_compressed(fn_wea, **{'paras':paras, 'timestamp':w_timestamp, DataType.Hist_weatherData.name:w_data})
     return load_data, paras, w_timestamp, w_data
+
 
 class WeatherDataSetBuilder:
     """
