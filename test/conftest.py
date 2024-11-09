@@ -19,7 +19,7 @@ def train_t1():
 
 @pytest.fixture(scope="session")
 def cur_toml_file():
-    return os.path.join(os.path.dirname(__file__), "../pytools/config/albany_prod.toml")
+    return os.path.join(os.path.dirname(__file__), "../pytools/config/albany_test.toml")
 
 
 @pytest.fixture(scope="session")
