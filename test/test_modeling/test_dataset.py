@@ -34,7 +34,7 @@ def test_build_from_config(config):
     assert w_data.shape == (49,21,21,16)
     assert w_timestamp.shape[0] == 49
 
-    check_fix_missings(df_load=load_data, w_timestamp=w_timestamp, w_arr=w_data)
+    check_fix_missings(load_arr=load_data, w_timestamp=w_timestamp, w_arr=w_data)
 
 
 def test_read_past_fst_weather(config):

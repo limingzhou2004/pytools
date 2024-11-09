@@ -80,19 +80,28 @@ def read_past_fst_weather(config:Config, year=-1, month=-1):
         pass
     return
 
-def check_fix_missings(df_load:np.ndarray, w_timestamp:np.ndarray, w_arr:np.ndarray)->Tuple[np.ndarray, np.ndarray]:
+def check_fix_missings(load_arr:np.ndarray, w_timestamp:np.ndarray, w_arr:np.ndarray)->Tuple[np.ndarray, np.ndarray]:
     # sync data, fill missings
+    #local_tzname = load_arr[0][0].tzname()
+
     w_timestamp = pd.DatetimeIndex(list(w_timestamp)).tz_localize('UTC')
+
     t_str = 'timestamp'
 
-    t0 = max(df_load[0][0], w_timestamp[0])
-    t1 = min(df_load[0][-1], w_timestamp[-1])
+    t0 = max(load_arr[0][0].tz_convert('UTC'), w_timestamp[0])
+    t1 = min(load_arr[-1][0].tz_convert('UTC'), w_timestamp[-1])
     t = pd.DataFrame(pd.date_range(start=t0, end=t1, freq='h'), columns=[t_str])
-    df_tl = t.join(df_load, on=t_str, how='left')
-    df_tl.interpolate(inplace=True)
+    df_load = pd.DataFrame(load_arr).set_index(0)
+    df_tl = t.set_index(t_str).join(load_arr, how='left')
+    #df_tl.interpolate(inplace=True)
+    df_tl.fillna(method='ffill', inplace=True)
     df_tw = t.join(pd.DataFrame(w_timestamp, columns=[t_str]), on=t_str, how='left' ) 
+    # the first hour will not be empty, and we will do a ffill
+    for i in range(1, len(df_tw)):
+        if df_tw[i][t_str+'_r'].isnan:
+            np.insert(w_arr, i, w_arr[i+1], axis=0)
 
-    return
+    return df_tl.set_index(t_str).values, w_arr
 
 def read_weather_data_from_config(config:Config, year=-1):
     np_load_old = np.load
