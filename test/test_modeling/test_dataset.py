@@ -33,8 +33,9 @@ def test_build_from_config(config):
     assert load_data.shape[1]>1
     assert w_data.shape == (49,21,21,16)
     assert w_timestamp.shape[0] == 49
-
-    check_fix_missings(load_arr=load_data, w_timestamp=w_timestamp, w_arr=w_data)
+    w_timestamp[6] = np.nan
+    load_arr, wea_arr = check_fix_missings(load_arr=load_data, w_timestamp=w_timestamp, w_arr=w_data)
+    assert np.allclose(wea_arr[3], wea_arr[2])
 
 
 def test_read_past_fst_weather(config):
