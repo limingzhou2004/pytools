@@ -17,29 +17,16 @@ from pytools.modeling.weather_net import WeatherPara
 class WeatherDataSet(data.Dataset):
     def __init__(
         self,
-        weather: np.ndarray,
-        lag_load: np.ndarray,
-        calendar_data: np.ndarray,
-        target: np.ndarray,
+        tabular_data: np.ndarray,
+        wea_arr: np.ndarray,
+        target_ind: int=0,
     ):
-        """
-        Move the channel to the second dimension in np wea arrays.
 
-        Args:
-            weather: np arrays, sample, x, y, channel
-            lag_load:  sample, load
-            calendar_data: sample, cal
-            target: sample, load
-        """
+        self._target = tabular_data[:, target_ind]
+        self._ext = np.delete(tabular_data, target_ind, axis=1)
+        self._wea_arr = wea_arr
         # weather dim batch, height, width, channel --> batch, channel, height, width
-        original_channel_num = 3
-        new_channel_num = 1
-        self._weather = np.moveaxis(
-            weather, original_channel_num, new_channel_num
-        ).astype(np.float32)
-        self._lag_load = np.expand_dims(lag_load, 1).astype(np.float32)
-        self._calendar_data = calendar_data.astype(np.float32)
-        self._target = target.astype(np.float32)
+
 
     def __len__(self):
         """
