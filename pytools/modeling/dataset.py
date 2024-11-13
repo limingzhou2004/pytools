@@ -20,6 +20,8 @@ class WeatherDataSet(data.Dataset):
         tabular_data: np.ndarray,
         wea_arr: np.ndarray,
         target_ind: int=0,
+        fst_horizon: List=[1,30],
+        embedding_dim: List=[],
     ):
 
         self._target = tabular_data[:, target_ind]
