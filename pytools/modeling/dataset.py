@@ -39,7 +39,7 @@ class WeatherDataSet(data.Dataset):
         self._wea_embedding_dim = wea_embedding_dim
         self._ext_embedding_dim = ext_embedding_dim
 
-        if not scaler is None:
+        if scaler is not None:
             self._target = scaler.scale_target(self._target)
             self._wea_arr = scaler.sclae_arr([self._wea_arr])[0]
         
