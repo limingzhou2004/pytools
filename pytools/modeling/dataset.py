@@ -24,6 +24,7 @@ class WeatherDataSet(data.Dataset):
         fst_horizon: List=[1,30],
         seq_length: List=[],
         wea_embedding_dim: int = 3,
+        ext_embedding_dim: int =0,
         scaler:Scaler = None,
     ):
         self._scaler = scaler 
@@ -36,6 +37,7 @@ class WeatherDataSet(data.Dataset):
         self._pred_length = fst_horizon[-1]
         self._fst_horizeon = fst_horizon
         self._wea_embedding_dim = wea_embedding_dim
+        self._ext_embedding_dim = ext_embedding_dim
 
         if not scaler is None:
             self._target = scaler.scale_target(self._target)
@@ -64,11 +66,11 @@ class WeatherDataSet(data.Dataset):
         Returns: weather, tabular(calendar), target-AR, target
 
         """
-        target_ind0 = index + self._seq_length + 1
+        target_ind0 = index + self._seq_length 
         target_ind1 = target_ind0 + self._pred_length
         wea_ind0 = target_ind0 - self._wea_embedding_dim
         wea_ind1 = target_ind1 
-        ext_ind0 = target_ind0
+        ext_ind0 = target_ind0 - self._ext_embedding_dim
         ext_ind1 = target_ind1 
         ar_ind0 = index
         ar_ind1 = index + self._seq_length
