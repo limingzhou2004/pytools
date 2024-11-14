@@ -87,6 +87,7 @@ def hist_load(
         # write the load data to npy 
         fn = config.get_load_data_full_fn(data_type=DataType.LoadData, extension='npz')
         cols, load = dm.export_data(DataType.LoadData)
+        logger.info(f'column names: {cols}')
         np.savez_compressed(fn, **{DataType.LoadData.name:load, 'columns':cols})       
         
     else:
@@ -124,6 +125,7 @@ def hist_weather_prepare_from_report(config_file:str, n_cores=1, suffix='v0', cr
     #     fn = f'{fn}_{year}'
     # use paras[()] to access the OrderedDict in the 0-dim paras array.
     paras, w_timestamp, wdata = d.export_data(DataType.Hist_weatherData)
+
     np.savez_compressed(fn, **{'paras':paras, 'timestamp':w_timestamp, DataType.Hist_weatherData.name:wdata})
     #dpm.save(config=config, dmp=d, suffix=suffix)
 

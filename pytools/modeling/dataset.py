@@ -11,6 +11,7 @@ from torch.utils import data
 
 from pytools.config import Config
 from pytools.config import DataType
+from pytools.modeling.scaler import Scaler
 from pytools.modeling.weather_net import WeatherPara
 
 
@@ -21,12 +22,26 @@ class WeatherDataSet(data.Dataset):
         wea_arr: np.ndarray,
         target_ind: int=0,
         fst_horizon: List=[1,30],
-        embedding_dim: List=[],
+        seq_length: List=[],
+        wea_embedding_dim: int = 3,
+        scaler:Scaler = None,
     ):
+        self._scaler = scaler 
 
         self._target = tabular_data[:, target_ind]
         self._ext = np.delete(tabular_data, target_ind, axis=1)
         self._wea_arr = wea_arr
+
+        self._seq_length = seq_length
+        self._pred_length = fst_horizon[-1]
+        self._fst_horizeon = fst_horizon
+        self._wea_embedding_dim = wea_embedding_dim
+
+        if not scaler is None:
+            self._target = scaler.scale_target(self._target)
+            self._wea_arr = scaler.sclae_arr([self._wea_arr])[0]
+        
+
         # weather dim batch, height, width, channel --> batch, channel, height, width
 
 
@@ -37,7 +52,7 @@ class WeatherDataSet(data.Dataset):
         Returns: sample number
 
         """
-        return self._target.shape[0]
+        return self._target.shape[0] - self._seq_length - self._pred_length +1
 
     def __getitem__(self, index) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
         """
@@ -46,14 +61,23 @@ class WeatherDataSet(data.Dataset):
         Args:
             index: a string
 
-        Returns: weather, calendar, y-label
+        Returns: weather, tabular(calendar), target-AR, target
 
         """
+        target_ind0 = index + self._seq_length + 1
+        target_ind1 = target_ind0 + self._pred_length
+        wea_ind0 = target_ind0 - self._wea_embedding_dim
+        wea_ind1 = target_ind1 
+        ext_ind0 = target_ind0
+        ext_ind1 = target_ind1 
+        ar_ind0 = index
+        ar_ind1 = index + self._seq_length
+
         return (
-            self._weather[index, :, :, :],
-            self._lag_load[index, :],
-            self._calendar_data[index, :],
-            self._target[index, :],
+            self._wea_arr[wea_ind0:wea_ind1, ...],
+            self._ext[ext_ind0:ext_ind1, :],
+            self._target[ar_ind0:ar_ind1, :],
+            self._target[target_ind0:target_ind1,:]
         )
 
 
