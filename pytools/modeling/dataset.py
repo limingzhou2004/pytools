@@ -61,7 +61,7 @@ class WeatherDataSet(data.Dataset):
         Generates one sample of data
 
         Args:
-            index: a string
+            index: an int
 
         Returns: weather, tabular(calendar), target-AR, target
 

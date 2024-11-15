@@ -1,5 +1,6 @@
 
 from enum import Enum
+import math
 import os
 import os.path as osp
 from pathlib import Path
@@ -149,6 +150,7 @@ class Weather(BaseModel):
 
 class Model(BaseModel):
     y_label: str
+    borders: List[float, List[float]]
     cv_settings: List[List]
     forecast_horizon: List[List]
     final_train_hist: List
@@ -308,10 +310,28 @@ class Config:
         )
         df.reset_index().to_csv(file_name, index=False)
 
-    # @property
-    # def weather_folder(self) -> Dict:
-    #     path_dict = self.get("weather_folder")
-    #     return {k: self._join(self._base_folder, path_dict[k]) for k in path_dict}
+    def get_sample_segmentation_borders(self, flag, full_length):
+        #, fractions=[0.5, (0.4, 0.3, 0.3)]):
+        fractions = self.model_pdt.borders
+        # full ind 0: len(all samples) - pred_length 
+        # plan 0, first year + 40% 2nd year (train): 30% 2nd year(test): 30% 2nd year(validate)
+        # fraction = [first percetage, (second train, test, validate)]
+        second_train_ind0 = range(full_length*(1-fractions[0]), )
+        quarter = math.ceil(full_length * (1-fractions[0]) / 4)
+        border0 = [i*quarter for i in range(4)]
+        
+
+
+
+        if flag=='train':
+            return List(range(fractions[0] * full_length)) + [] 
+        elif flag=='test':
+            return
+        elif flag=='validate':
+
+            return
+        else:
+            raise ValueError(f'{flag} is not understood, flag must be [train|test|validate]')
     
     @property
     def center(self) -> Tuple[float, float]:
