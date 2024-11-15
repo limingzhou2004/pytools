@@ -5,6 +5,8 @@ import os
 import os.path as osp
 from pathlib import Path
 from typing import Dict, List, Tuple, Union
+from itertools import chain
+
 
 import numpy as np
 import pandas as pd
@@ -150,7 +152,8 @@ class Weather(BaseModel):
 
 class Model(BaseModel):
     y_label: str
-    borders: List[float, List[float]]
+    frac_yr1: float
+    frac_split: list
     cv_settings: List[List]
     forecast_horizon: List[List]
     final_train_hist: List
@@ -310,28 +313,37 @@ class Config:
         )
         df.reset_index().to_csv(file_name, index=False)
 
-    def get_sample_segmentation_borders(self, flag, full_length):
+    def get_sample_segmentation_borders(self, full_length, fst_scenario=0):
         #, fractions=[0.5, (0.4, 0.3, 0.3)]):
-        fractions = self.model_pdt.borders
+        fraction_yr1 = self.model_pdt.frac_yr1
+        frac_train=self.model_pdt.frac_split[0]
+        frac_test=self.model_pdt.frac_split[1]
+        frac_val=self.model_pdt.frac_split[2]
         # full ind 0: len(all samples) - pred_length 
-        # plan 0, first year + 40% 2nd year (train): 30% 2nd year(test): 30% 2nd year(validate)
+        # first year + 40% 2nd year (train): 30% 2nd year(test): 30% 2nd year(validate)
         # fraction = [first percetage, (second train, test, validate)]
-        second_train_ind0 = range(full_length*(1-fractions[0]), )
-        quarter = math.ceil(full_length * (1-fractions[0]) / 4)
-        border0 = [i*quarter for i in range(4)]
-        
+        pre_length = self.model_pdt.forecast_horizon[fst_scenario][-1]
+        full_length -= pre_length
+        train_borders = range(int(full_length*fraction_yr1))
+        test_borders = range(1,0)
+        val_borders = range(1,0)
+        n_quarter = 4
+        quarter = math.ceil(full_length * (1-fraction_yr1) / n_quarter)
+        m = train_borders[-1]+1
+
+        for i in range(n_quarter):
+            train_borders = chain(train_borders, range(int(i*quarter+m), \
+                                         int((i+frac_train)*quarter+m)))
+            test_borders = chain(test_borders, range(int((i+frac_train)*quarter+m), \
+                                       int((i+frac_train+frac_test)*quarter)+m))
+            val_borders = chain(val_borders, range(int((i+frac_train+frac_test)*quarter)+m, \
+                                      int((i+frac_train+frac_test+frac_val)*quarter)+m))
+
+        fun = lambda x: x<=full_length
+        return filter(fun, train_borders), filter(fun, test_borders), \
+            filter(fun, val_borders)
 
 
-
-        if flag=='train':
-            return List(range(fractions[0] * full_length)) + [] 
-        elif flag=='test':
-            return
-        elif flag=='validate':
-
-            return
-        else:
-            raise ValueError(f'{flag} is not understood, flag must be [train|test|validate]')
     
     @property
     def center(self) -> Tuple[float, float]:

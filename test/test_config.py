@@ -4,6 +4,25 @@ from pytools.config import Config
 from pytools.config import DataType
 
 class TestConfig:
+
+    def test_get_sample_segments(self, config):
+        train_borders, test_borders, val_borders = config.get_sample_segmentation_borders(\
+            15999, 0)
+        
+        train_borders = list(train_borders)
+        test_borders = list(test_borders)
+        val_borders = list(val_borders)
+
+        assert train_borders[0] == 0 
+        assert train_borders[7999:8001] == [7999, 8000]
+        assert train_borders[-1] == 14772
+        assert test_borders[0] == 8782
+        assert test_borders[-1] == 15371
+        assert val_borders[0] == 9381
+        assert val_borders[-1] == 15969
+
+
+
     def test_get(self, config):
         assert config.site["name"] == "Albany-NY"
 
