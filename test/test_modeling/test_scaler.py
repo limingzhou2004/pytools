@@ -16,7 +16,7 @@ def test_sclaer(config):
     arr =[a, b, c]
     s = Scaler(x, arr, scaler_type='minmax')
     x1 = s.scale_target(x)
-    arr=s.sclae_arr(arr)
+    arr=s.scale_arr(arr)
     assert x1.max() == 1
     assert x1.min() ==0
     assert np.isclose(arr[0].max() ,1)

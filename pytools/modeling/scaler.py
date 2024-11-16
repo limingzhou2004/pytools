@@ -35,7 +35,7 @@ class Scaler:
         shape=target.shape
         return self._target_scaler.transform(target.reshape(-1,1)).reshape(shape)
     
-    def sclae_arr(self, arr_list):
+    def scale_arr(self, arr_list):
         ret = []
         for s, a in zip(self._arr_scalers, arr_list):
             last_dim = self._get_last_dim(a.shape)

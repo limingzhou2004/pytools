@@ -18,17 +18,24 @@ from pytools.modeling.weather_net import WeatherPara
 class WeatherDataSet(data.Dataset):
     def __init__(
         self,
+        flag:str,
         tabular_data: np.ndarray,
         wea_arr: np.ndarray,
-        target_ind: int=0,
-        fst_horizon: List=[1,30],
-        seq_length: List=[],
-        wea_embedding_dim: int = 3,
-        ext_embedding_dim: int =0,
+        config: Config,
+        sce_ind: int,
+        # target_ind: int=0,
+        # fst_horizon: List=[1,30],
+        # seq_length: List=[],
+        # wea_embedding_dim: int = 3,
+        # ext_embedding_dim: int =0,
         scaler:Scaler = None,
     ):
+        # the scaler and model file has flag and year information
+        self._flag = flag
         self._scaler = scaler 
-
+        target_ind = config.model_pdt.target_ind
+        seq_length = config.model_pdt.seq_length
+        fst_horizon = config.model_pdt.forecast_horizon
         self._target = tabular_data[:, target_ind]
         self._ext = np.delete(tabular_data, target_ind, axis=1)
         self._wea_arr = wea_arr
@@ -36,12 +43,16 @@ class WeatherDataSet(data.Dataset):
         self._seq_length = seq_length
         self._pred_length = fst_horizon[-1]
         self._fst_horizeon = fst_horizon
-        self._wea_embedding_dim = wea_embedding_dim
-        self._ext_embedding_dim = ext_embedding_dim
+        self._wea_ar_embedding_dim = config.model_pdt.wea_ar_embedding_dim
+        self._wea_embedding_dim = config.model_pdt.wea_embedding_dim
+        self._ext_embedding_dim = config.model_pdt.ext_embedding_dim
 
         if scaler is not None:
             self._target = scaler.scale_target(self._target)
-            self._wea_arr = scaler.sclae_arr([self._wea_arr])[0]
+            self._wea_arr = scaler.scale_arr([self._wea_arr])[0]
+
+        # load the data, and selec the subset, based on flag, ind
+        fn = config.get_model_file_name(class_name=f'{flag}_scaler_{sce_ind}')
         
 
         # weather dim batch, height, width, channel --> batch, channel, height, width

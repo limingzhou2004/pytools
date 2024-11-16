@@ -157,6 +157,11 @@ class Model(BaseModel):
     cv_settings: List[List]
     forecast_horizon: List[List]
     final_train_hist: List
+    target_ind: int
+    wea_ar_embedding_dim: int
+    wea_embedding_dim: int 
+    ext_embedding_dim: int
+    seq_length: int 
     models: List
 
 

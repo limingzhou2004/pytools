@@ -57,6 +57,12 @@ forecast_horizon = [
     [1, 30],
     [25,48]
 ]
+target_ind = 0
+wea_ar_embedding_dim = 162
+wea_embedding_dim =6
+ext_embedding_dim =48
+seq_length = 168
+
 frac_yr1 = 0.5
 frac_split = [0.4, 0.3, 0.3]
 cv_settings = [
