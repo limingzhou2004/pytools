@@ -20,6 +20,8 @@ class TestConfig:
         assert test_borders[-1] == 15371
         assert val_borders[0] == 9381
         assert val_borders[-1] == 15969
+        assert len(val_borders) == 2397
+        assert len(test_borders) ==2396
 
 
 
