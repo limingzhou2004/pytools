@@ -339,7 +339,7 @@ class Config:
             val_borders = chain(val_borders, range(int((i+frac_train+frac_test)*quarter)+m, \
                                       int((i+frac_train+frac_test+frac_val)*quarter)+m))
 
-        fun = lambda x: x<=full_length
+        fun = lambda x: x<full_length
         return filter(fun, train_borders), filter(fun, test_borders), \
             filter(fun, val_borders)
 
