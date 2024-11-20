@@ -16,6 +16,7 @@ from pytools.data_prep import weather_data as wd
 from pytools.data_prep.weather_data_prep import GribType
 from pytools.data_prep import load_data_prep as ldp
 from pytools.config import Config
+from pytools.config import DataType
 
 
 # pd.set_option('mode.chained_assignment', 'raise')
@@ -35,10 +36,10 @@ weather data
 """
 
 
-class DataType(enum.Enum):
-    LoadData = 0
-    CalendarData = 1
-    WeatherData = 2
+# class DataType(enum.Enum):
+#     LoadData = 0
+#     CalendarData = 1
+#     WeatherData = 2
 
 
 class DataPrepManager:
@@ -60,8 +61,6 @@ class DataPrepManager:
         t1: str,
         load_data: ldp.LoadData,
         load_limit: Tuple[float, float],
-       # max_load_lag_start: int = 1,
-       # load_lag_order: int = 168,
         utc_to_local_hours: int = -5,
         load_name: str = "load",
         timestamp_name: str = "timestamp",
@@ -98,6 +97,12 @@ class DataPrepManager:
         self.site_folder = site_folder
         if not os.path.exists(self.site_folder):
             os.makedirs(self.site_folder)
+        data_subdir = os.path.join(self.site_folder,'data')
+        if not os.path.exists(data_subdir):
+            os.makedirs(data_subdir)
+        model_subdir = os.path.join(self.site_folder,'model')
+        if not os.path.exists(model_subdir):
+            os.makedirs(model_subdir)
         self._load_data: ldp.LoadData = load_data
         self.t0 = t0
         self.t1 = t1
@@ -118,12 +123,9 @@ class DataPrepManager:
         )
         del raw_load_data[load_name]
         self.data_calendar = raw_load_data
-      #  self.max_load_lag_start = max_load_lag_start
-      #  self.load_lag_order = load_lag_order
+
         self.utc_to_local_hours = utc_to_local_hours
-        # self.data_standard_load_lag = self.add_lag(
-        #     self.data_standard_load, start=max_load_lag_start, order=load_lag_order
-        # )
+
         self.weather: wp.WeatherDataPrep = None
         self.center = None
         self.rect = None
@@ -136,6 +138,12 @@ class DataPrepManager:
         self._weather_para_file = ""
         self._weather_predict_folder = ""
         self.para_num = para_num
+
+    def export_data(self, data_type: DataType):
+        if data_type == DataType.LoadData:
+            return np.array(self.load_data.train_data.columns), self.load_data.train_data
+        elif data_type == DataType.Hist_weatherData:
+            return np.array(self.weather.hrrr_paras), self.weather.weather_train_data.timestamp, self.weather.weather_train_data.get_unscaled_weather_arr()
 
     def process_load_data(
         self, load_data: ldp.LoadData, lag_hours=168, fst_horizon:List[int]=None

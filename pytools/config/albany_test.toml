@@ -7,15 +7,17 @@
  state = "NY"
  base_folder = "~/zhoul/work/energy/sites/albany-test"
  name = "Albany-NY"
+ # alias is the name for each project
  alias = "albany-test"
  sql_location = "CAPITL"
- site_folder = "nyiso"
+ back_fst_window = ["2020-01-01 00:00", "2025-01-01 00:00"]
+ #site_folder = "nyiso"
  #center[lon, lat]
  center = [-73.0, 43.0]
  #[east, west, south, north]
  rect = [30.0, 30.0, 30.0, 30.0]
- t0="2018-01-01"
- t1="2018-01-04"
+ t0="2018-11-03"
+ t1="2018-11-05"
  description = "Zone Capital of NYISO"
  comments = """name is used for database query and must match what the database use; while alias is used for setting up
   the folder structure"""
@@ -42,15 +44,38 @@
 [weather]
 envelope = [1548, 1568, 774, 794]
 hist_weather_pickle = "../data/grib2_folder_1.pkl"
-folder_col_name = "folder"
+fullfile_col_name = "full_file_name"
 filename_col_name = "filename"
 type_col_name = "type"
 hrrr_paras_file = "data_prep/hrrr_paras_cfgrib.txt"
 
-hrrr_hist = ["utah"] #["hrrr2", "utah"]
+#hrrr_hist = ["utah"] #["hrrr2", "utah"]
 hrrr_predict = "hrrr_fst"
 
 [model]
+scaler_type = 'minmax'
 y_label = "load"
-models = [ {ahead=1, uri="file:///Users/limingzhou/zhoul/work/me/xaog_proj/src/python/pytools/pytools/modeling/mlruns/7831ce8125a240cdb0c7769ab0b92311/artifacts/Albany-NY-fst-1-full"},
- {ahead=6, uri="file:///Users/limingzhou/zhoul/work/me/xaog_proj/src/python/pytools/pytools/modeling/mlruns/b4aaa0b068404188865c289d270a0b80/artifacts/Albany-NY-fst-6"} ]
+forecast_horizon = [
+    [1, 30],
+    [25,48]
+]
+target_ind = 0
+wea_ar_embedding_dim = 162
+wea_embedding_dim =6
+ext_embedding_dim =48
+seq_length = 168
+
+frac_yr1 = 0.5
+frac_split = [0.4, 0.3, 0.3]
+final_train_frac_yr1 = 0.5
+final_train_frac =[1, 0, 0]
+cv_settings = [
+   ["2018-11-03","2018-11-04 12:00","2018-11-04 13:00","2018-11-05"]
+    # ["2018-01-01", "2020-01-01", "2020-01-01", "2021-01-01"],
+    # ["2020-01-01", "2021-01-01", "2021-01-01","2022-01-01"],
+    # ["2021-01-01", "2022-01-01", "2022-01-01","2023-01-01"],
+    # ["2022-01-01", "2023-01-01", "2023-01-01","2024-01-01"],
+    # ["2023-01-01", "2024-01-01", "2024-01-01","2025-01-01"]
+]
+final_train_hist = ["2021-01-01", "2025-01-01"]
+models = [ ]

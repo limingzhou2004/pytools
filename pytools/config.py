@@ -1,7 +1,12 @@
+
+from enum import Enum
+import math
 import os
 import os.path as osp
 from pathlib import Path
 from typing import Dict, List, Tuple, Union
+from itertools import chain
+
 
 import numpy as np
 import pandas as pd
@@ -77,6 +82,12 @@ US_timezones=['US/Alaska',
  'US/Pacific',
  'US/Samoa']
 
+class DataType(Enum):
+    LoadData =1 
+    CalendarData = 2
+    Hist_weatherData = 3
+    Past_fst_weatherData = 4 
+    Latest_fst_weatherData = 5
 
 
 class Site(BaseModel):
@@ -87,11 +98,12 @@ class Site(BaseModel):
     base_folder: str
     center: Tuple[float, float]
     rect: Tuple[float, float, float, float]
+    back_fst_window: List[str]
     t0: str
     t1: str
     hrrr_paras_file: FilePath
     sql_location: str 
-    site_folder: str 
+    #site_folder: str 
     description: str 
 
     @field_validator('state',mode='after')
@@ -124,18 +136,36 @@ class Load(BaseModel):
     lag_hours:int
     utc_to_local_hours:int 
     #load_lag_start:int # to delete
-    fst_hours: List[int]
+    #fst_hours: List[int]
 
 
 class Weather(BaseModel):
     envelope: List[int]
     hist_weather_pickle: str
-    folder_col_name: str 
+    fullfile_col_name: str 
     filename_col_name: str 
     hrrr_paras_file: str
     type_col_name: str 
-    hrrr_hist: List[str]
+    #hrrr_hist: List[str]
     hrrr_predict: str
+
+
+class Model(BaseModel):
+    y_label: str
+    scaler_type: str
+    frac_yr1: float
+    frac_split: list
+    final_train_frac_yr1: float
+    final_train_frac: list
+    cv_settings: List[List]
+    forecast_horizon: List[List]
+    final_train_hist: List
+    target_ind: int
+    wea_ar_embedding_dim: int
+    wea_embedding_dim: int 
+    ext_embedding_dim: int
+    seq_length: int 
+    models: List
 
 
 class Config:
@@ -157,6 +187,7 @@ class Config:
         self.site_pdt = Site(**self.toml_dict['site'])
         self.load_pdt = Load(**self.toml_dict['load'])
         self.weather_pdt = Weather(**self.toml_dict['weather'])
+        self.model_pdt = Model(**self.toml_dict['model'])
 
     def _add_base_folder(self, dict_to_update, key):
         dict_to_update[key] = os.path.join(self._base_folder, dict_to_update[key])
@@ -172,6 +203,11 @@ class Config:
 
         """
         return self.toml_dict[table]
+    
+    def get_load_data_full_fn(self, data_type: DataType, extension:str, year=-1, month=-1):
+        year_str = '' if year < 0 else f'_{year}'
+        mon_str = '' if month < 0 else f'_{month}'
+        return self.automate_path(f'data/{str(data_type.name)}{year_str}{mon_str}.{extension}')
 
     def get_model_file_name(
         self, class_name: str = "_data_manager_", prefix: str = "", suffix: str = "", extension='.pkl'
@@ -187,9 +223,8 @@ class Config:
 
         """
         return os.path.join(
-            #self._base_folder,
             self.site_parent_folder,
-            prefix + self.site_pdt.alias + class_name + suffix + extension,
+            prefix + self.site_pdt.alias + '_' + class_name + suffix + extension,
         )
 
     @property
@@ -204,9 +239,9 @@ class Config:
     def site_parent_folder(self):
         return os.path.join(
             self._base_folder,
-            self.toml_dict["site"]["site_folder"],
-            self.toml_dict["category"]["name"],
-            self.toml_dict["site"]["alias"],
+            #self.toml_dict["site"]["site_folder"],
+            # self.toml_dict["category"]["name"],
+            # self.toml_dict["site"]["alias"],
         )
 
     @property
@@ -231,7 +266,7 @@ class Config:
         if fn.startswith('data_prep'):
             return get_file_path(fn=fn, this_file_path=__file__)
         
-        return osp.join(self.site_pdt.base_folder, fn)
+        return osp.join(self.site_parent_folder, fn)
 
     @property
     def load(self):
@@ -286,10 +321,38 @@ class Config:
         )
         df.reset_index().to_csv(file_name, index=False)
 
-    # @property
-    # def weather_folder(self) -> Dict:
-    #     path_dict = self.get("weather_folder")
-    #     return {k: self._join(self._base_folder, path_dict[k]) for k in path_dict}
+    def get_sample_segmentation_borders(self, full_length, fst_scenario=0, first_yr_frac=0.5, fractions=[]):
+        #, fractions=[0.5, (0.4, 0.3, 0.3)]):
+        fraction_yr1 = first_yr_frac
+        frac_train=fractions[0]
+        frac_test=fractions[1]
+        frac_val=fractions[2]
+        # full ind 0: len(all samples) - pred_length 
+        # first year + 40% 2nd year (train): 30% 2nd year(test): 30% 2nd year(validate)
+        # fraction = [first percetage, (second train, test, validate)]
+        pre_length = self.model_pdt.forecast_horizon[fst_scenario][-1]
+        full_length -= pre_length
+        train_borders = range(int(full_length*fraction_yr1))
+        test_borders = range(1,0)
+        val_borders = range(1,0)
+        n_quarter = 4
+        quarter = math.ceil(full_length * (1-fraction_yr1) / n_quarter)
+        m = train_borders[-1]+1
+
+        for i in range(n_quarter):
+            train_borders = chain(train_borders, range(int(i*quarter+m), \
+                                         int((i+frac_train)*quarter+m)))
+            test_borders = chain(test_borders, range(int((i+frac_train)*quarter+m), \
+                                       int((i+frac_train+frac_test)*quarter)+m))
+            val_borders = chain(val_borders, range(int((i+frac_train+frac_test)*quarter)+m, \
+                                      int((i+frac_train+frac_test+frac_val)*quarter)+m))
+
+        def fun(x):
+            return x<full_length
+        return filter(fun, train_borders), filter(fun, test_borders), \
+            filter(fun, val_borders)
+
+
     
     @property
     def center(self) -> Tuple[float, float]:

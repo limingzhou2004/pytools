@@ -104,6 +104,9 @@ class WeatherData:
             data[:, :, :, p] = scaled.reshape(d1_arr.shape)
         self.standardized_data = data
 
+    def get_unscaled_weather_arr(self):
+        return np.array([d for d in self.dict_data.values()])
+
     def save_unscaled_npz(self, fn:str):
         """
         Save the original weather data and timestamp, for other purposes rather than modeling.

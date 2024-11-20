@@ -1,9 +1,30 @@
 from pathlib import Path
 
 from pytools.config import Config
-
+from pytools.config import DataType
 
 class TestConfig:
+
+    def test_get_sample_segments(self, config):
+        train_borders, test_borders, val_borders = config.get_sample_segmentation_borders(\
+            15999, 0, 0.5, [0.4, 0.3, 0.3])
+        
+        train_borders = list(train_borders)
+        test_borders = list(test_borders)
+        val_borders = list(val_borders)
+
+        assert train_borders[0] == 0 
+        assert train_borders[7999:8001] == [7999, 8000]
+        assert train_borders[-1] == 14772
+        assert test_borders[0] == 8782
+        assert test_borders[-1] == 15371
+        assert val_borders[0] == 9381
+        assert val_borders[-1] == 15968
+        assert len(val_borders) == 2396
+        assert len(test_borders) ==2396
+
+
+
     def test_get(self, config):
         assert config.site["name"] == "Albany-NY"
 
@@ -20,9 +41,6 @@ class TestConfig:
     def test_sql(self, config):
         assert len(config.sql) == 3
 
-    def test_weather_folder(self, config):
-        assert len(config.weather_folder["hrrr_hist"]) >= 1
-
     def test_env_parse(self, config):
         assert config.site["envtest"] == "test an env"
 
@@ -32,5 +50,15 @@ class TestConfig:
         assert config.weather_pdt.envelope == [1548, 1568, 774, 794]
 
     def test_get_fst_hours(self, config):
+        assert config.model_pdt.forecast_horizon==[[1,24], [25,48]]
 
-        assert config.load_pdt.fst_hours==[1,6, 24]
+    def test_get_full_filename(self, config):
+        fn = config.get_load_data_full_fn(DataType.LoadData ,'npz')
+        assert fn.endswith('LoadData.npz')
+        fn = config.get_load_data_full_fn(DataType.LoadData ,'npz', year=2020)
+        assert '_2020' in fn
+        fn = config.get_load_data_full_fn(DataType.LoadData ,'npz', year=2021, month=2)
+        assert '_2021_2' in fn
+
+
+

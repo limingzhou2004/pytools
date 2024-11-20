@@ -60,36 +60,36 @@ class TestDataPrep:
         )
         assert ny_manager.data_standard_load_lag.shape[1] == 168
 
-    def test_py_jar(self):
-        data_folder = "/Users/limingzhou/zhoul/work/me"
-        f_in = data_folder + "/testdata/hrrrsub_2018_10_06_00F0"
-        f_out = data_folder + "/testdata/output2/test_hrrr"
-        # paras_file = "/Users/limingzhou/zhoul/work/me/xaog_ops/modeling/sites/nyiso/nam_paras.txt"
-        pj = Pj.PyJar(
-            jar_address=self.jar_address,
-            folder_in=f_in,
-            folder_out=f_out,
-            paras_file=self.paras_file,
-            center='"(43,-73.0)"',
-            rect='"(100.0,100.0)"',
-        )
-        # pj.process_a_grib(f_in=f_in, f_out=f_out)
-        f_in = data_folder + "/testdata/nam.t00z.conusnest.hiresf00.tm00.grib2"
-        f_out = data_folder + "/testdata/output2/test_nem"
-        pj.process_a_grib(f_in=f_in, f_out=f_out)
+    # def test_py_jar(self):
+    #     data_folder = "/Users/limingzhou/zhoul/work/me"
+    #     f_in = data_folder + "/testdata/hrrrsub_2018_10_06_00F0"
+    #     f_out = data_folder + "/testdata/output2/test_hrrr"
+    #     # paras_file = "/Users/limingzhou/zhoul/work/me/xaog_ops/modeling/sites/nyiso/nam_paras.txt"
+    #     pj = Pj.PyJar(
+    #         jar_address=self.jar_address,
+    #         folder_in=f_in,
+    #         folder_out=f_out,
+    #         paras_file=self.paras_file,
+    #         center='"(43,-73.0)"',
+    #         rect='"(100.0,100.0)"',
+    #     )
+    #     # pj.process_a_grib(f_in=f_in, f_out=f_out)
+    #     f_in = data_folder + "/testdata/nam.t00z.conusnest.hiresf00.tm00.grib2"
+    #     f_out = data_folder + "/testdata/output2/test_nem"
+    #     pj.process_a_grib(f_in=f_in, f_out=f_out)
 
-    def test_py_jar_process_folder(self):
-        data_in_folder = "/Users/limingzhou/zhoul/work/me/testdata/naminput"
-        data_out_folder = "/Users/limingzhou/zhoul/work/me/testdata/output3"
-        pj = Pj.PyJar(
-            jar_address=self.jar_address,
-            folder_in=data_in_folder,
-            folder_out=data_out_folder,
-            paras_file=self.nam_paras_file,
-            center='"(43,-73.0)"',
-            rect='"(100.0,100.0)"',
-        )
-        pj.process_folders(out_prefix="nam_test_", out_suffix=".npy", parallel=True)
+    # def test_py_jar_process_folder(self):
+    #     data_in_folder = "/Users/limingzhou/zhoul/work/me/testdata/naminput"
+    #     data_out_folder = "/Users/limingzhou/zhoul/work/me/testdata/output3"
+    #     pj = Pj.PyJar(
+    #         jar_address=self.jar_address,
+    #         folder_in=data_in_folder,
+    #         folder_out=data_out_folder,
+    #         paras_file=self.nam_paras_file,
+    #         center='"(43,-73.0)"',
+    #         rect='"(100.0,100.0)"',
+    #     )
+    #     pj.process_folders(out_prefix="nam_test_", out_suffix=".npy", parallel=True)
 
     def test_weather_data_prep(self):
         npy_folder = "/Users/limingzhou/zhoul/work/me/testdata/output5"

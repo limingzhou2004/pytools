@@ -83,31 +83,11 @@ class PandasSql:
         dmap = PandasSql.sql_dtype_map()
         return {n: dmap[str(df[n].dtype)] for n in df.dtypes.index}
 
-    # @staticmethod
-    # def create_mysql_tbl_schema(df, conn, db, tbl_name):
-    #     tbl_cols_sql = PandasSql.gen_tbl_cols_sql(df)
-    #     sql = "USE {0}; CREATE TABLE if not exists {1} ({2});".format(
-    #         db, tbl_name, tbl_cols_sql
-    #     )
-    #     # print("\n" + sql_template)
-    #     cur = conn.cursor()
-    #     res = cur.execute(sql, multi=True)
-    #     # Need to iterate if multi = True
-    #     try:
-    #         for r in res:
-    #             print(r)
-    #     except PandasSql.sqlError:
-    #         print(sql)
-    #     finally:
-    #         conn.commit()
-    #         cur.close()
-    #         conn.close()
-
     @staticmethod
     def df_to_sql(df, engine, schema, tbl_name, new_dtype=None, if_exists="replace"):
         df.to_sql(tbl_name, engine, schema=schema, if_exists=if_exists, dtype=new_dtype)
 
     @staticmethod
-    def read_sql_timeseries(engine, qstr, date_col): #, chunk_size=20000):
+    def read_sql_timeseries(engine, qstr):
         with engine.connect() as conn:
-            return pd.read_sql(qstr, conn.connection, parse_dates=date_col)  
+            return pd.read_sql(qstr, conn.connection)

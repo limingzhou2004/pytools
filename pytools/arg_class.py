@@ -116,24 +116,69 @@ class ArgClass:
             type=int,
             help="number of cores to use, default 1",
         )
+        sub_parser.add_argument(
+            "-fh",
+            "--fst-hour",
+            dest="fst_hour",
+            required=False,
+            default=48,
+            type=int,
+            help="max weather forecast hours, default 48",
+        )
+        sub_parser.add_argument(
+            "-flag",
+            "--flag",
+            dest="flag",
+            required=False,
+            default='hf',
+            type=str,
+            help='f-forecast, h-historical, use together as fh or separate as f or h',
+        )
+        sub_parser.add_argument(
+            "-year",
+            "--year",
+            dest="year",
+            required=False,
+            default=-1,
+            type=int,
+            help='year, -1 for all years, 2020-',
+        )
+        
+        sub_parser.add_argument(
+            "-month",
+            "--month",
+            dest="month",
+            required=False,
+            default=-1,
+            type=int,
+            help='month, -1 for all months, 1-12',
+        )
         sub_parser.set_defaults(func=fun)
 
     def _add_task3(self, fun):
-        sub_parser = ArgumentParser()
-        self.sub_parsers.add_subparser("task_3", sub_parser, help="Task 3")
+        sub_parser = self.sub_parsers.add_parser("task_3")
         sub_parser.add_argument(
-            "-f",
-            "--fst-hours",
-            dest="fst_hours",
+            "-flag",
+            "--flag",
+            dest="flag",
             required=False,
-            default=1,
+            default='cv_0',
+            type=str,
+            help="train type, e.g. cv_0|final_train_0",
+        )
+        sub_parser.add_argument(
+            "-ind",
+            "--sce-ind",
+            dest="ind",
+            required=False,
+            default=0,
             type=int,
-            help="number of hours to forecast ahead",
+            help="cv or final_train ind, default 0",
         )
         sub_parser.set_defaults(func=fun)
 
     def _add_task4(self, fun):
-        sub_parser = ArgumentParser()
+        sub_parser = self.sub_parsers.add_parser("task_4")
         sub_parser.add_argument(
             "-to",
             "--train-options",
@@ -191,7 +236,7 @@ class ArgClass:
         sub_parser.set_defaults(func=fun)
 
     def _add_task5(self, fun):
-        sub_parser = ArgumentParser()
+        sub_parser = self.sub_parsers.add_parser("task_5")
         sub_parser.add_argument(
             "-mha",
             "--max-hours-ahead",
@@ -220,8 +265,7 @@ class ArgClass:
         sub_parser.set_defaults(func=fun)
 
     def _add_task6(self, fun):
-        sub_parser = ArgumentParser()
-        self.sub_commands.add_subcommand("task_6", sub_parser, help="Task 6")
+        sub_parser = self.sub_parsers.add_parser("task_6")
         sub_parser.add_argument(
             "-mha",
             "--max-hours-ahead",
@@ -263,8 +307,6 @@ class ArgClass:
 
 
     def _add_task7(self, fun):
-        sub_parser = ArgumentParser()
-        self.sub_commands.add_subcommand("task_7", sub_parser, help="Task 7")
-
+        sub_parser = self.sub_parsers.add_parser("task_7")
         sub_parser.set_defaults(func=fun)
 

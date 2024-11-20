@@ -35,6 +35,7 @@ cur_path = os.path.dirname(os.path.realpath(__file__))
 folder_info_file = os.path.join(cur_path, '../data/hrrr_obs_folder.txt')
 
 col_folder = 'folder'
+col_fullname = 'full_file_name'
 col_type = 'type'
 col_batch = 'batch'
 col_filename = 'filename'
@@ -97,11 +98,11 @@ def load_files(batch_no=0):
     for f in df['folder']:
         fs = list(get_all_files_iter(f, recursive=True, exclude_small_files=True))
         df0 = pd.DataFrame(data={col_filename:[v.name for v in fs ]})
-        df0[col_folder] = pd.DataFrame(data={col_filename:[v.path for v in fs ]})
+        df0[col_fullname] = pd.DataFrame(data={col_filename:[v.path for v in fs ]})
         df0[col_type] = df0[col_filename].apply(decide_grib_type)
         # generate timestamp from filename
         print(f'processing {f}...')
-        df0[col_timestamp] = df0.progress_apply(lambda x: get_timestamp(x[col_filename], x[col_type], x[folder_name]), axis=1)
+        df0[col_timestamp] = df0.progress_apply(lambda x: get_timestamp(x[col_filename], x[col_type], x[col_fullname]), axis=1)
         ds.append(df0)
 
     fo = pd.concat(ds)
@@ -120,7 +121,7 @@ def download_herbie_file_extract(cur_date:np.datetime64, tgt_folder:str):
     config_file='pytools/config/albany_test.toml'
     c = Config(config_file)
     paras_file = c.automate_path(c.weather_pdt.hrrr_paras_file)
-    download_obs_data_as_files(t0=str(cur_date), t1=str(cur_date + np.timedelta64(1,'h')), paras_file=paras_file,save_dir=tgt_folder)
+    download_obs_data_as_files(t0=str(cur_date), t1=str(cur_date + np.timedelta64(0,'h')), paras_file=paras_file,save_dir=tgt_folder)
 
 
 def fillmissing_from_pickle(batch_no, tgt_folder:str):
@@ -134,19 +135,21 @@ def fillmissing_from_pickle(batch_no, tgt_folder:str):
     fn = os.path.join(os.path.dirname(__file__), f'../data/grib2_folder_{batch_no}.pkl')
     df = pd.read_pickle(fn)
     df = df[df['timestamp'].isna()]
+   
     print('start processing...\n')
     for t in tqdm(df['cplt_timestamp']):
         if t.to_datetime64()<np.datetime64('2020-01-01'):
             continue
         download_herbie_file_extract(cur_date=t, tgt_folder=tgt_folder)
 
-    
-def main():
-    return
-
 
 if __name__ == '__main__':
-# usage, python -m  pytools.data_prep.grib_util_org 0
+# usage: 
+# python -m pytools.data_prep.grib_util_org 1
+# python -m pytools.data_prep.grib_util_org summary 1
+# python -m pytools.data_prep.grib_util_org -fill "/Users/limingzhou/zhoul/work/energy/herbie" 1
+# python -m pytools.data_prep.grib_util_org 1
+
     if len(sys.argv) > 1:
         if sys.argv[1]=='summary':
             make_stats(i=int(sys.argv[2]))

@@ -2,45 +2,67 @@
  name = "electric_load"
  description = "mwh for zones in iso or rto"
 
-[jar_config]
- address = "\"Scala-http/classes/artifacts/scalahttp_jar/*\""
- comments = """escape the quotation mark as the path will be passed to the command line arguments and in case of spaces
-  in the path"""
-
 [site]
- base_folder = "$DAF"
+ timezone = "US/Eastern"
+ state = "NY"
+ base_folder = "~/zhoul/work/energy/sites/albany-prod"
  name = "Albany-NY"
- alias = "albany-test"
- sql_location = "capitl"
- site_folder = "nyiso"
- center = "\"(43.0,-73.0)\""
- rect = "\"(100.0,100.0)\""
- hrrr_paras_file = "$DAF/params/hrrr_paras.txt"
- nam_paras_file = "$DAF/params/nam_paras.txt"
+ back_fst_window = ["2020-01-01 00:00", "2025-01-01 00:00"]
+ alias = "albany-prod"
+ sql_location = "CAPITL"
+ #site_folder = "nyiso"
+ #center[lon, lat]
+ center = [-73.0, 43.0]
+ #[east, west, south, north]
+ rect = [30.0, 30.0, 30.0, 30.0]
+ t0="2018-01-01"
+ t1="2025-01-01"
  description = "Zone Capital of NYISO"
  comments = """name is used for database query and must match what the database use; while alias is used for setting up
   the folder structure"""
+ #envtest = "$ENV_TEST"
 
 [load]
+ db_name="daf"
+ db_schema = "iso"
  table = "nyiso_hist_load"
+ table_iso_fst = "nyiso_fst_load"
+ table_our_fst = "nyiso_fst_load_ours"
  unit = "mwh"
  datetime_column = "timestamp"
  daylightsaving_col = "daylightsaving"
  load_column = "load"
- sql_template_file = "$DAF/configs/sql_template/nyiso_sql_template.toml"
+ #relative to the config folder
+ sql_template_file = "sql_template/nyiso_sql_template.toml"
  #reasonable value range limit
  limit = [0, 99999]
  lag_hours = 168
  utc_to_local_hours = -5
- load_lag_start = 72
+ fst_hours =[1, 6, 24]
 
-[weather_folder]
-hrrr_hist = ["$HRRR_DIR0", "HRRR_DIR1"]
+[weather]
+envelope = [1548, 1568, 774, 794]
+hist_weather_pickle = "../data/grib2_folder_1.pkl"
+fullfile_col_name = "full_file_name"
+filename_col_name = "filename"
+type_col_name = "type"
+hrrr_paras_file = "data_prep/hrrr_paras_cfgrib.txt"
+
+#hrrr_hist = ["utah"] #["hrrr2", "utah"]
 hrrr_predict = "hrrr_fst"
-
-
 
 [model]
 y_label = "load"
-models = [ {ahead=1, uri="file:///Users/limingzhou/zhoul/work/me/xaog_proj/src/python/pytools/pytools/modeling/mlruns/7831ce8125a240cdb0c7769ab0b92311/artifacts/Albany-NY-fst-1-full"},
- {ahead=6, uri="file:///Users/limingzhou/zhoul/work/me/xaog_proj/src/python/pytools/pytools/modeling/mlruns/b4aaa0b068404188865c289d270a0b80/artifacts/Albany-NY-fst-6"} ]
+forecast_horizon = [
+    [1, 24],
+    [25,48]
+]
+cv_settings = [
+    ["2018-01-01", "2020-01-01", "2020-01-01", "2021-01-01"],
+    ["2020-01-01", "2021-01-01", "2021-01-01","2022-01-01"],
+    ["2021-01-01", "2022-01-01", "2022-01-01","2023-01-01"],
+    ["2022-01-01", "2023-01-01", "2023-01-01","2024-01-01"],
+    ["2023-01-01", "2024-01-01", "2024-01-01","2025-01-01"]
+]
+final_train_hist = ["2021-01-01", "2025-01-01"]
+models = [ ]

@@ -111,15 +111,14 @@ pip install "apache-airflow[celery]==2.10.2" --constraint "https://raw.githubuse
 The folders included are listed in pytools/data/hrrr_obs_folder.txt file, with stages ==0 for prod and <0 for test.
 1. Create the pickle file to list each file for each hour, including missing hours, `python -m  pytools.data_prep.grib_util_org 1` The min and max timestamp are determined fromt he exising files. You may need to manually download the last hour data to expand the max timestamp.
 2. Run the report of statistics, by not using additional args, `python -m  pytools.data_prep.grib_util_org summary 1` . __Remember__ to run step 1 to update the pickle file.
-3. Run the Utah downloading to fill missing hours, 
-4. `python -m pytools.data_prep.grib_util_org -fill "/Users/limingzhou/zhoul/work/energy/herbie" 1`
+3. Run the Herbie downloading to fill missing hours,  `python -m pytools.data_prep.grib_util_org -fill "/Users/limingzhou/zhoul/work/energy/herbie" 1`
    
    After the missings are filled, rerun the statisitcal report, there should be no missings.
 
 ### Integration
 #### Weather prep
 The weather steps include:
-- For obs weather, extract grib2 files based on the pickle report file, data/grib2_folder_1.pkl.  `python -m pytools.data_pre`
-- Get load data
-- Combine npy weather data.
+1. Task 1, `python -m pytools.weather_task -cfg pytools/config/albany_test.toml --create task_1 `
+2. Task 2, get historical weather `python -m pytools.weather_task -cfg pytools/config/albany_prod.toml task_2 --n-cores 1 -year 2018 -flag h`. To get past forecast weather, `python -m pytools.weather_task -cfg pytools/config/albany_prod.toml task_2 -fh 48 --n-cores 1 -year 2024 -flag f`
+3. Task 3, sync load and weather data.
 - 

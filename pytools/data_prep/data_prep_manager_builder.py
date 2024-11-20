@@ -52,7 +52,6 @@ class DataPrepManagerBuilder:
             t1=self.t1,
             load_data=load_data,
             load_limit=config.load["limit"],
-            # max_load_lag_start=config.load["load_lag_start"],
             utc_to_local_hours=config.load["utc_to_local_hours"],
             load_name=config.load["load_column"],
             timestamp_name=config.load["datetime_column"],

@@ -1,3 +1,4 @@
+import pickle
 import sys
 import datetime as dt
 from functools import partial
@@ -17,6 +18,8 @@ from pytorch_lightning.callbacks import EarlyStopping
 from torch.utils.data import DataLoader
 
 from pytools.arg_class import ArgClass
+from pytools.data_prep.herbie_wrapper import download_hist_fst_data
+from pytools.modeling.dataset import WeatherDataSet, check_fix_missings, read_weather_data_from_config
 from pytools.modeling.rolling_forecast import RollingForecast
 from pytools.modeling.utilities import extract_model_settings
 from pytools.modeling.weather_net import WeatherNet, default_layer_sizes, ModelSettings
@@ -38,7 +41,7 @@ from pytools.data_prep.data_prep_manager_builder import (
 from pytools.data_prep import load_data_prep as ldp
 from pytools.data_prep.get_datetime_from_grib_file_name import get_datetime_from_grib_file_name
 from pytools.data_prep import weather_data_prep as wp
-from pytools.config import Config
+from pytools.config import Config, DataType
 
 # use hour 0-5 forecast as history to train models, also called analysis
 
@@ -46,7 +49,8 @@ from pytools.config import Config
 #nam_hist_max_fst_hour = 5
 hrrr_hist_max_fst_hour = 0
 logger = get_logger("weather_tasks")
-weather_data_file_name = 'weather_data.npz'
+#weather_data_file_name = 'weather_data.npz'
+
 
 def hist_load(
     config_file: str,
@@ -78,24 +82,27 @@ def hist_load(
         dm = Dpmb(
             config_file=config_file, t0=t0, t1=t1
         ).build_dm_from_config_weather(config=config)
-        dm.build_weather(
-            weather=config.weather,
-            center=config.site["center"],
-            rect=config.site["rect"],
-        )
         # save the data manager with a weather object
         dpm.save(config=config, dmp=dm, prefix=prefix, suffix=suffix)
+
+        # write the load data to npy 
+        fn = config.get_load_data_full_fn(data_type=DataType.LoadData, extension='npz')
+        cols, load = dm.export_data(DataType.LoadData)
+        logger.info(f'column names: {cols}')
+        np.savez_compressed(fn, **{DataType.LoadData.name:load, 'columns':cols})       
+        
     else:
         logger.info("Use the existing manager...\n")
     return dm
 
 
-def hist_weather_prepare_from_report(config_file:str, n_cores=1, suffix='v0'):
-    d = hist_load(config_file=config_file, create=False)
-    logger.info(f"Creating historical npy data from {d.t0} to {d.t1}...\n")
+def hist_weather_prepare_from_report(config_file:str, n_cores=1, suffix='v0', create=False, fst_hour=48,year=-1):
+    d = hist_load(config_file=config_file, create=create)
+    logger.info(f"Creating historical npy data from {d.t0} to {d.t1}\n")
+    if year>0:
+        logger.info(f'process year {year} only...')
 
     config = Config(config_file)
-    #hour_offset = config.load["utc_to_local_hours"]
     d.build_weather(
         weather=config.weather,
         center=config.site["center"],
@@ -105,73 +112,89 @@ def hist_weather_prepare_from_report(config_file:str, n_cores=1, suffix='v0'):
     if n_cores > 1:
         parallel = True
     w_obj = d.weather.make_npy_data_from_inventory(
-        center=config.site['center'],
-        rect=config.site['rect'],
-        inventory_file=config.weather_pdt.hist_weather_pickle,
+        config=config,
         parallel=parallel,
-        folder_col_name=config.weather_pdt.folder_col_name,
-        filename_col_name=config.weather_pdt.filename_col_name,
-        type_col_name=config.weather_pdt.type_col_name,
         t0=d.t0,
         t1=d.t1,
         n_cores=n_cores,
+        year=year
         )
     #w_obj.save_scaled_npz(osp.join(config.site_parent_folder, weather_data_file_name))
     #w_obj.save_unscaled_npz(osp.join(config.site_parent_folder, 'unscaled_'+weather_data_file_name))
-    dpm.save(config=config, dmp=d, suffix=suffix)
+    fn = config.get_load_data_full_fn(data_type=DataType.Hist_weatherData, extension='npz', year=year)
+    # if year>0:
+    #     fn = f'{fn}_{year}'
+    # use paras[()] to access the OrderedDict in the 0-dim paras array.
+    paras, w_timestamp, wdata = d.export_data(DataType.Hist_weatherData)
+
+    np.savez_compressed(fn, **{'paras':paras, 'timestamp':w_timestamp, DataType.Hist_weatherData.name:wdata})
+    #dpm.save(config=config, dmp=d, suffix=suffix)
 
     return d
 
 
-def train_data_assemble(
-    config_file: str, suffix='v0', 
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """
-    Assemble training data. Save to a npz file.
-
-    Args:
-        config_file:
-        fst_horizon: forecast horizon, 1, 6, 24
-        suffix: id, will add fst_horizon
-
-    Returns: DataPrepManager with load and hist weather organized for training
-
-    """
-    d: DataPrepManager = hist_load(config_file=config_file, create=False)
-
-    h_weather = d.weather.get_weather_train()  
-    c: Config = Config(config_file)
+def past_fst_weather_prepare(config_file:str, fst_hour=48, year=-1, month=-1):
+    logger.info('Create past weather forecast, with forecast horizon of {fst_hour}...\n')
+    if year>0:
+        logger.info(f'Process year {year} only...')
+    c = Config(config_file)
+    paras_file = c.automate_path(c.weather_pdt.hrrr_paras_file)
+    spot_time, weather_arr = download_hist_fst_data(t_start=c.site_pdt.back_fst_window[0], t_end=c.site_pdt.back_fst_window[1], fst_hr=fst_hour, 
+    paras_file=paras_file,envelopes=c.weather_pdt.envelope, year=year)
+    fn = c.get_load_data_full_fn(DataType.Past_fst_weatherData, extension='pkl', year=year, month=month)
+    with open(fn, 'wb') as f:
+        pickle.dump([spot_time, weather_arr],f)
     
-    lag_data, calendar_data, data_standard_load = d.process_load_data(
-        d.load_data, lag_hours=c.load_pdt.lag_hours, fst_horizon=c.load_pdt.fst_hours
-    )
-    cols_lag = list(lag_data.keys())
-    cols_calendar = list(calendar_data)
-    cols_load = list(data_standard_load)
-    join_load, join_wdata = d.reconcile(
-        pd.concat([lag_data, calendar_data, data_standard_load], axis=1),
-        d.load_data.date_col,
-        h_weather,
-    )
-    cols_calendar.remove(d.load_data.date_col)
-    # Let's set up the weather data scaler, and save the file with all weather data
-    #join_wdata = d.standardize_weather(weather_array=join_wdata)
-    cfg = Config(config_file)
-    dpm.save(config=cfg, dmp=d, suffix=suffix)
-    save_fn = get_npz_train_weather_file_name(cfg=cfg, suffix=suffix)
-    np.savez_compressed(
-        save_fn,
-        weather=join_wdata,
-        load_lag=join_load[cols_lag].values,
-        calendar=join_load[cols_calendar].values,
-        target=join_load[cols_load].values,
-    )
-    return (
-        join_wdata,
-        join_load[cols_lag],
-        join_load[cols_calendar],
-        join_load[cols_load],
-    )
+
+# def train_data_assemble(
+#     config_file: str, suffix='v0', 
+# ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+#     """
+#     Assemble training data. Fill missing load and/or weather data.
+
+#     Args:
+#         config_file:
+#         fst_horizon: forecast horizon, 1, 6, 24
+#         suffix: id, will add fst_horizon
+
+#     Returns: DataPrepManager with load and hist weather organized for training
+
+#     """
+#     #d: DataPrepManager = hist_load(config_file=config_file, create=False)
+#     #h_weather = d.weather.get_weather_train()  
+#     c: Config = Config(config_file)
+
+    
+#     lag_data, calendar_data, data_standard_load = d.process_load_data(
+#         d.load_data, lag_hours=c.load_pdt.lag_hours, fst_horizon=c.load_pdt.fst_hours
+#     )
+#     cols_lag = list(lag_data.keys())
+#     cols_calendar = list(calendar_data)
+#     cols_load = list(data_standard_load)
+#     join_load, join_wdata = d.reconcile(
+#         pd.concat([lag_data, calendar_data, data_standard_load], axis=1),
+#         d.load_data.date_col,
+#         h_weather,
+#     )
+#     cols_calendar.remove(d.load_data.date_col)
+#     # Let's set up the weather data scaler, and save the file with all weather data
+#     #join_wdata = d.standardize_weather(weather_array=join_wdata)
+#     cfg = Config(config_file)
+#     dpm.save(config=cfg, dmp=d, suffix=suffix)
+#     save_fn = get_npz_train_weather_file_name(cfg=cfg, suffix=suffix)
+#     np.savez_compressed(
+#         save_fn,
+#         weather=join_wdata,
+#         load_lag=join_load[cols_lag].values,
+#         calendar=join_load[cols_calendar].values,
+#         target=join_load[cols_load].values,
+#     )
+#     return (
+#         join_wdata,
+#         join_load[cols_lag],
+#         join_load[cols_calendar],
+#         join_load[cols_load],
+#     )
 
 
 def train_model(
@@ -347,7 +370,7 @@ def main(args):
         "task_7": task_7,
     }
     pa = ArgClass(args, list(task_dict.values()))
-    fun, args = pa.construct_args()
+    fun, args = pa.construct_args_dict()
 
     return fun(**args)
 
@@ -358,12 +381,32 @@ def task_1(**args):
 
 
 def task_2(**args):
-    dm = hist_weather_prepare_from_report(**args)
-    return dm
+    flag = args['flag']
+    del args['flag']
+    if 'h' in flag:
+        del args['month']
+        hist_weather_prepare_from_report(**args)
+    if 'f' in flag:
+        past_fst_weather_prepare(config_file=args['config_file'], fst_hour=args['fst_hour'], year=args['year'])
 
 
 def task_3(**args):
-    return train_data_assemble(**args)
+    flag = args['flag']
+    config = Config(args['config_file'])
+    load_data, w_paras, w_timestamp, w_data = read_weather_data_from_config(config, year=-1)
+    load_arr, wea_arr, t = check_fix_missings(load_arr=load_data, w_timestamp=w_timestamp, w_arr=w_data)
+
+    if flag.startswith('cv_'):
+        prefix = 'cv'
+    elif flag.startswith('final_'):
+        prefix= 'final_train'
+    ind = args['ind']
+    train_flag = f'{prefix}_train'
+    ds_train = WeatherDataSet(flag=train_flag,tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
+    ds_test =  WeatherDataSet(flag=f'{prefix}_test',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
+    ds_val =  WeatherDataSet(flag=f'{prefix}_val',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
+
+    #return train_data_assemble(**args)
 
 
 def task_4(**args):
@@ -428,4 +471,8 @@ def task_7(**args):
 
 
 if __name__ == "__main__":
+# python -m pytools.weather_task -cfg pytools/config/albany_test.toml --create task_1 
+# python -m pytools.weather_task -cfg pytools/config/albany_test.toml task_2 -fh 2 --n-cores 1 -year 2020 -flag hf
+# python -m pytools.weather_task -cfg pytools/config/albany_prod.toml task_2 --n-cores 1 -year 2018 -flag h
+# python -m pytools.weather_task -cfg pytools/config/albany_prod.toml task_2 -fh 48 --n-cores 1 -year 2024 -flag f
     main(sys.argv[1:])

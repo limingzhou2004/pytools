@@ -8,11 +8,16 @@ import uuid
 import numpy as np
 import pandas as pd
 import dask.bag as bag
+from tqdm import tqdm
 
+from pytools import get_logger
+from pytools.config import Config
 from pytools.data_prep import weather_data as wd
 from pytools.data_prep.get_datetime_from_grib_file_name import get_datetime_from_grib_file_name, get_datetime_from_grib_file_name_utah
 from pytools.data_prep.grib_utils import extract_data_from_grib2, get_paras_from_cfgrib_file
 from pytools.utilities import get_file_path, parallelize_dataframe
+
+logger = get_logger('weather_data_prep')
 
 def grib_filter_func(
     file_names: list,
@@ -252,47 +257,53 @@ class WeatherDataPrep:
 
     def make_npy_data_from_inventory(
             self, 
-            center:List[float],
-            rect:List[float],
-            inventory_file:str=None,
+            config: Config,
             parallel:bool=False,
-            folder_col_name:str='folder',
-            filename_col_name:str='filename',
-            type_col_name:str='type',
             t0: np.datetime64=np.datetime64('2018-01-01'),
             t1: np.datetime64=np.datetime64('2018-01-03'),
             n_cores=7,
+            year=-1,
             )->wd.WeatherData:
-        df = pd.read_pickle(get_file_path(fn=inventory_file, this_file_path=__file__))
+        
+        center = config.site_pdt.center
+        rect = config.site_pdt.rect
+        df = pd.read_pickle(get_file_path(fn=config.weather_pdt.hist_weather_pickle, this_file_path=__file__))
         df = df[(df['timestamp']>=t0) & (df['timestamp']<=t1)]
-
+        if year>0:
+            df = df[df['timestamp'].dt.year == year]
         envelope = []
+        if not config.weather_pdt.envelope:
+            logger.info(f'Construct the envelope {config.weather_pdt.envelope} from center and the rect...')
+            ret, envelope = extract_data_from_grib2(fn_arr=df.iloc[0], lat=center[1], lon=center[0], radius=rect, 
+                        paras=self.hrrr_paras,return_latlon=False)
+        else: 
+            envelope = config.weather_pdt.envelope
 
         def single_row_process(row):
             nonlocal envelope
-
-            filename = getattr(row,filename_col_name)
-            fn = os.path.join(getattr(row,folder_col_name), filename)
-
-            if getattr(row,type_col_name).startswith('hrrr'):
+            filename = getattr(row,config.weather_pdt.filename_col_name)
+            fn = getattr(row, config.weather_pdt.fullfile_col_name)
+            file_type = getattr(row, config.weather_pdt.type_col_name)
+            if file_type.startswith('hrrr') or file_type.startswith('herbie'):
                 is_utah=False
                 p=self.hrrr_paras
             else:
                 is_utah=True
                 p=self.utah_paras
 
-            timestamp = get_datetime_from_grib_file_name_utah(filename,hour_offset=0, nptime=True, get_fst_hour=False)  if is_utah \
-                else get_datetime_from_grib_file_name(
-                filename=filename, 
-                hour_offset=0,
-                nptime=True, 
-                get_fst_hour=False)
+            timestamp = getattr(row,'timestamp')
+            # timestamp = get_datetime_from_grib_file_name_utah(filename,hour_offset=0, nptime=True, get_fst_hour=False)  if is_utah \
+            #     else get_datetime_from_grib_file_name(
+            #     filename=filename, 
+            #     hour_offset=0,
+            #     nptime=True, 
+            #     get_fst_hour=False)
             
             return_latlon = False
             if self.x_grid is None:
                 return_latlon = True
             res = extract_data_from_grib2(
-                fn=fn, lon=center[0],  
+                fn_arr=fn, lon=center[0],  
                 lat=center[1], radius=rect, paras=p, 
                 return_latlon=return_latlon, envelope=envelope)
             envelope = res[1] 
@@ -303,11 +314,13 @@ class WeatherDataPrep:
         
         def df_block_process(df_sub):
             data_dict={}
-            for row in df_sub.itertuples():
-                k, v = single_row_process(row)
-                data_dict[k] = v
+            with tqdm(total=df_sub.shape[0]) as pbar:
+                for row in tqdm(df_sub.itertuples()):
+                    k, v = single_row_process(row)
+                    pbar.update(1)
+                    data_dict[k] = v
 
-            return data_dict  #np.stack(arr, axis=0)
+            return data_dict  
         
         if parallel:
             dict_list = parallelize_dataframe(df, df_block_process, n_cores=n_cores )

@@ -138,7 +138,8 @@ class LoadData:
         Returns: dataframe
 
         """
-        data = self.sql_query(qstr=query, date_col=[self.date_col])
+        data = self.sql_query(qstr=query)
+        data[self.date_col] = data[self.date_col].apply(pd.Timestamp)
         if data.shape[0]==0:
             ic(data)
             raise ValueError('No load data retrieved!')
@@ -208,7 +209,7 @@ class LoadData:
             df[c] = dw[c]
         return df
 
-    def sql_query_scaler(self, qm_str: str, date_col: List[str] = ["max_date"]):
+    def sql_query_scaler(self, qm_str: str):
         """
         query a scaler
 
@@ -219,10 +220,10 @@ class LoadData:
         Returns:
         """
         return Ps.read_sql_timeseries(
-            pu.get_pg_conn(), qstr=qm_str, date_col=date_col
+            pu.get_pg_conn(), qstr=qm_str
         ).values[0, 0]
 
-    def sql_query(self, qstr: str, date_col: List[str] = []) -> pd.DataFrame:
+    def sql_query(self, qstr: str) -> pd.DataFrame:
         """
         sql query
 
@@ -233,10 +234,8 @@ class LoadData:
         Returns:
 
         """
-        if not isinstance(date_col, List):
-            date_col = [date_col]
         return Ps.read_sql_timeseries(
-            pu.get_pg_conn(db=self.db_name, schema=self.db_schema), qstr=qstr, date_col=date_col
+            pu.get_pg_conn(db=self.db_name, schema=self.db_schema), qstr=qstr, 
         )
 
 
