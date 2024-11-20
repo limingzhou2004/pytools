@@ -63,15 +63,15 @@ class WeatherDataSet(data.Dataset):
         # load the data, and selec the subset, based on flag, ind
         # filter by t0 and t1
 
-        if flag=='cv':
+        if flag.startswith('cv'):
             tt = config.model_pdt.cv_settings[sce_ind]
             t0 = tt[0]
             t1 = tt[1]
-        elif flag=='final_train':
+        elif flag.startswith('final_train'):
             tt = config.model_pdt.final_train_hist[sce_ind]
             t0 = tt[0]
             t1 = tt[1]
-        elif flag=='forward_forecast':
+        elif flag.startswith('forward_forecast'):
             tt = config.model_pdt.final_train_hist[sce_ind]
             t0 = tt[2]
             t1 = tt[3]

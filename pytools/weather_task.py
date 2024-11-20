@@ -403,6 +403,8 @@ def task_3(**args):
     ind = args['ind']
     train_flag = f'{prefix}_train'
     ds_train = WeatherDataSet(flag=train_flag,tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
+    ds_test =  WeatherDataSet(flag=f'{prefix}_test',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
+    ds_val =  WeatherDataSet(flag=f'{prefix}_val',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
 
     #return train_data_assemble(**args)
 
