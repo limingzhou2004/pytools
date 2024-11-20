@@ -155,6 +155,7 @@ class Model(BaseModel):
     scaler_type: str
     frac_yr1: float
     frac_split: list
+    final_train_frac_yr1: float
     final_train_frac: list
     cv_settings: List[List]
     forecast_horizon: List[List]
@@ -223,7 +224,7 @@ class Config:
         """
         return os.path.join(
             self.site_parent_folder,
-            prefix + self.site_pdt.name + '_' + class_name + suffix + extension,
+            prefix + self.site_pdt.alias + '_' + class_name + suffix + extension,
         )
 
     @property
@@ -346,7 +347,8 @@ class Config:
             val_borders = chain(val_borders, range(int((i+frac_train+frac_test)*quarter)+m, \
                                       int((i+frac_train+frac_test+frac_val)*quarter)+m))
 
-        fun = lambda x: x<full_length
+        def fun(x):
+            return x<full_length
         return filter(fun, train_borders), filter(fun, test_borders), \
             filter(fun, val_borders)
 

@@ -35,6 +35,8 @@ class WeatherDataSet(data.Dataset):
         to_scale:bool = True,
     ):
         # the scaler and model file has flag and year information
+
+        self._config = config
         self._flag = flag
         target_ind = config.model_pdt.target_ind
         seq_length = config.model_pdt.seq_length
@@ -93,6 +95,12 @@ class WeatherDataSet(data.Dataset):
         Returns: sample number
 
         """
+        fs = [self._config.model_pdt.final_train_frac, self._config.model_pdt.final_train_frac_yr1]\
+              if self._flag.startswith('final_train') else \
+        [self._config.model_pdt.frac_yr1, self._config.model_pdt.frac_split ]
+        first_yr = fs[0]
+        frac = fs[1]
+
         if self._flag.startswith('final_train'):
             return self._target.shape[0] - self._seq_length - self._pred_length +1        
         else:
