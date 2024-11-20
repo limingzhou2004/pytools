@@ -136,8 +136,6 @@ class WeatherDataSet(data.Dataset):
         ext_ind1 = target_ind1 
         ar_ind0 = index
         ar_ind1 = index + self._seq_length
-
-
         return (
             self._wea_arr[wea_ind0:wea_ind1, ...],
             self._ext[ext_ind0:ext_ind1, :],

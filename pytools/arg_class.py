@@ -158,13 +158,13 @@ class ArgClass:
     def _add_task3(self, fun):
         sub_parser = self.sub_parsers.add_parser("task_3")
         sub_parser.add_argument(
-            "-f",
-            "--fst-hours",
-            dest="fst_hours",
+            "-flag",
+            "--flag",
+            dest="flag",
             required=False,
-            default=1,
-            type=int,
-            help="number of hours to forecast ahead",
+            default='cv_0',
+            type=str,
+            help="train type, e.g. cv_0|final_train_0",
         )
         sub_parser.set_defaults(func=fun)
 

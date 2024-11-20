@@ -19,6 +19,7 @@ from torch.utils.data import DataLoader
 
 from pytools.arg_class import ArgClass
 from pytools.data_prep.herbie_wrapper import download_hist_fst_data
+from pytools.modeling.dataset import WeatherDataSet
 from pytools.modeling.rolling_forecast import RollingForecast
 from pytools.modeling.utilities import extract_model_settings
 from pytools.modeling.weather_net import WeatherNet, default_layer_sizes, ModelSettings
@@ -145,55 +146,55 @@ def past_fst_weather_prepare(config_file:str, fst_hour=48, year=-1, month=-1):
         pickle.dump([spot_time, weather_arr],f)
     
 
-def train_data_assemble(
-    config_file: str, suffix='v0', 
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """
-    Assemble training data. Fill missing load and/or weather data.
+# def train_data_assemble(
+#     config_file: str, suffix='v0', 
+# ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+#     """
+#     Assemble training data. Fill missing load and/or weather data.
 
-    Args:
-        config_file:
-        fst_horizon: forecast horizon, 1, 6, 24
-        suffix: id, will add fst_horizon
+#     Args:
+#         config_file:
+#         fst_horizon: forecast horizon, 1, 6, 24
+#         suffix: id, will add fst_horizon
 
-    Returns: DataPrepManager with load and hist weather organized for training
+#     Returns: DataPrepManager with load and hist weather organized for training
 
-    """
-    #d: DataPrepManager = hist_load(config_file=config_file, create=False)
-    #h_weather = d.weather.get_weather_train()  
-    c: Config = Config(config_file)
+#     """
+#     #d: DataPrepManager = hist_load(config_file=config_file, create=False)
+#     #h_weather = d.weather.get_weather_train()  
+#     c: Config = Config(config_file)
 
     
-    lag_data, calendar_data, data_standard_load = d.process_load_data(
-        d.load_data, lag_hours=c.load_pdt.lag_hours, fst_horizon=c.load_pdt.fst_hours
-    )
-    cols_lag = list(lag_data.keys())
-    cols_calendar = list(calendar_data)
-    cols_load = list(data_standard_load)
-    join_load, join_wdata = d.reconcile(
-        pd.concat([lag_data, calendar_data, data_standard_load], axis=1),
-        d.load_data.date_col,
-        h_weather,
-    )
-    cols_calendar.remove(d.load_data.date_col)
-    # Let's set up the weather data scaler, and save the file with all weather data
-    #join_wdata = d.standardize_weather(weather_array=join_wdata)
-    cfg = Config(config_file)
-    dpm.save(config=cfg, dmp=d, suffix=suffix)
-    save_fn = get_npz_train_weather_file_name(cfg=cfg, suffix=suffix)
-    np.savez_compressed(
-        save_fn,
-        weather=join_wdata,
-        load_lag=join_load[cols_lag].values,
-        calendar=join_load[cols_calendar].values,
-        target=join_load[cols_load].values,
-    )
-    return (
-        join_wdata,
-        join_load[cols_lag],
-        join_load[cols_calendar],
-        join_load[cols_load],
-    )
+#     lag_data, calendar_data, data_standard_load = d.process_load_data(
+#         d.load_data, lag_hours=c.load_pdt.lag_hours, fst_horizon=c.load_pdt.fst_hours
+#     )
+#     cols_lag = list(lag_data.keys())
+#     cols_calendar = list(calendar_data)
+#     cols_load = list(data_standard_load)
+#     join_load, join_wdata = d.reconcile(
+#         pd.concat([lag_data, calendar_data, data_standard_load], axis=1),
+#         d.load_data.date_col,
+#         h_weather,
+#     )
+#     cols_calendar.remove(d.load_data.date_col)
+#     # Let's set up the weather data scaler, and save the file with all weather data
+#     #join_wdata = d.standardize_weather(weather_array=join_wdata)
+#     cfg = Config(config_file)
+#     dpm.save(config=cfg, dmp=d, suffix=suffix)
+#     save_fn = get_npz_train_weather_file_name(cfg=cfg, suffix=suffix)
+#     np.savez_compressed(
+#         save_fn,
+#         weather=join_wdata,
+#         load_lag=join_load[cols_lag].values,
+#         calendar=join_load[cols_calendar].values,
+#         target=join_load[cols_load].values,
+#     )
+#     return (
+#         join_wdata,
+#         join_load[cols_lag],
+#         join_load[cols_calendar],
+#         join_load[cols_load],
+#     )
 
 
 def train_model(
@@ -390,7 +391,10 @@ def task_2(**args):
 
 
 def task_3(**args):
-    return train_data_assemble(**args)
+    flag = args['flag']
+    ds = WeatherDataSet()
+
+    #return train_data_assemble(**args)
 
 
 def task_4(**args):
