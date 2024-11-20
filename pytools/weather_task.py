@@ -19,7 +19,7 @@ from torch.utils.data import DataLoader
 
 from pytools.arg_class import ArgClass
 from pytools.data_prep.herbie_wrapper import download_hist_fst_data
-from pytools.modeling.dataset import WeatherDataSet
+from pytools.modeling.dataset import WeatherDataSet, check_fix_missings, read_weather_data_from_config
 from pytools.modeling.rolling_forecast import RollingForecast
 from pytools.modeling.utilities import extract_model_settings
 from pytools.modeling.weather_net import WeatherNet, default_layer_sizes, ModelSettings
@@ -392,7 +392,17 @@ def task_2(**args):
 
 def task_3(**args):
     flag = args['flag']
-    ds = WeatherDataSet()
+    config = Config(args['config_file'])
+    load_data, w_paras, w_timestamp, w_data = read_weather_data_from_config(config, year=-1)
+    load_arr, wea_arr, t = check_fix_missings(load_arr=load_data, w_timestamp=w_timestamp, w_arr=w_data)
+
+    if flag.startswith('cv_'):
+        prefix = 'cv'
+    elif flag.startswith('final_'):
+        prefix= 'final_train'
+    ind = args['ind']
+    train_flag = f'{prefix}_train'
+    ds_train = WeatherDataSet(flag=train_flag,tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
 
     #return train_data_assemble(**args)
 

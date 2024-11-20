@@ -166,6 +166,15 @@ class ArgClass:
             type=str,
             help="train type, e.g. cv_0|final_train_0",
         )
+        sub_parser.add_argument(
+            "-ind",
+            "--sce-ind",
+            dest="ind",
+            required=False,
+            default=0,
+            type=int,
+            help="cv or final_train ind, default 0",
+        )
         sub_parser.set_defaults(func=fun)
 
     def _add_task4(self, fun):
