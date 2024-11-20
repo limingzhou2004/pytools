@@ -27,11 +27,6 @@ class WeatherDataSet(data.Dataset):
         timestamp: np.ndarray,
         config: Config,
         sce_ind: int,
-        # target_ind: int=0,
-        # fst_horizon: List=[1,30],
-        # seq_length: List=[],
-        # wea_embedding_dim: int = 3,
-        # ext_embedding_dim: int =0,
         to_scale:bool = True,
     ):
         # the scaler and model file has flag and year information
@@ -44,6 +39,7 @@ class WeatherDataSet(data.Dataset):
         self._target = tabular_data[:, target_ind]
         self._ext = np.delete(tabular_data, target_ind, axis=1)
         self._wea_arr = wea_arr
+        self._sce_ind = sce_ind
 
         self._seq_length = seq_length
         self._pred_length = fst_horizon[-1]
@@ -88,6 +84,27 @@ class WeatherDataSet(data.Dataset):
         self._ext = self._ext[t_flag]
         self._wea_arr = self._wea_arr[t_flag, ...]       
 
+        fs = [self._config.model_pdt.final_train_frac, self._config.model_pdt.final_train_frac_yr1]\
+              if self._flag.startswith('final_train') else \
+        [self._config.model_pdt.frac_yr1, self._config.model_pdt.frac_split ]
+        first_yr = fs[0]
+        frac = fs[1]
+
+        full_length = self._target.shape[0] - self._seq_length - self._pred_length +1 
+        train_iter, test_iter, val_iter = self._config.get_sample_segmentation_borders(full_length=full_length, 
+                                                     fst_scenario=self._sce_ind,
+                                                     first_yr_frac=first_yr,
+                                                     fractions=frac)
+        
+        if 'test' in self._flag:
+            self._sample_iter = train_iter
+        elif 'val' in self._flag:
+            self._sample_iter = test_iter
+        else: 
+            self._sample_iter = val_iter
+
+        self._sample_list = list(self._sample_iter)
+
     def __len__(self):
         """
         Denotes the total number of samples
@@ -95,22 +112,9 @@ class WeatherDataSet(data.Dataset):
         Returns: sample number
 
         """
-        fs = [self._config.model_pdt.final_train_frac, self._config.model_pdt.final_train_frac_yr1]\
-              if self._flag.startswith('final_train') else \
-        [self._config.model_pdt.frac_yr1, self._config.model_pdt.frac_split ]
-        first_yr = fs[0]
-        frac = fs[1]
+ 
+        return len(self._sample_iter)
 
-        if self._flag.startswith('final_train'):
-            return self._target.shape[0] - self._seq_length - self._pred_length +1        
-        else:
-
-            if self._flag.startswith('cv_train'):
-                return 
-            elif self._flag.startswith('cv_test'):
-                return 
-            elif self._flag.startswith('cv_val'):
-                return
 
     def __getitem__(self, index) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
         """
@@ -122,6 +126,8 @@ class WeatherDataSet(data.Dataset):
         Returns: weather, tabular(calendar), target-AR, target
 
         """
+        index = self._sample_list[index]
+
         target_ind0 = index + self._seq_length 
         target_ind1 = target_ind0 + self._pred_length
         wea_ind0 = target_ind0 - self._wea_embedding_dim
@@ -130,6 +136,7 @@ class WeatherDataSet(data.Dataset):
         ext_ind1 = target_ind1 
         ar_ind0 = index
         ar_ind1 = index + self._seq_length
+
 
         return (
             self._wea_arr[wea_ind0:wea_ind1, ...],

@@ -7,7 +7,7 @@ class TestConfig:
 
     def test_get_sample_segments(self, config):
         train_borders, test_borders, val_borders = config.get_sample_segmentation_borders(\
-            15999, 0)
+            15999, 0, 0.5, [0.4, 0.3, 0.3])
         
         train_borders = list(train_borders)
         test_borders = list(test_borders)
@@ -19,8 +19,8 @@ class TestConfig:
         assert test_borders[0] == 8782
         assert test_borders[-1] == 15371
         assert val_borders[0] == 9381
-        assert val_borders[-1] == 15969
-        assert len(val_borders) == 2397
+        assert val_borders[-1] == 15968
+        assert len(val_borders) == 2396
         assert len(test_borders) ==2396
 
 

@@ -321,12 +321,12 @@ class Config:
         )
         df.reset_index().to_csv(file_name, index=False)
 
-    def get_sample_segmentation_borders(self, full_length, fst_scenario=0):
+    def get_sample_segmentation_borders(self, full_length, fst_scenario=0, first_yr_frac=0.5, fractions=[]):
         #, fractions=[0.5, (0.4, 0.3, 0.3)]):
-        fraction_yr1 = self.model_pdt.frac_yr1
-        frac_train=self.model_pdt.frac_split[0]
-        frac_test=self.model_pdt.frac_split[1]
-        frac_val=self.model_pdt.frac_split[2]
+        fraction_yr1 = first_yr_frac
+        frac_train=fractions[0]
+        frac_test=fractions[1]
+        frac_val=fractions[2]
         # full ind 0: len(all samples) - pred_length 
         # first year + 40% 2nd year (train): 30% 2nd year(test): 30% 2nd year(validate)
         # fraction = [first percetage, (second train, test, validate)]
