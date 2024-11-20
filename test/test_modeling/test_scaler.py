@@ -30,7 +30,7 @@ def test_sclaer(config):
     assert (c2 * c0.max()-c0.min()+c0.min()).std()>0
 
 
-    fn = config.get_model_file_name(class_name='scaler')
+    fn = config.get_model_file_name(class_name='scaler', suffix='_test')
     s.save(fn)
     s = load(fn)
 

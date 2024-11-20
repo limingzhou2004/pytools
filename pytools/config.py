@@ -152,8 +152,10 @@ class Weather(BaseModel):
 
 class Model(BaseModel):
     y_label: str
+    scaler_type: str
     frac_yr1: float
     frac_split: list
+    final_train_frac: list
     cv_settings: List[List]
     forecast_horizon: List[List]
     final_train_hist: List
@@ -221,7 +223,7 @@ class Config:
         """
         return os.path.join(
             self.site_parent_folder,
-            prefix + self.site_pdt.alias + class_name + suffix + extension,
+            prefix + self.site_pdt.name + '_' + class_name + suffix + extension,
         )
 
     @property
