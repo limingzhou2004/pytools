@@ -10,7 +10,7 @@ from itertools import chain
 
 import numpy as np
 import pandas as pd
-from pydantic import BaseModel, FilePath, field_validator, validator
+from pydantic import BaseModel, FilePath, field_validator
 import toml
 import envtoml
 
@@ -165,6 +165,10 @@ class Model(BaseModel):
     wea_embedding_dim: int 
     ext_embedding_dim: int
     seq_length: int 
+
+    cov_layer: Dict 
+    lstm_layer: Dict
+
     models: List
 
 

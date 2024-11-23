@@ -17,6 +17,6 @@ class WeaCov(nn.Module):
 class TSWeatherNet(WeatherNet):
 
     def __init__(self, *args, **kwargs):
-        super().super().__init__(*args, **kwargs)(self,)
+        super().super().__init__(*args, **kwargs)
 
         return

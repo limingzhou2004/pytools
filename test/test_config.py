@@ -5,6 +5,10 @@ from pytools.config import DataType
 
 class TestConfig:
 
+    def test_model_para(self, config:Config):
+        assert config.model_pdt.cov_layer['cov1']['pad1']==1
+        
+
     def test_get_sample_segments(self, config):
         train_borders, test_borders, val_borders = config.get_sample_segmentation_borders(\
             15999, 0, 0.5, [0.4, 0.3, 0.3])
@@ -12,6 +16,7 @@ class TestConfig:
         train_borders = list(train_borders)
         test_borders = list(test_borders)
         val_borders = list(val_borders)
+
 
         assert train_borders[0] == 0 
         assert train_borders[7999:8001] == [7999, 8000]
@@ -22,6 +27,7 @@ class TestConfig:
         assert val_borders[-1] == 15968
         assert len(val_borders) == 2396
         assert len(test_borders) ==2396
+
 
 
 

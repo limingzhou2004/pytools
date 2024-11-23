@@ -79,5 +79,10 @@ cv_settings = [
 ]
 final_train_hist = ["2021-01-01", "2025-01-01"]
 
+#----- model layer configuration parameters
+cov_layer.cov1.pad1=1
+lstm_layer.input=13
 
+
+#--- model management
 models = [ ]

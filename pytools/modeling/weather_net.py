@@ -73,9 +73,6 @@ ModelSettings = namedtuple(
 )
 
 
-
-
-
 class WeatherLayer(nn.Module):
     def __init__(
         self,
