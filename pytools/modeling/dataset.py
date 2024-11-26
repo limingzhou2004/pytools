@@ -94,9 +94,9 @@ class WeatherDataSet(data.Dataset):
 
         full_length = self._target.shape[0] - self._seq_length - self._pred_length +1 
         train_iter, test_iter, val_iter = self._config.get_sample_segmentation_borders(full_length=full_length, 
-                                                     fst_scenario=self._sce_ind,
-                                                     first_yr_frac=first_yr,
-                                                     fractions=frac)
+        fst_scenario=self._sce_ind,
+        first_yr_frac=first_yr,
+        fractions=frac)
         
         if 'test' in self._flag:
             self._sample_iter = train_iter
@@ -118,9 +118,9 @@ class WeatherDataSet(data.Dataset):
         return len(self._sample_iter)
 
 
-    def __getitem__(self, index) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+    def __getitem__(self, index) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
         """
-        Generates one sample of data [wea_arr, ext_arr, seq_ar, target]
+        Generates one sample of data [seq_wea, seq_ext, seq_target, wea_arr, ext_arr, target]
 
         Args:
             index: an int
