@@ -27,6 +27,7 @@ class WeatherDataSet(data.Dataset):
         timestamp: np.ndarray,
         config: Config,
         sce_ind: int,
+        fst_horizon_ind: int,
         to_scale:bool = True,
     ):
         # the scaler and model file has flag and year information
@@ -35,7 +36,7 @@ class WeatherDataSet(data.Dataset):
         self._flag = flag
         target_ind = config.model_pdt.target_ind
         seq_length = config.model_pdt.seq_length
-        fst_horizon = config.model_pdt.forecast_horizon
+        fst_horizon = config.model_pdt.forecast_horizon[fst_horizon_ind]
         self._target = tabular_data[:, target_ind]
         self._ext = np.delete(tabular_data, target_ind, axis=1)
         self._wea_arr = wea_arr
@@ -119,7 +120,7 @@ class WeatherDataSet(data.Dataset):
 
     def __getitem__(self, index) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
         """
-        Generates one sample of data
+        Generates one sample of data [wea_arr, ext_arr, seq_ar, target]
 
         Args:
             index: an int
@@ -137,6 +138,7 @@ class WeatherDataSet(data.Dataset):
         ext_ind1 = target_ind1 
         ar_ind0 = index
         ar_ind1 = index + self._seq_length
+        target_ind0 += self._fst_horizeon[0] - 1
         return (
             self._wea_arr[wea_ind0:wea_ind1, ...],
             self._ext[ext_ind0:ext_ind1, :],
