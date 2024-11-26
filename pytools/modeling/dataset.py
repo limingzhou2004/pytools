@@ -79,7 +79,8 @@ class WeatherDataSet(data.Dataset):
             raise ValueError(f'Unkown flag of{flag}.  It has to be cv|final_train|forward_forecast')
 
         # weather dim batch, height, width, channel --> batch, channel, height, width
-        t_flag = (pd.DataFrame(timestamp) >= pd.Timestamp(t0)) & (pd.DataFrame(timestamp) <= pd.Timestamp(t1))
+        t_flag = (timestamp >= pd.Timestamp(t0,tz='UTC')) & (timestamp<= pd.Timestamp(t1,tz='UTC'))
+        t_flag = t_flag.to_numpy().reshape((-1))
         self._target = self._target[t_flag]
         self._ext = self._ext[t_flag]
         self._wea_arr = self._wea_arr[t_flag, ...]       

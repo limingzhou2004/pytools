@@ -1,42 +1,72 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 from pytools.modeling.weather_net import WeatherNet
 
 
-class WeaCov(nn.Module):
-
-    def __init__(self, input_shape, layer_paras):
-        # input_shape, (batch, x, y, channel)
+class DirectFC(nn.Module):
+    def __init__(self, input_feature, output_feature):
         super().__init__()
-        self.weather_conv1_layer = nn.Sequential(
-            nn.Conv2d(
-                in_channels=weather_para.channel,
-                out_channels=layer_paras["w_out1_channel"],
-                kernel_size=layer_paras["w_kernel1"],
-                stride=layer_paras["w_stride1"],
-                padding=layer_paras["w_padding_1"],
-            ),
-            nn.LayerNorm(num_features=layer_paras["w_out1_channel"]),
-            nn.ReLU(),
-            # nn.Dropout2d(p=model_settings.dropout),
-        )
-        self.weather_conv2_layer = nn.Sequential(
-            nn.Conv2d(
-                in_channels=layer_paras["w_out1_channel"],
-                out_channels=layer_paras["w_out2_channel"],
-                kernel_size=layer_paras["w_kernel2"],
-                stride=layer_paras["w_stride2"],
-                padding=layer_paras["w_padding_2"],
-            ),
-            nn.LayerNorm(num_features=layer_paras["w_out2_channel"]),
-            nn.ReLU(),
-            # nn.Dropout2d(p=model_settings.dropout),
-        )
+        self.dfc = nn.Sequential(
+            nn.Linear(in_features=input_feature, out_features=output_feature),
+            nn.LayerNorm(num_features=output_feature),
+            nn.ReLU() 
+        ) 
 
     def forward(self, wea_arr):
+         wea_arr = torch.reshape(wea_arr, (-1,))
+         return self.dfc(wea_arr)
+    
 
-        return
+class WeaCov(nn.Module):
+
+    def __init__(self, input_shape, layer_paras, min_cv1_size=3,
+        min_cv2_size=5):
+        # input_shape, (x, y, channel)
+        super().__init__()
+        m_list = []
+
+        if input_shape[0] > min_cv1_size:
+            weather_conv1_layer = nn.Sequential(
+            nn.Conv2d(
+                in_channels=input_shape[-1],
+                out_channels=layer_paras['cov1']['output_channel'],
+                kernel_size=layer_paras['cov1']['kernel'],
+                stride=layer_paras['cov1']['stride'],
+                padding=layer_paras['cov1']['padding'],
+            ),
+            nn.LayerNorm(num_features=layer_paras['cov1']['output_channel']),
+            nn.ReLU(),
+            )
+            m_list.append(weather_conv1_layer)
+        else:
+
+            m_list.append(DirectFC(layer_paras['cov1']['output_channel']))
+
+        # if less than 5 X 5, no need for the 2nd Cov2d
+
+        if input_shape[0] >= min_cv2_size:
+            weather_conv2_layer = nn.Sequential(
+            nn.Conv2d(
+                in_channels=layer_paras['cov1']['output_channel'],
+                out_channels=layer_paras['cov2']['output_channel'],
+                kernel_size=layer_paras['cov2']['kernel'],
+                stride=layer_paras['cov2']['stride'],
+                padding=layer_paras['cov2']['padding'],
+            ),
+            nn.LayerNorm(num_features=layer_paras['cov2']['output_channel']),
+            nn.ReLU(),
+            )
+            m_list.append(weather_conv2_layer)
+        elif input_shape >= min_cv2_size:
+            m_list.append(DirectFC(layer_paras['cov2']['output_channel'], ))
+
+        self.module_list = nn.ModuleList(m_list)
+
+
+    def forward(self, wea_arr):
+        return self.module_list(wea_arr)        
     
 
 class TSWeatherNet(WeatherNet):

@@ -6,7 +6,7 @@ from pytools.config import DataType
 class TestConfig:
 
     def test_model_para(self, config:Config):
-        assert config.model_pdt.cov_layer['cov1']['pad1']==1
+        assert config.model_pdt.cov_layer['cov1']['padding']==0
         
 
     def test_get_sample_segments(self, config):

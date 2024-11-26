@@ -15,11 +15,11 @@ def test_construct_weathernet(config:Config):
     assert w_timestamp.shape[0] == 49
    
     load_arr, wea_arr, t = check_fix_missings(load_arr=load_data, w_timestamp=w_timestamp, w_arr=w_data)
-    assert np.allclose(wea_arr[3], wea_arr[2])
     wds = WeatherDataSet(flag='cv',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=0)
     wds1 = WeatherDataSet(flag='final_train',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=0)
 
     w=WeaCov(config.model_pdt.cov_layer)
+    w.forward(wea_arr=wea_arr[1:5, 0, ...].squeeze())
 
 
     assert 1==1

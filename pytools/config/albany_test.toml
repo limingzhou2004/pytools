@@ -80,7 +80,20 @@ cv_settings = [
 final_train_hist = ["2021-01-01", "2025-01-01"]
 
 #----- model layer configuration parameters
-cov_layer.cov1.pad1=1
+cov_layer.cov1.kernel=3
+cov_layer.cov1.padding=0
+cov_layer.cov1.stride=1
+cov_layer.cov1.dilation=1
+cov_layer.cov1.group=1
+cov_layer.cov1.output_channel=8
+cov_layer.cov2.kernel=3
+cov_layer.cov2.padding=0
+cov_layer.cov2.stride=1
+cov_layer.cov2.dilation=1
+cov_layer.cov2.group=1
+cov_layer.cov2.output_channel=4
+
+
 lstm_layer.input=13
 
 
