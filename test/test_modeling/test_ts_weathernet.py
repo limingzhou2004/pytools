@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 
 
 from pytools.config import Config
@@ -19,8 +20,9 @@ def test_construct_weathernet(config:Config):
     # wds = WeatherDataSet(flag='cv',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=0, fst_horizon_ind=0)
     wds1 = WeatherDataSet(flag='final_train',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=0, fst_horizon_ind=1)
 
-    w=WeaCov(config.model_pdt.cov_layer)
+    w=WeaCov(input_shape=[] ,layer_paras=config.model_pdt.cov_layer)
     w.forward(wea_arr=wea_arr[1:5, 0, ...].squeeze())
 
+    x = torch.rand(3,2,2)
 
     assert 1==1
