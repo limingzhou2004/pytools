@@ -86,7 +86,7 @@ class WeatherDataSet(data.Dataset):
         self._ext = self._ext[t_flag]
         self._wea_arr = self._wea_arr[t_flag, ...]       
 
-        fs = [self._config.model_pdt.final_train_frac, self._config.model_pdt.final_train_frac_yr1]\
+        fs = [self._config.model_pdt.final_train_frac_yr1, self._config.model_pdt.final_train_frac]\
               if self._flag.startswith('final_train') else \
         [self._config.model_pdt.frac_yr1, self._config.model_pdt.frac_split ]
         first_yr = fs[0]
@@ -117,7 +117,6 @@ class WeatherDataSet(data.Dataset):
  
         return len(self._sample_iter)
 
-
     def __getitem__(self, index) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
         """
         Generates one sample of data [seq_wea, seq_ext, seq_target, wea_arr, ext_arr, target]
@@ -125,24 +124,26 @@ class WeatherDataSet(data.Dataset):
         Args:
             index: an int
 
-        Returns: weather, tabular(calendar), target-AR, target
+        Returns: seq weather, seq ext vars, seq target, weather array, 
+        tabular(calendar), target
 
         """
         index = self._sample_list[index]
-
         target_ind0 = index + self._seq_length 
         target_ind1 = target_ind0 + self._pred_length
-        wea_ind0 = target_ind0 - self._wea_embedding_dim
+        wea_ind0 = target_ind0 - self._wea_embedding_dim + self._fst_horizeon[0] - 1
         wea_ind1 = target_ind1 
-        ext_ind0 = target_ind0 - self._ext_embedding_dim
+        ext_ind0 = target_ind0 - self._ext_embedding_dim + self._fst_horizeon[0] - 1
         ext_ind1 = target_ind1 
         ar_ind0 = index
         ar_ind1 = index + self._seq_length
         target_ind0 += self._fst_horizeon[0] - 1
         return (
+            self._wea_arr[ar_ind0:ar_ind1, ...],
+            self._ext[ar_ind0:ar_ind1, :],
+            self._target[ar_ind0:ar_ind1, :],
             self._wea_arr[wea_ind0:wea_ind1, ...],
             self._ext[ext_ind0:ext_ind1, :],
-            self._target[ar_ind0:ar_ind1, :],
             self._target[target_ind0:target_ind1,:]
         )
 
