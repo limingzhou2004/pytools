@@ -26,41 +26,41 @@ class WeaCov(nn.Module):
         # input_shape, (x, y, channel)
         super().__init__()
         m_list = []
-        weather_conv1_layer = nn.Conv2d(
+
+        if input_shape[0] > min_cv1_size:
+            weather_conv1_layer = nn.Conv2d(
                 in_channels=input_shape[-1],
                 out_channels=layer_paras['cov1']['output_channel'],
                 kernel_size=layer_paras['cov1']['kernel'],
                 stride=layer_paras['cov1']['stride'],
                 padding=layer_paras['cov1']['padding'],
             )
-        output_shape1= weather_conv1_layer(torch.random(input_shape))
-        if input_shape[0] > min_cv1_size:
-            nn.Sequential(weather_conv1_layer,
-            nn.LayerNorm(normalized_shape=output_shape1 ), #layer_paras['cov1']['output_channel']),
+            output_shape1= weather_conv1_layer(torch.random(input_shape)).shape
+            m = nn.Sequential(weather_conv1_layer,
+            nn.LayerNorm(normalized_shape=output_shape1[1:]), #layer_paras['cov1']['output_channel']),
             nn.ReLU(),
             )
-            m_list.append(weather_conv1_layer)
+            m_list.append(m)
         else:
-
             m_list.append(DirectFC(layer_paras['cov1']['output_channel']))
 
         # if less than 5 X 5, no need for the 2nd Cov2d
 
         if input_shape[0] >= min_cv2_size:
-            weather_conv2_layer = nn.Sequential(
-            nn.Conv2d(
+            weather_conv2_layer = nn.Conv2d(
                 in_channels=layer_paras['cov1']['output_channel'],
                 out_channels=layer_paras['cov2']['output_channel'],
                 kernel_size=layer_paras['cov2']['kernel'],
                 stride=layer_paras['cov2']['stride'],
                 padding=layer_paras['cov2']['padding'],
-            ),
-            nn.LayerNorm(normalized_shape=layer_paras['cov2']['output_channel']),
-            nn.ReLU(),
             )
-            m_list.append(weather_conv2_layer)
+            output_shape2 = weather_conv2_layer(torch.random(output_shape2)).shape
+            m = nn.Sequential(weather_conv2_layer,
+            nn.LayerNorm(normalized_shape=output_shape2),
+            nn.ReLU())
+            m_list.append(m)
         elif input_shape >= min_cv2_size:
-            m_list.append(DirectFC(layer_paras['cov2']['output_channel'], ))
+            m_list.append(DirectFC(layer_paras['cov2']['output_channel']))
 
         self.module_list = nn.ModuleList(m_list)
 
