@@ -19,10 +19,14 @@ def test_construct_weathernet(config:Config):
 
     # wds = WeatherDataSet(flag='cv',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=0, fst_horizon_ind=0)
     wds1 = WeatherDataSet(flag='final_train',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=0, fst_horizon_ind=1)
+    # wea_arr[1:5, 0, ...].squeeze()
 
-    w=WeaCov(input_shape=[] ,layer_paras=config.model_pdt.cov_layer)
-    w.forward(wea_arr=wea_arr[1:5, 0, ...].squeeze())
+def test_ts_weather_net(config:Config):
+    input_shape = [20, 8,8,10]
+    w=WeaCov(input_shape=input_shape ,layer_paras=config.model_pdt.cov_layer)
+    w_arr = torch.rand(input_shape)
+    y = w.forward(wea_arr=w_arr)
+    assert y.shape[0] == input_shape[0]
 
-    x = torch.rand(3,2,2)
 
-    assert 1==1
+

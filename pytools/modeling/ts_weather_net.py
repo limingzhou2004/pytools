@@ -10,7 +10,7 @@ class DirectFC(nn.Module):
         super().__init__()
         self.dfc = nn.Sequential(
             nn.Linear(in_features=input_feature, out_features=output_feature),
-            nn.LayerNorm(num_features=output_feature),
+            nn.LayerNorm(normalized_shape=output_feature),
             nn.ReLU() 
         ) 
 
@@ -26,17 +26,17 @@ class WeaCov(nn.Module):
         # input_shape, (x, y, channel)
         super().__init__()
         m_list = []
-
-        if input_shape[0] > min_cv1_size:
-            weather_conv1_layer = nn.Sequential(
-            nn.Conv2d(
+        weather_conv1_layer = nn.Conv2d(
                 in_channels=input_shape[-1],
                 out_channels=layer_paras['cov1']['output_channel'],
                 kernel_size=layer_paras['cov1']['kernel'],
                 stride=layer_paras['cov1']['stride'],
                 padding=layer_paras['cov1']['padding'],
-            ),
-            nn.LayerNorm(num_features=layer_paras['cov1']['output_channel']),
+            )
+        output_shape1= weather_conv1_layer(torch.random(input_shape))
+        if input_shape[0] > min_cv1_size:
+            nn.Sequential(weather_conv1_layer,
+            nn.LayerNorm(normalized_shape=output_shape1 ), #layer_paras['cov1']['output_channel']),
             nn.ReLU(),
             )
             m_list.append(weather_conv1_layer)
@@ -55,7 +55,7 @@ class WeaCov(nn.Module):
                 stride=layer_paras['cov2']['stride'],
                 padding=layer_paras['cov2']['padding'],
             ),
-            nn.LayerNorm(num_features=layer_paras['cov2']['output_channel']),
+            nn.LayerNorm(normalized_shape=layer_paras['cov2']['output_channel']),
             nn.ReLU(),
             )
             m_list.append(weather_conv2_layer)
