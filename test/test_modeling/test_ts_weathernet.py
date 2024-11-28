@@ -29,7 +29,7 @@ def test_ts_weather_net(config:Config):
         w_arr = torch.rand(input_shape)
         y = w.forward(wea_arr=w_arr)
         assert y.shape[0] == input_shape[0]
-        assert y.shape == w.output_shape
+        assert list(y.shape) == w.output_shape
 
 
 

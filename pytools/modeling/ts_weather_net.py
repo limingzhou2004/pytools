@@ -67,7 +67,7 @@ class WeaCov(nn.Module):
             m_list.append(DirectFC(output_shape1, layer_paras['cov2']['output_channel']))
             output_shape2 = m_list[-1].forward(torch.rand(output_shape1)).shape
 
-        self.output_shape = output_shape2
+        self.output_shape = [output_shape2[0], reduce(mul, output_shape2[1:])]
         self.module_list = nn.ModuleList(m_list)
 
     def forward(self, wea_arr):
@@ -75,7 +75,7 @@ class WeaCov(nn.Module):
         for _, layer in enumerate(self.module_list):
             wea_arr = layer(wea_arr)
 
-        return wea_arr      
+        return torch.flatten(wea_arr,1)     
     
 
 class TSWeatherNet(WeatherNet):
