@@ -23,12 +23,13 @@ def test_construct_weathernet(config:Config):
 
 def test_ts_weather_net(config:Config):
     # [batch, x, y, wea_para]
-    input_shapes = [[20, 8, 8, 10], [20, 3, 3, 10]]
+    input_shapes = [[20, 8, 8, 10], [20, 5, 5, 10],[20, 2, 1, 10]]
     for input_shape in input_shapes:
         w=WeaCov(input_shape=input_shape, layer_paras=config.model_pdt.cov_layer)
         w_arr = torch.rand(input_shape)
         y = w.forward(wea_arr=w_arr)
         assert y.shape[0] == input_shape[0]
+        assert y.shape == w.output_shape
 
 
 

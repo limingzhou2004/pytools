@@ -1,3 +1,6 @@
+from functools import reduce
+from operator import mul
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -6,16 +9,17 @@ from pytools.modeling.weather_net import WeatherNet
 
 
 class DirectFC(nn.Module):
-    def __init__(self, input_feature, output_feature):
+    def __init__(self, input_shape, output_feature):
         super().__init__()
+        input_feature = reduce(mul, input_shape[1:])
         self.dfc = nn.Sequential(
             nn.Linear(in_features=input_feature, out_features=output_feature),
             nn.LayerNorm(normalized_shape=output_feature),
-            nn.ReLU() 
+            nn.ReLU(), 
         ) 
 
     def forward(self, wea_arr):
-         wea_arr = torch.reshape(wea_arr, (-1,))
+         wea_arr = torch.flatten(wea_arr, start_dim=1)
          return self.dfc(wea_arr)
     
 
@@ -23,11 +27,11 @@ class WeaCov(nn.Module):
 
     def __init__(self, input_shape, layer_paras, min_cv1_size=3,
         min_cv2_size=5):
-        # input_shape, (x, y, channel)
+        # input_shape, (paras/channel, x, y)
         super().__init__()
         m_list = []
 
-        if input_shape[1] > min_cv1_size:
+        if input_shape[1] >= min_cv1_size:
             weather_conv1_layer = nn.Conv2d(
                 in_channels=input_shape[-1],
                 out_channels=layer_paras['cov1']['output_channel'],
@@ -40,10 +44,10 @@ class WeaCov(nn.Module):
             nn.LayerNorm(normalized_shape=output_shape1[1:]), #layer_paras['cov1']['output_channel']),
             nn.ReLU(),
             )
-            m_list.append(m)
+            m_list.append(m)          
         else:
-            m_list.append(DirectFC(layer_paras['cov1']['output_channel']))
-
+            m_list.append(DirectFC(input_shape, layer_paras['cov1']['output_channel']))
+            output_shape1 = m_list[-1].forward(torch.rand(input_shape).permute([0,3,1,2])).shape
         # if less than 5 X 5, no need for the 2nd Cov2d
 
         if input_shape[1] >= min_cv2_size:
@@ -59,14 +63,19 @@ class WeaCov(nn.Module):
             nn.LayerNorm(normalized_shape=output_shape2[1:]),
             nn.ReLU())
             m_list.append(m)
-        elif input_shape >= min_cv2_size:
-            m_list.append(DirectFC(layer_paras['cov2']['output_channel']))
+        else:
+            m_list.append(DirectFC(output_shape1, layer_paras['cov2']['output_channel']))
+            output_shape2 = m_list[-1].forward(torch.rand(output_shape1)).shape
 
+        self.output_shape = output_shape2
         self.module_list = nn.ModuleList(m_list)
 
     def forward(self, wea_arr):
         wea_arr = wea_arr.permute([0, 3, 1, 2])
-        return self.module_list(wea_arr)        
+        for _, layer in enumerate(self.module_list):
+            wea_arr = layer(wea_arr)
+
+        return wea_arr      
     
 
 class TSWeatherNet(WeatherNet):
