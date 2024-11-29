@@ -80,16 +80,17 @@ class WeaCov(nn.Module):
 
 class TSWeatherNet(WeatherNet):
 
-    def __init__(self, wea_arr_shape, wea_layer_paras, seq_dim=1):
+    def __init__(self, wea_arr_shape, wea_layer_paras, ts_layer_paras, pred_length, seq_dim=1):
         # wea_arr_shape, N, Seq, x, y, channel/para
         super().super().__init__()
         self._wea_arr_shape = wea_arr_shape.copy()
         self._seq_dim = seq_dim
         del wea_arr_shape[seq_dim]
         self.wea_net = WeaCov(input_shape=wea_arr_shape, layer_paras=wea_layer_paras)
-
-
-        return
+        # lstm hidden state + ext channel * length  + ext weather channel * length
+        multi_linear_input_dim = 27
+        # pred length
+        self.multi_linear = nn.Linear(multi_linear_input_dim, pred_length)
     
     def forward(self, seq_wea_arr, ext_wea_arr):
         seq_wea_arr = seq_wea_arr.detach().clone()
@@ -103,7 +104,5 @@ class TSWeatherNet(WeatherNet):
         for i in range(wea_len):
             wea_pred[:,i,:] = self.wea_net.forward(ext_wea_arr[:,i,...])
 
-
-        wea_embed = nn.Linear()
 
         return seq_pred, wea_pred
