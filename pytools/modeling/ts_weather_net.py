@@ -4,6 +4,7 @@ from operator import mul
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import pytorch_lightning as pl
 
 from pytools.modeling.weather_net import WeatherNet
 
@@ -78,18 +79,19 @@ class WeaCov(nn.Module):
         return torch.flatten(wea_arr,1)     
     
 
-class TSWeatherNet(WeatherNet):
+class TSWeatherNet(pl.LightningModule):
 
-    def __init__(self, wea_arr_shape, wea_layer_paras, ts_layer_paras, pred_length, seq_dim=1):
+    def __init__(self, wea_arr_shape, wea_layer_paras, lstm_layer_paras, pred_length, seq_dim=1):
         # wea_arr_shape, N, Seq, x, y, channel/para
-        super().super().__init__()
+        super().__init__()
         self._wea_arr_shape = wea_arr_shape.copy()
         self._seq_dim = seq_dim
         del wea_arr_shape[seq_dim]
         self.wea_net = WeaCov(input_shape=wea_arr_shape, layer_paras=wea_layer_paras)
         # lstm hidden state + ext channel * length  + ext weather channel * length
-        multi_linear_input_dim = 27
+        multi_linear_input_dim = lstm_layer_paras['hidden_dim'] 
         # pred length
+        self._pred_length = pred_length
         self.multi_linear = nn.Linear(multi_linear_input_dim, pred_length)
     
     def forward(self, seq_wea_arr, ext_wea_arr):

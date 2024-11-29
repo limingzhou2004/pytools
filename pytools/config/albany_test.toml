@@ -98,6 +98,10 @@ cov_layer.cov2.output_channel=4
 
 
 lstm_layer.input=13
+lstm_layer.hidden_dim=10
+
+ext_layer.output=5
+
 
 
 #--- model management

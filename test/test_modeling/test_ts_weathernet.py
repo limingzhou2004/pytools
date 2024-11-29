@@ -36,12 +36,13 @@ def test_ts_weather_net(config:Config):
 
 def test_ts_TSWeather(config:Config):
     input_shape = [20, 12, 8, 8, 10]
+    fst_hz = config.model_pdt.forecast_horizon
 
     w = TSWeatherNet(
         wea_arr_shape=input_shape, 
         wea_layer_paras=config.model_pdt.cov_layer, 
-        ts_layer_paras=config.model_pdt.lstm_layer, 
-        pred_length=,
+        lstm_layer_paras=config.model_pdt.lstm_layer, 
+        pred_length=fst_hz[0][1] -fst_hz[0][0],
         )
     for name, p in w.named_parameters():
         if 'multi_linear' in name:
