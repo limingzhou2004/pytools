@@ -124,11 +124,10 @@ class TSWeatherNet(pl.LightningModule):
     def __init__(self, wea_arr_shape, 
                  #wea_layer_paras, lstm_layer_paras, pred_length, seq_dim=1,
                  config:Config,
-                 fst_ind: int,
-                 model_settings=None, ):
+                 fst_ind: int ):
         # wea_arr_shape, N, Seq, x, y, channel/para
         super().__init__()
-        self.model_settings = model_settings
+        self.model_settings = config.model_pdt.model_settings
         self.checkpoint_callback = ModelCheckpoint(
             filepath=config.get_model_file_name(class_name='model', extension='ckpt', suffix=f'_fstind{fst_ind}'), 
             verbose=True,
@@ -171,7 +170,7 @@ class TSWeatherNet(pl.LightningModule):
         others = [p for name, p in self.named_parameters() if label not in name]
 
         return torch.optim.Adam([{'paras':m_linear}, {'paras':others, 'weight_decay':0}], 
-                                weight_decay=self.model_settings.weight_decay, lr=self.model_settings.learning_rate)
+                                weight_decay=self.model_settings['weight_decay'], lr=self.model_settings['lr'])
     
     def forward(self, seq_wea_arr, ext_wea_arr):
         seq_wea_arr = seq_wea_arr.detach().clone()

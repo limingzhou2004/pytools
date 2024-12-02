@@ -83,6 +83,11 @@ final_train_hist = [
     ["2018-11-03", "2018-11-05"]
 ]
 
+model_settings.lr=0.001
+model_settings.weight_decay=0.001
+model_settings.epoch=20
+model_settings.batch_size=10
+
 #----- model layer configuration parameters
 cov_layer.cov1.kernel=3
 cov_layer.cov1.padding=0
