@@ -60,6 +60,7 @@ forecast_horizon = [
     #[1, 30],
     #[25,48]
 ]
+seq_dim = 1
 target_ind = 0
 wea_ar_embedding_dim = 1 #162
 wea_embedding_dim = 1

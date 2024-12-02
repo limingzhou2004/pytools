@@ -83,7 +83,8 @@ class WeaCov(nn.Module):
 
 class TSWeatherNet(pl.LightningModule):
 
-    def __init__(self, #wea_arr_shape, wea_layer_paras, lstm_layer_paras, pred_length, seq_dim=1,
+    def __init__(self, wea_arr_shape, 
+                 #wea_layer_paras, lstm_layer_paras, pred_length, seq_dim=1,
                  config:Config,
                  fst_ind: int,
                  model_settings=None, ):
@@ -97,8 +98,14 @@ class TSWeatherNet(pl.LightningModule):
             mode="min",
         )
         self._mdl_logger: TensorBoardLogger = None
-
         self._wea_arr_shape = wea_arr_shape.copy()
+
+        seq_dim = config.model_pdt.seq_dim
+        wea_layer_paras = config.model_pdt.cov_layer
+        lstm_layer_paras = config.model_pdt.lstm_layer
+        if fst_ind >= len(config.model_pdt.forecast_horizon):
+            raise ValueError(f'fst_ind is beyond the length of forecast_horizon length!')
+        pred_length = config.model_pdt.forecast_horizon[fst_ind][1]
         self._seq_dim = seq_dim
         del wea_arr_shape[seq_dim]
         self.wea_net = WeaCov(input_shape=wea_arr_shape, layer_paras=wea_layer_paras)
@@ -112,7 +119,11 @@ class TSWeatherNet(pl.LightningModule):
         # REQUIRED
         # can return multiple optimizers and learning_rate schedulers
         # (LBFGS it is automatically supported, no need for closure function)
-        return torch.optim.Adam(self.parameters(), lr=self.model_settings.learning_rate)
+        m_linear = [p for name, p in self.named_parameters() if 'multi_linear' in name]
+        others = [p for name, p in self.named_parameters() if 'multi_linear' not in name]
+
+        return torch.optim.Adam([{'paras':m_linear}, {'paras':others, 'weight_decay':0}], 
+                                weight_decay=self.model_settings.weight_decay, lr=self.model_settings.learning_rate)
     
     def forward(self, seq_wea_arr, ext_wea_arr):
         seq_wea_arr = seq_wea_arr.detach().clone()
