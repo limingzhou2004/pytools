@@ -115,12 +115,10 @@ class TSWeatherNet(pl.LightningModule):
         self._pred_length = pred_length
         self.multi_linear = nn.Linear(multi_linear_input_dim, pred_length)
 
-    def configure_optimizers(self):
+    def configure_optimizers(self, label='multi_linear'):
         # REQUIRED
-        # can return multiple optimizers and learning_rate schedulers
-        # (LBFGS it is automatically supported, no need for closure function)
-        m_linear = [p for name, p in self.named_parameters() if 'multi_linear' in name]
-        others = [p for name, p in self.named_parameters() if 'multi_linear' not in name]
+        m_linear = [p for name, p in self.named_parameters() if label in name]
+        others = [p for name, p in self.named_parameters() if label not in name]
 
         return torch.optim.Adam([{'paras':m_linear}, {'paras':others, 'weight_decay':0}], 
                                 weight_decay=self.model_settings.weight_decay, lr=self.model_settings.learning_rate)
