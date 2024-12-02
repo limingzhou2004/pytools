@@ -5,8 +5,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
+from pytorch_lightning.loggers import TensorBoardLogger
+from pytorch_lightning.callbacks import ModelCheckpoint
 
-from pytools.modeling.weather_net import WeatherNet
+from pytools.config import Config
 
 
 class DirectFC(nn.Module):
@@ -81,9 +83,21 @@ class WeaCov(nn.Module):
 
 class TSWeatherNet(pl.LightningModule):
 
-    def __init__(self, wea_arr_shape, wea_layer_paras, lstm_layer_paras, pred_length, seq_dim=1):
+    def __init__(self, #wea_arr_shape, wea_layer_paras, lstm_layer_paras, pred_length, seq_dim=1,
+                 config:Config,
+                 fst_ind: int,
+                 model_settings=None, ):
         # wea_arr_shape, N, Seq, x, y, channel/para
         super().__init__()
+        self.model_settings = model_settings
+        self.checkpoint_callback = ModelCheckpoint(
+            filepath=config.get_model_file_name(class_name='model', extension='ckpt', suffix=f'_fstind{fst_ind}'), 
+            verbose=True,
+            monitor="val_loss",
+            mode="min",
+        )
+        self._mdl_logger: TensorBoardLogger = None
+
         self._wea_arr_shape = wea_arr_shape.copy()
         self._seq_dim = seq_dim
         del wea_arr_shape[seq_dim]
@@ -93,6 +107,12 @@ class TSWeatherNet(pl.LightningModule):
         # pred length
         self._pred_length = pred_length
         self.multi_linear = nn.Linear(multi_linear_input_dim, pred_length)
+
+    def configure_optimizers(self):
+        # REQUIRED
+        # can return multiple optimizers and learning_rate schedulers
+        # (LBFGS it is automatically supported, no need for closure function)
+        return torch.optim.Adam(self.parameters(), lr=self.model_settings.learning_rate)
     
     def forward(self, seq_wea_arr, ext_wea_arr):
         seq_wea_arr = seq_wea_arr.detach().clone()
