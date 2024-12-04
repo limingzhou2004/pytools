@@ -169,6 +169,7 @@ class Model(BaseModel):
 
     cov_layer: Dict 
     lstm_layer: Dict
+    ext_layer: Dict
 
     models: List
 

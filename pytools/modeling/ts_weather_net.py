@@ -7,6 +7,16 @@ import torch.nn.functional as F
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
+# from einops import rearrange, repeat, pack, unpack
+# from xlstm import (
+#     xLSTMBlockStack,
+#     xLSTMBlockStackConfig,
+#     sLSTMBlockConfig,
+#     sLSTMLayerConfig,
+#     mLSTMBlockConfig,
+# )
+
+from pytools.modeling.StandardNorm import Normalize as RevIN
 
 from pytools.config import Config
 
@@ -18,7 +28,7 @@ class DirectFC(nn.Module):
         self.dfc = nn.Sequential(
             nn.Linear(in_features=input_feature, out_features=output_feature),
             nn.LayerNorm(normalized_shape=output_feature),
-            nn.ReLU(), 
+            nn.LeakyReLU(), 
         ) 
 
     def forward(self, wea_arr):
@@ -45,7 +55,7 @@ class WeaCov(nn.Module):
             output_shape1= weather_conv1_layer(torch.rand(input_shape).permute([0,3,1,2])).shape
             m = nn.Sequential(weather_conv1_layer,
             nn.LayerNorm(normalized_shape=output_shape1[1:]), #layer_paras['cov1']['output_channel']),
-            nn.ReLU(),
+            nn.LeakyReLU(),
             )
             m_list.append(m)          
         else:
@@ -64,7 +74,7 @@ class WeaCov(nn.Module):
             output_shape2 = weather_conv2_layer(torch.rand(output_shape1)).shape
             m = nn.Sequential(weather_conv2_layer,
             nn.LayerNorm(normalized_shape=output_shape2[1:]),
-            nn.ReLU())
+            nn.LeakyReLU())
             m_list.append(m)
         else:
             m_list.append(DirectFC(output_shape1, layer_paras['cov2']['output_channel']))
@@ -104,13 +114,15 @@ class TSWeatherNet(pl.LightningModule):
         wea_layer_paras = config.model_pdt.cov_layer
         lstm_layer_paras = config.model_pdt.lstm_layer
         if fst_ind >= len(config.model_pdt.forecast_horizon):
-            raise ValueError(f'fst_ind is beyond the length of forecast_horizon length!')
+            raise ValueError(f'fst_ind={fst_ind} is beyond the length of forecast_horizon length={len(config.model_pdt.forecast_horizon)}!')
         pred_length = config.model_pdt.forecast_horizon[fst_ind][1]
         self._seq_dim = seq_dim
         del wea_arr_shape[seq_dim]
         self.wea_net = WeaCov(input_shape=wea_arr_shape, layer_paras=wea_layer_paras)
         # lstm hidden state + ext channel * length  + ext weather channel * length
-        multi_linear_input_dim = lstm_layer_paras['hidden_dim'] 
+        mcf = config.model_pdt
+        multi_linear_input_dim = lstm_layer_paras['hidden_dim'] *2 + mcf.ext_embedding_dim * mcf.ext_layer['output'] + \
+            mcf.wea_embedding_dim * mcf.cov_layer['cov2']['output_channel']
         # pred length
         self._pred_length = pred_length
         self.multi_linear = nn.Linear(multi_linear_input_dim, pred_length)
