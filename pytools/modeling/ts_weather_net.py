@@ -125,6 +125,12 @@ class TSWeatherNet(pl.LightningModule):
             mcf.wea_embedding_dim * mcf.cov_layer['cov2']['output_channel']
         # pred length
         self._pred_length = pred_length
+
+        #filter_net
+        in_channel = 1 if isinstance(config.model_pdt.target_ind, int) else len(config.model_pdt.target_ind)
+        self.revin_layer = RevIN(in_channel, affine=True, subtract_last=False)
+
+
         self.multi_linear = nn.Linear(multi_linear_input_dim, pred_length)
 
     def configure_optimizers(self, label='multi_linear'):

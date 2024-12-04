@@ -1,23 +1,27 @@
+from collections import namedtuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from pytools.modeling.RevIN import RevIN
+#from pytools.modeling.RevIN import RevIN
 
 
 class Model(nn.Module):
 
-    def __init__(self, configs):
+    def __init__(self, filter_net_paras):
         super(Model, self).__init__()
-        self.seq_len = configs.seq_len
-        self.pred_len = configs.pred_len
+        #self.seq_len = configs.seq_len
+        #self.pred_len = configs.pred_len
+        FNP = namedtuple('FNP',filter_net_paras)
+        configs = FNP(**filter_net_paras)
         self.embed_size = configs.embed_size
         self.hidden_size = configs.hidden_size
         self.dropout = configs.dropout
-        self.band_width = 96
-        self.scale = 0.02
-        self.sparsity_threshold = 0.01
+        self.band_width = configs.band_width
+        self.scale = configs.scale
+        self.sparsity_threshold = configs.sparsity_threshold
+        #self.revin_layer = RevIN(configs.enc_in, affine=True, subtract_last=False)
 
-        self.revin_layer = RevIN(configs.enc_in, affine=True, subtract_last=False)
         self.embedding = nn.Linear(self.seq_len, self.embed_size)
         self.token = nn.Conv1d(in_channels=self.seq_len, out_channels=self.embed_size, kernel_size=(1,))
 
@@ -89,9 +93,9 @@ class Model(nn.Module):
     def forward(self, x, x_mark_enc, x_dec, x_mark_dec, mask=None):
         # x: [Batch, Input length, Channel]
         B, L, N = x.shape
-        z = x
-        z = self.revin_layer(z, 'norm')
-        x = z
+        # z = x
+        # z = self.revin_layer(z, 'norm')
+        # x = z
 
         x = x.permute(0, 2, 1)
         x = self.embedding(x)  # B, N, D
@@ -107,8 +111,8 @@ class Model(nn.Module):
         x = self.output(x)
         x = x.permute(0, 2, 1)
 
-        z = x
-        z = self.revin_layer(z, 'denorm')
-        x = z
+        # z = x
+        # z = self.revin_layer(z, 'denorm')
+        # x = z
 
         return x
