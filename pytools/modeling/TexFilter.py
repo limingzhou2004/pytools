@@ -90,7 +90,7 @@ class SeqModel(nn.Module):
         y = torch.view_as_complex(y)
         return y
 
-    def forward(self, x, x_mark_enc, x_dec, x_mark_dec, mask=None):
+    def forward(self, x):
         # x: [Batch, Input length, Channel]
         B, L, N = x.shape
         # z = x
@@ -109,7 +109,7 @@ class SeqModel(nn.Module):
         x = self.dropout(x)
         x = self.fc(x)
         #x = self.output(x)
-        #x = x.permute(0, 2, 1)
+        x = x.permute(0, 2, 1)
 
         # z = x
         # z = self.revin_layer(z, 'denorm')
