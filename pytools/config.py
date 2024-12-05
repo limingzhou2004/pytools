@@ -169,7 +169,7 @@ class Model(BaseModel):
 
     cov_layer: Dict 
     filter_net: Dict
-    lstm_layer: Dict
+   # lstm_layer: Dict
     ext_layer: Dict
 
     models: List

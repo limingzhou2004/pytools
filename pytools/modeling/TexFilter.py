@@ -6,10 +6,10 @@ import torch.nn.functional as F
 #from pytools.modeling.RevIN import RevIN
 
 
-class Model(nn.Module):
+class SeqModel(nn.Module):
 
-    def __init__(self, filter_net_paras):
-        super(Model, self).__init__()
+    def __init__(self, seq_len, filter_net_paras):
+        super().__init__()
         #self.seq_len = configs.seq_len
         #self.pred_len = configs.pred_len
         FNP = namedtuple('FNP',filter_net_paras)
@@ -22,8 +22,8 @@ class Model(nn.Module):
         self.sparsity_threshold = configs.sparsity_threshold
         #self.revin_layer = RevIN(configs.enc_in, affine=True, subtract_last=False)
 
-        self.embedding = nn.Linear(self.seq_len, self.embed_size)
-        self.token = nn.Conv1d(in_channels=self.seq_len, out_channels=self.embed_size, kernel_size=(1,))
+        self.embedding = nn.Linear(seq_len, self.embed_size)
+        self.token = nn.Conv1d(in_channels=seq_len, out_channels=self.embed_size, kernel_size=(1,))
 
         self.w = nn.Parameter(self.scale * torch.randn(2, self.embed_size))
         self.w1 = nn.Parameter(self.scale * torch.randn(2, self.embed_size))
@@ -40,7 +40,7 @@ class Model(nn.Module):
             nn.Linear(self.hidden_size, self.embed_size)
         )
 
-        self.output = nn.Linear(self.embed_size, self.pred_len)
+        #self.output = nn.Linear(self.embed_size, self.pred_len)
         self.layernorm = nn.LayerNorm(self.embed_size)
         self.layernorm1 = nn.LayerNorm(self.embed_size)
         self.dropout = nn.Dropout(self.dropout)
@@ -108,8 +108,8 @@ class Model(nn.Module):
         x = self.layernorm1(x)
         x = self.dropout(x)
         x = self.fc(x)
-        x = self.output(x)
-        x = x.permute(0, 2, 1)
+        #x = self.output(x)
+        #x = x.permute(0, 2, 1)
 
         # z = x
         # z = self.revin_layer(z, 'denorm')

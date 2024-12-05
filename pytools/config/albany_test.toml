@@ -100,7 +100,7 @@ cov_layer.cov2.output_channel=4
 filter_net.embed_size=8
 filter_net.hidden_size=8
 filter_net.dropout=0.01
-filter_net.bandwith=96
+filter_net.band_width=96
 filter_net.scale=0.2
 filter_net.sparsity_threshold=0.01
 
