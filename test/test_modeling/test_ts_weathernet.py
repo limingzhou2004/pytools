@@ -4,7 +4,7 @@ import torch
 
 from pytools.config import Config
 from pytools.modeling.dataset import WeatherDataSet, check_fix_missings, read_weather_data_from_config
-from pytools.modeling.ts_weather_net import TSWeatherNet, WeaCov
+from pytools.modeling.ts_weather_net import MixedOutput, TSWeatherNet, WeaCov
 from pytools.modeling.weather_net import WeatherLayer
 
 
@@ -22,6 +22,16 @@ def test_construct_weathernet(config:Config):
     for name, p in wds1.named_parameters():
         print(name, p.shape)
     # wea_arr[1:5, 0, ...].squeeze()
+
+
+def test_mixed_output(config:Config):
+
+    m = MixedOutput(seq_arr_dim=8, filternet_hidden_size=5, ext_dim=4, wea_arr_dim=8, pred_len=23, model_paras=config.model_pdt.mixed_layer)
+    seq_arr = torch.rand(20, 8, 5)
+    ext_arr = torch.rand(20, 23, 4)
+    wea_arr = torch.rand(20, 23, 8)
+    y = m.forward(seq_arr=seq_arr, ext_arr=ext_arr, wea_arr=wea_arr)
+    assert list(y.shape) == [20]
 
 def test_ts_weather_net(config:Config):
     # [batch, x, y, wea_para]

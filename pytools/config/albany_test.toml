@@ -104,6 +104,11 @@ filter_net.band_width=96
 filter_net.scale=0.2
 filter_net.sparsity_threshold=0.01
 
+mixed_layer.cov1d.kernel_size=5
+mixed_layer.cov1d.padding=2
+mixed_layer.cov1d.stride=1
+mixed_layer.cov1d.dilation=1
+mixed_layer.cov1d.out_channels=3
 
 # lstm_layer.input=13
 # lstm_layer.hidden_dim=10

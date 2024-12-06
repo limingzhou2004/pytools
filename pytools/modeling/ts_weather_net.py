@@ -37,14 +37,30 @@ class DirectFC(nn.Module):
     
 
 class MixedOutput(nn.Module):
-    def __init__(self, seq_arr_dim, wea_arr_dim, pred_len):
+    def __init__(self, seq_arr_dim, filternet_hidden_size, ext_dim, wea_arr_dim, pred_len, model_paras):
         super().__init__()
-        y = torch.zeros(pred_len)
-        self.mix_model = 
+        target_dim = 1
+        self._pred_len = pred_len
+        self.wea_cov1d = nn.Conv1d(in_channels=wea_arr_dim, **model_paras['cov1d'])
+        in_dim = seq_arr_dim * filternet_hidden_size + ext_dim + model_paras['cov1d']['out_channels']
+        self.mixed_model = nn.ModuleList(
+            nn.Sequential(
+            nn.Linear(in_features=in_dim, out_features=in_dim//2),
+            nn.LeakyReLU(),
+            nn.Linear(in_features=in_dim//2, out_features=target_dim),
+            ) for _ in range(pred_len)
+            )
 
-    def forward(self, seq_arr, wea_arr):
+    def forward(self, seq_arr, ext_arr, wea_arr):
+        # B, pred_len, channel
+        B = wea_arr.shape[0]
+        seq_cross = seq_arr.shape[1] * seq_arr.shape[2]
+        y = torch.zeros(self._pred_len)
+        wea_arr = self.wea_cov1d.forward(torch.permute(wea_arr,[0, 2, 1]))
+        for i, layer in enumerate(self.mixed_model):
+            y[i] = layer(torch.cat([torch.reshape(seq_arr, (B, seq_cross)), ext_arr[:, i, :], wea_arr[:, i, :]], dim=1))
 
-        return
+        return y
 
 
 class WeaCov(nn.Module):
