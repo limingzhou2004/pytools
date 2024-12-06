@@ -55,11 +55,11 @@ class MixedOutput(nn.Module):
         # B, pred_len, channel
         B = wea_arr.shape[0]
         seq_cross = seq_arr.shape[1] * seq_arr.shape[2]
-        y = torch.zeros(self._pred_len)
+        y = torch.zeros(B, self._pred_len)
         wea_arr = self.wea_cov1d.forward(torch.permute(wea_arr,[0, 2, 1]))
         #wea_arr = torch.permute(wea_arr, [0, 2, 1])
         for i, layer in enumerate(self.mixed_model):
-            y[i] = layer(torch.cat([torch.reshape(seq_arr, (B, seq_cross)), ext_arr[:, i, :], wea_arr[:, :, i]], dim=1))
+            y[:, i] = layer(torch.cat([torch.reshape(seq_arr, (B, seq_cross)), ext_arr[:, i, :], wea_arr[:, :, i]], dim=1)).squeeze()
 
         return y
 

@@ -25,13 +25,14 @@ def test_construct_weathernet(config:Config):
 
 
 def test_mixed_output(config:Config):
+    pred_len=23
 
-    m = MixedOutput(seq_arr_dim=8, filternet_hidden_size=5, ext_dim=4, wea_arr_dim=8, pred_len=23, model_paras=config.model_pdt.mixed_layer)
+    m = MixedOutput(seq_arr_dim=8, filternet_hidden_size=5, ext_dim=4, wea_arr_dim=8, pred_len=pred_len, model_paras=config.model_pdt.mixed_layer)
     seq_arr = torch.rand(20, 8, 5)
-    ext_arr = torch.rand(20, 23, 4)
-    wea_arr = torch.rand(20, 23, 8)
+    ext_arr = torch.rand(20, pred_len, 4)
+    wea_arr = torch.rand(20, pred_len, 8)
     y = m.forward(seq_arr=seq_arr, ext_arr=ext_arr, wea_arr=wea_arr)
-    assert list(y.shape) == [20]
+    assert list(y.shape) == [20, 23]
 
 def test_ts_weather_net(config:Config):
     # [batch, x, y, wea_para]
