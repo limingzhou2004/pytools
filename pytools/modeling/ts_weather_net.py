@@ -36,6 +36,17 @@ class DirectFC(nn.Module):
          return self.dfc(wea_arr)
     
 
+class MixedOutput(nn.Module):
+    def __init__(self, seq_arr_dim, wea_arr_dim, pred_len):
+        super().__init__()
+        y = torch.zeros(pred_len)
+        self.mix_model = 
+
+    def forward(self, seq_arr, wea_arr):
+
+        return
+
+
 class WeaCov(nn.Module):
 
     def __init__(self, input_shape, layer_paras, min_cv1_size=3,
@@ -129,6 +140,10 @@ class TSWeatherNet(pl.LightningModule):
         #filter_net
         in_channel = 1 if isinstance(config.model_pdt.target_ind, int) else len(config.model_pdt.target_ind)
         self.revin_layer = RevIN(in_channel, affine=True, subtract_last=False)
+
+
+        # prediction weather 1D cov
+        self.pred_wea_cov = nn.cov1d()
 
 
         self.multi_linear = nn.Linear(multi_linear_input_dim, pred_length)
