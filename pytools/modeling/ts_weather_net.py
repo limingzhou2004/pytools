@@ -57,6 +57,11 @@ class MixedOutput(nn.Module):
         seq_cross = seq_arr.shape[1] * seq_arr.shape[2]
         y = torch.zeros(B, self._pred_len)
         wea_arr = self.wea_cov1d.forward(torch.permute(wea_arr,[0, 2, 1]))
+        delta =  wea_arr.shape[-1] - self._pred_len
+        if delta >=0:
+            wea_arr = wea_arr[..., delta:]
+        else:
+            raise ValueError(f'weather length is less than pred_len {self._pred_len} by {-delta}')
         #wea_arr = torch.permute(wea_arr, [0, 2, 1])
         for i, layer in enumerate(self.mixed_model):
             y[:, i] = layer(torch.cat([torch.reshape(seq_arr, (B, seq_cross)), ext_arr[:, i, :], wea_arr[:, :, i]], dim=1)).squeeze()
