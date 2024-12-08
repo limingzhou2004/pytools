@@ -163,11 +163,17 @@ class TSWeatherNet(pl.LightningModule):
         self.revin_layer = RevIN(in_channel, affine=True, subtract_last=False)
 
 
+
         # prediction weather 1D cov
-        self.pred_wea_cov = nn.cov1d()
+        self.mixed_output = MixedOutput(
+            seq_arr_dim=,
+            filternet_hidden_size=,
+            ext_dim= wea_arr_dim=, 
+            pred_len=, 
+            model_paras=config.model_pdt.)
 
 
-        self.multi_linear = nn.Linear(multi_linear_input_dim, pred_length)
+        # self.multi_linear = nn.Linear(multi_linear_input_dim, pred_length)
 
     def configure_optimizers(self, label='multi_linear'):
         # REQUIRED
