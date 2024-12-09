@@ -20,11 +20,23 @@ def test_construct_weathernet(config:Config):
     # wds = WeatherDataSet(flag='cv_train',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=0, fst_horizon_ind=0)
     wds1 = WeatherDataSet(flag='final_train',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=0, fst_horizon_ind=1)
 
-    #wds1.__getitem__(1)
+    sample = wds1.__getitem__(1)
+    assert len(sample)  == 6
 
-    for i, sample in enumerate(wds1):
-        sample
-        print(sample)
+    [seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target] = sample
+
+    wea_input_shape = [20, 12, 8, 8, 10] # B, seq, x, y, channel
+
+    m = TSWeatherNet(wea_arr_shape=wea_input_shape, config=config, fst_ind=0)
+    y = m.forward(seq_wea_arr=seq_wea_arr, seq_ext_arr=seq_ext_arr, seq_target=seq_arr, wea_arr=wea_arr, ext_arr=ext_arr)
+    assert y.shape == target.shape
+
+
+
+
+    # for i, sample in enumerate(wds1):
+    #     sample
+    #     print(sample)
 
     # for name, p in wds1.named_parameters():
     #     print(name, p.shape)

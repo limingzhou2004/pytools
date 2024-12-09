@@ -1,5 +1,6 @@
 from functools import reduce
 from operator import mul
+import os.path as osp
 
 import torch
 import torch.nn as nn
@@ -134,8 +135,10 @@ class TSWeatherNet(pl.LightningModule):
         # wea_arr_shape, N, Seq, x, y, channel/para
         super().__init__()
         self.model_settings = config.model_pdt.model_settings
+        fn = config.get_model_file_name(class_name='model', extension='.ckpt', suffix=f'_fstind{fst_ind}')
         self.checkpoint_callback = ModelCheckpoint(
-            filepath=config.get_model_file_name(class_name='model', extension='ckpt', suffix=f'_fstind{fst_ind}'), 
+            dirpath=osp.dirname(fn),
+            filename=osp.basename(fn),
             verbose=True,
             monitor="val_loss",
             mode="min",
@@ -174,7 +177,7 @@ class TSWeatherNet(pl.LightningModule):
             ext_dim=config.model_pdt.ext_net['output_channel'],
             wea_arr_dim=config.model_pdt.cov_net['cov2']['output_channel'], 
             pred_len=self._pred_length, 
-            model_paras=config.model_pdt.MixedOutput)
+            model_paras=config.model_pdt.mixed_net)
 
 
         # self.multi_linear = nn.Linear(multi_linear_input_dim, pred_length)
