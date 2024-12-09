@@ -17,17 +17,24 @@ def test_construct_weathernet(config:Config):
    
     load_arr, wea_arr, t = check_fix_missings(load_arr=load_data, w_timestamp=w_timestamp, w_arr=w_data)
 
-    # wds = WeatherDataSet(flag='cv',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=0, fst_horizon_ind=0)
+    # wds = WeatherDataSet(flag='cv_train',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=0, fst_horizon_ind=0)
     wds1 = WeatherDataSet(flag='final_train',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=0, fst_horizon_ind=1)
-    for name, p in wds1.named_parameters():
-        print(name, p.shape)
+
+    #wds1.__getitem__(1)
+
+    for i, sample in enumerate(wds1):
+        sample
+        print(sample)
+
+    # for name, p in wds1.named_parameters():
+    #     print(name, p.shape)
     # wea_arr[1:5, 0, ...].squeeze()
 
 
 def test_mixed_output(config:Config):
     pred_len=23
 
-    m = MixedOutput(seq_arr_dim=8, filternet_hidden_size=5, ext_dim=4, wea_arr_dim=8, pred_len=pred_len, model_paras=config.model_pdt.mixed_layer)
+    m = MixedOutput(seq_arr_dim=8, filternet_hidden_size=5, ext_dim=4, wea_arr_dim=8, pred_len=pred_len, model_paras=config.model_pdt.mixed_net)
     seq_arr = torch.rand(20, 8, 5)
     ext_arr = torch.rand(20, pred_len, 4)
     wea_arr = torch.rand(20, pred_len, 8)
@@ -38,7 +45,7 @@ def test_ts_weather_net(config:Config):
     # [batch, x, y, wea_para]
     input_shapes = [[20, 8, 8, 10], [20, 5, 5, 10],[20, 2, 1, 10]]
     for input_shape in input_shapes:
-        w=WeaCov(input_shape=input_shape, layer_paras=config.model_pdt.cov_layer)
+        w=WeaCov(input_shape=input_shape, layer_paras=config.model_pdt.cov_net)
         w_arr = torch.rand(input_shape)
         y = w.forward(wea_arr=w_arr)
         assert y.shape[0] == input_shape[0]
@@ -51,8 +58,8 @@ def test_ts_TSWeather(config:Config):
 
     w = TSWeatherNet(
         wea_arr_shape=input_shape, 
-        wea_layer_paras=config.model_pdt.cov_layer, 
-        lstm_layer_paras=config.model_pdt.lstm_layer, 
+        wea_layer_paras=config.model_pdt.cov_net, 
+        lstm_layer_paras=config.model_pdt.lstm_net, 
         pred_length=fst_hz[0][1] -fst_hz[0][0],
         )
     for name, p in w.named_parameters():

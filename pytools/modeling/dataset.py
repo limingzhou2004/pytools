@@ -46,8 +46,8 @@ class WeatherDataSet(data.Dataset):
         self._pred_length = fst_horizon[-1]
         self._fst_horizeon = fst_horizon
         self._wea_ar_embedding_dim = config.model_pdt.wea_ar_embedding_dim
-        self._wea_embedding_dim = config.model_pdt.wea_embedding_dim
-        self._ext_embedding_dim = config.model_pdt.ext_embedding_dim
+        self._wea_embedding_dim = config.model_pdt.wea_ar_embedding_dim
+        self._ext_embedding_dim = config.model_pdt.ext_ar_embedding_dim
 
         self._fn_scaler = config.get_model_file_name(class_name='scaler')
 
@@ -68,10 +68,12 @@ class WeatherDataSet(data.Dataset):
             tt = config.model_pdt.cv_settings[sce_ind]
             t0 = tt[0]
             t1 = tt[1]
+            self._flag = self._flag.split('_')[-1]
         elif flag.startswith('final_train'):
             tt = config.model_pdt.final_train_hist[sce_ind]
             t0 = tt[0]
             t1 = tt[1]
+            self._flag = self._flag.split('_')[-1]
         elif flag.startswith('forward_forecast'):
             tt = config.model_pdt.final_train_hist[sce_ind]
             t0 = tt[2]
@@ -98,12 +100,14 @@ class WeatherDataSet(data.Dataset):
         first_yr_frac=first_yr,
         fractions=frac)
         
-        if 'test' in self._flag:
+        if 'train' in self._flag:
             self._sample_iter = train_iter
-        elif 'val' in self._flag:
+        elif 'test' in self._flag:
             self._sample_iter = test_iter
-        else: 
+        elif 'val' in self._flag: 
             self._sample_iter = val_iter
+        else:
+            raise ValueError('flag must be ened as _train|_test|_val')
 
         self._sample_list = list(self._sample_iter)
 
@@ -141,10 +145,10 @@ class WeatherDataSet(data.Dataset):
         return (
             self._wea_arr[ar_ind0:ar_ind1, ...],
             self._ext[ar_ind0:ar_ind1, :],
-            self._target[ar_ind0:ar_ind1, :],
+            self._target[ar_ind0:ar_ind1,...],
             self._wea_arr[wea_ind0:wea_ind1, ...],
             self._ext[ext_ind0:ext_ind1, :],
-            self._target[target_ind0:target_ind1,:]
+            self._target[target_ind0:target_ind1,...]
         )
 
 

@@ -164,15 +164,15 @@ class Model(BaseModel):
     final_train_hist: List
     target_ind: int
     wea_ar_embedding_dim: int
-    wea_embedding_dim: int 
-    ext_embedding_dim: int
+    #wea_embedding_dim: int 
+    ext_ar_embedding_dim: int
     seq_length: int 
 
-    cov_layer: Dict 
+    cov_net: Dict 
+    ext_net: Dict
     filter_net: Dict
-    mixed_layer: Dict
-   # lstm_layer: Dict
-    ext_layer: Dict
+    mixed_net: Dict
+
 
     models: List
 

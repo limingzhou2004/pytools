@@ -19,6 +19,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from pytools.modeling.StandardNorm import Normalize as RevIN
 
 from pytools.config import Config
+from pytools.modeling.TexFilter import SeqModel
 
 
 class DirectFC(nn.Module):
@@ -143,34 +144,37 @@ class TSWeatherNet(pl.LightningModule):
         self._wea_arr_shape = wea_arr_shape.copy()
 
         seq_dim = config.model_pdt.seq_dim
-        wea_layer_paras = config.model_pdt.cov_layer
-        lstm_layer_paras = config.model_pdt.lstm_layer
+        wea_layer_paras = config.model_pdt.cov_net
+        filter_net_paras = config.model_pdt.filter_net
+        
         if fst_ind >= len(config.model_pdt.forecast_horizon):
             raise ValueError(f'fst_ind={fst_ind} is beyond the length of forecast_horizon length={len(config.model_pdt.forecast_horizon)}!')
-        pred_length = config.model_pdt.forecast_horizon[fst_ind][1]
+        pred_length = config.model_pdt.forecast_horizon[fst_ind][1] - config.model_pdt.forecast_horizon[fst_ind][0] + 1
         self._seq_dim = seq_dim
         del wea_arr_shape[seq_dim]
         self.wea_net = WeaCov(input_shape=wea_arr_shape, layer_paras=wea_layer_paras)
         # lstm hidden state + ext channel * length  + ext weather channel * length
-        mcf = config.model_pdt
-        multi_linear_input_dim = lstm_layer_paras['hidden_dim'] *2 + mcf.ext_embedding_dim * mcf.ext_layer['output'] + \
-            mcf.wea_embedding_dim * mcf.cov_layer['cov2']['output_channel']
+        # mcf = config.model_pdt
+        # multi_linear_input_dim = lstm_layer_paras['hidden_dim'] *2 + mcf.ext_embedding_dim * mcf.ext_layer['output'] + \
+        #     mcf.wea_embedding_dim * mcf.cov_layer['cov2']['output_channel']
         # pred length
         self._pred_length = pred_length
 
         #filter_net
         in_channel = 1 if isinstance(config.model_pdt.target_ind, int) else len(config.model_pdt.target_ind)
         self.revin_layer = RevIN(in_channel, affine=True, subtract_last=False)
+        self.filter_net = SeqModel(seq_len=seq_dim, filter_net_paras=filter_net_paras)
 
-
-
+        self.ext_net = nn.Linear(in_features=config.model_pdt.ext_net['input_channel'], out_features=config.model_pdt.ext_net['output_channel'])
+        
         # prediction weather 1D cov
         self.mixed_output = MixedOutput(
-            seq_arr_dim=,
-            filternet_hidden_size=,
-            ext_dim= wea_arr_dim=, 
-            pred_len=, 
-            model_paras=config.model_pdt.)
+            seq_arr_dim=config.model_pdt.filter_net['embed_size'],
+            filternet_hidden_size=config.model_pdt.filter_net['hidden_size'],
+            ext_dim=config.model_pdt.ext_net['output_channel'],
+            wea_arr_dim=config.model_pdt.cov_net['cov2']['output_channel'], 
+            pred_len=self._pred_length, 
+            model_paras=config.model_pdt.MixedOutput)
 
 
         # self.multi_linear = nn.Linear(multi_linear_input_dim, pred_length)
@@ -183,17 +187,17 @@ class TSWeatherNet(pl.LightningModule):
         return torch.optim.Adam([{'paras':m_linear}, {'paras':others, 'weight_decay':0}], 
                                 weight_decay=self.model_settings['weight_decay'], lr=self.model_settings['lr'])
     
-    def forward(self, seq_wea_arr, ext_wea_arr):
+    def forward(self, seq_wea_arr, seq_ext_arr, seq_target, wea_arr, ext_arr):
         seq_wea_arr = seq_wea_arr.detach().clone()
         channel_num = self.wea_net.output_shape[1]
-        wea_len = ext_wea_arr.shape[self._seq_dim]
+        wea_len = wea_arr.shape[self._seq_dim]
         seq_length = seq_wea_arr.shape[self._seq_dim]
         seq_pred = torch.zeros([seq_length,channel_num])
-        wea_pred = torch.zeros(ext_wea_arr.shape[self._seq_dim], channel_num)
+        wea_pred = torch.zeros(wea_arr.shape[self._seq_dim], channel_num)
         for i in range(seq_length):
             seq_pred[:,i,:] = self.wea_net.forward(seq_wea_arr[:,i,...])
         for i in range(wea_len):
-            wea_pred[:,i,:] = self.wea_net.forward(ext_wea_arr[:,i,...])
+            wea_pred[:,i,:] = self.wea_net.forward(wea_arr[:,i,...])
 
 
         return seq_pred, wea_pred
