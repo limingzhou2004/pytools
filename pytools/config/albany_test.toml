@@ -103,6 +103,7 @@ cov_net.cov2.stride=1
 cov_net.cov2.dilation=1
 cov_net.cov2.group=1
 cov_net.cov2.output_channel=4
+cov_net.last.channel=8
 
 ext_net.input_channel=7
 ext_net.output_channel=3

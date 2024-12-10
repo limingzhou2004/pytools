@@ -119,11 +119,14 @@ class WeaCov(nn.Module):
             nn.LayerNorm(normalized_shape=output_shape2[1:]),
             nn.LeakyReLU())
             m_list.append(m)
+            output_shape_from_cov = [output_shape2[0], reduce(mul, output_shape2[1:])]
+            m_list.append(DirectFC(output_shape_from_cov, layer_paras['last']['channels']))
+
         else:
-            m_list.append(DirectFC(output_shape1, layer_paras['cov2']['output_channel']))
+            m_list.append(DirectFC(output_shape1, layer_paras['last']['channels']))
             output_shape2 = m_list[-1].forward(torch.rand(output_shape1)).shape
 
-        self.output_shape = [output_shape2[0], reduce(mul, output_shape2[1:])]
+        self.output_shape = layer_paras['last']['channels']
         self.module_list = nn.ModuleList(m_list)
 
     def forward(self, wea_arr):
@@ -197,6 +200,11 @@ class TSWeatherNet(pl.LightningModule):
     
     def forward(self, seq_wea_arr, seq_ext_arr, seq_target, wea_arr, ext_arr):
         seq_wea_arr = seq_wea_arr.detach().clone()
+        seq_ext_arr = seq_ext_arr.detach().clone()
+
+        # seq pass to time series
+
+
         channel_num = self.wea_net.output_shape[1]
         wea_len = wea_arr.shape[self._seq_dim]
         seq_length = seq_wea_arr.shape[self._seq_dim]
@@ -205,6 +213,7 @@ class TSWeatherNet(pl.LightningModule):
         wea_pred = torch.zeros(wea_arr.shape[self._seq_dim], channel_num)
         for i in range(seq_length):
             seq_pred[:,i,:] = self.wea_net.forward(seq_wea_arr[:,i,...])
+
         for i in range(wea_len):
             wea_pred[:,i,:] = self.wea_net.forward(wea_arr[:,i,...])
 
