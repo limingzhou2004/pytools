@@ -120,13 +120,13 @@ class WeaCov(nn.Module):
             nn.LeakyReLU())
             m_list.append(m)
             output_shape_from_cov = [output_shape2[0], reduce(mul, output_shape2[1:])]
-            m_list.append(DirectFC(output_shape_from_cov, layer_paras['last']['channels']))
+            m_list.append(DirectFC(output_shape_from_cov, layer_paras['last']['channel']))
 
         else:
-            m_list.append(DirectFC(output_shape1, layer_paras['last']['channels']))
+            m_list.append(DirectFC(output_shape1, layer_paras['last']['channel']))
             output_shape2 = m_list[-1].forward(torch.rand(output_shape1)).shape
 
-        self.output_shape = layer_paras['last']['channels']
+        self.output_shape = layer_paras['last']['channel']
         self.module_list = nn.ModuleList(m_list)
 
     def forward(self, wea_arr):
