@@ -39,12 +39,15 @@ class DirectFC(nn.Module):
     
 
 class MixedOutput(nn.Module):
-    def __init__(self, seq_arr_dim, filternet_hidden_size, ext_dim, wea_arr_dim, pred_len, model_paras):
+    def __init__(self, seq_arr_dim, filternet_hidden_size, ext_dim, wea_arr_dim, pred_len, model_paras, ):
         super().__init__()
         target_dim = 1
         self._pred_len = pred_len
         self.wea_cov1d = nn.Conv1d(in_channels=wea_arr_dim, **model_paras['cov1d'])
-        in_dim = seq_arr_dim * filternet_hidden_size + ext_dim + model_paras['cov1d']['out_channels']
+        self.ext_cov1d = nn.Conv1d(in_channels=ext_dim, **model_paras['ext_cov1d'])
+
+        in_dim = seq_arr_dim * filternet_hidden_size + model_paras['cov1d']['out_channels'] + model_paras['cov1d']['out_channels']
+
         self.mixed_model = nn.ModuleList(
             nn.Sequential(
             nn.Linear(in_features=in_dim, out_features=in_dim//2),
@@ -59,14 +62,19 @@ class MixedOutput(nn.Module):
         seq_cross = seq_arr.shape[1] * seq_arr.shape[2]
         y = torch.zeros(B, self._pred_len)
         wea_arr = self.wea_cov1d.forward(torch.permute(wea_arr,[0, 2, 1]))
+        ext_arr = self.ext_cov1d.forward(torch.permute(ext_arr, [0, 2, 1]))
         delta =  wea_arr.shape[-1] - self._pred_len
         if delta >=0:
             wea_arr = wea_arr[..., delta:]
         else:
-            raise ValueError(f'weather length is less than pred_len {self._pred_len} by {-delta}')
-        #wea_arr = torch.permute(wea_arr, [0, 2, 1])
+            raise ValueError(f'weather length is less than pred_len {self._pred_len} by {-delta}!')
+        delta = ext_arr.shape[-1] - self._pred_len
+        if delta >=0 :
+            ext_arr = ext_arr[..., delta:]
+        else:
+            raise ValueError(f'ext length is less than pred_len {self._pred_len} by {-delta}!')
         for i, layer in enumerate(self.mixed_model):
-            y[:, i] = layer(torch.cat([torch.reshape(seq_arr, (B, seq_cross)), ext_arr[:, i, :], wea_arr[:, :, i]], dim=1)).squeeze()
+            y[:, i] = layer(torch.cat([torch.reshape(seq_arr, (B, seq_cross)), ext_arr[:, :, i], wea_arr[:, :, i]], dim=1)).squeeze()
 
         return y
 
@@ -131,11 +139,11 @@ class TSWeatherNet(pl.LightningModule):
     def __init__(self, wea_arr_shape, 
                  #wea_layer_paras, lstm_layer_paras, pred_length, seq_dim=1,
                  config:Config,
-                 fst_ind: int ):
+                  ):
         # wea_arr_shape, N, Seq, x, y, channel/para
         super().__init__()
         self.model_settings = config.model_pdt.model_settings
-        fn = config.get_model_file_name(class_name='model', extension='.ckpt', suffix=f'_fstind{fst_ind}')
+        fn = config.get_model_file_name(class_name='model', extension='.ckpt')
         self.checkpoint_callback = ModelCheckpoint(
             dirpath=osp.dirname(fn),
             filename=osp.basename(fn),
@@ -149,9 +157,7 @@ class TSWeatherNet(pl.LightningModule):
         seq_dim = config.model_pdt.seq_dim
         wea_layer_paras = config.model_pdt.cov_net
         filter_net_paras = config.model_pdt.filter_net
-        
-        if fst_ind >= len(config.model_pdt.forecast_horizon):
-            raise ValueError(f'fst_ind={fst_ind} is beyond the length of forecast_horizon length={len(config.model_pdt.forecast_horizon)}!')
+        fst_ind=0        
         pred_length = config.model_pdt.forecast_horizon[fst_ind][1] - config.model_pdt.forecast_horizon[fst_ind][0] + 1
         self._seq_dim = seq_dim
         del wea_arr_shape[seq_dim]
@@ -179,7 +185,6 @@ class TSWeatherNet(pl.LightningModule):
             pred_len=self._pred_length, 
             model_paras=config.model_pdt.mixed_net)
 
-
         # self.multi_linear = nn.Linear(multi_linear_input_dim, pred_length)
 
     def configure_optimizers(self, label='multi_linear'):
@@ -195,6 +200,7 @@ class TSWeatherNet(pl.LightningModule):
         channel_num = self.wea_net.output_shape[1]
         wea_len = wea_arr.shape[self._seq_dim]
         seq_length = seq_wea_arr.shape[self._seq_dim]
+
         seq_pred = torch.zeros([seq_length,channel_num])
         wea_pred = torch.zeros(wea_arr.shape[self._seq_dim], channel_num)
         for i in range(seq_length):
