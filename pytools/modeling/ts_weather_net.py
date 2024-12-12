@@ -208,16 +208,21 @@ class TSWeatherNet(pl.LightningModule):
         # seq pass to time series
         wea_channel_num = self.wea_net.output_shape
         seq_length = self._seq_length
+        w_dim = wea_arr.shape[1]
+        e_dim = ext_arr.shape[1]
         seq_wea_y = torch.zeros(B, seq_length, wea_channel_num)
-        wea_y = torch.zeros(B, self._pred_length, wea_channel_num)
+        wea_y = torch.zeros(B, w_dim, wea_channel_num)
         seq_ext_y = torch.zeros(B, seq_length, self.ext_channels)
-        ext_y = torch.zeros([B, self._pred_length, self.ext_channels])
+        ext_y = torch.zeros([B, e_dim, self.ext_channels])
+
+        
 
         for i in range(seq_length):
             seq_wea_y[:,i,:] = self.wea_net(seq_wea_arr[:,i,...])
             seq_ext_y[:,i,:] = self.ext_net(seq_ext_arr[:,i,...])
-        for i in range(self._pred_length):
+        for i in range(w_dim):
             wea_y[:,i,:] = self.wea_net(wea_arr[:,i,...])
+        for i in range(e_dim):
             ext_y[:,i,:] = self.ext_net(ext_arr[:,i,...])
         seq_y = torch.cat([seq_target[...,None], seq_ext_y, seq_wea_y],dim=2).permute([0, 2, 1])
         seq_y = self.filter_net(seq_y)
