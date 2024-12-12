@@ -202,6 +202,7 @@ class TSWeatherNet(pl.LightningModule):
                                 weight_decay=self.model_settings['weight_decay'], lr=self.model_settings['lr'])
     
     def forward(self, seq_wea_arr, seq_ext_arr, seq_target, wea_arr, ext_arr):
+        self.revin_layer(seq_target,'norm')
         B= seq_wea_arr.shape[0]
         seq_wea_arr = seq_wea_arr.detach().clone()
         seq_ext_arr = seq_ext_arr.detach().clone()
@@ -227,5 +228,8 @@ class TSWeatherNet(pl.LightningModule):
         seq_y = torch.cat([seq_target[...,None], seq_ext_y, seq_wea_y],dim=2).permute([0, 2, 1])
         seq_y = self.filter_net(seq_y)
 
-        return self.mixed_output(seq_y, ext_y, wea_y)
+        y = self.mixed_output(seq_y, ext_y, wea_y)
+        y = self.revin_layer(y, 'denorm')
+        return y
+
 
