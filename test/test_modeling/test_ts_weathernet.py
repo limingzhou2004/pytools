@@ -17,17 +17,23 @@ def test_construct_weathernet(config:Config):
    
     load_arr, wea_arr, t = check_fix_missings(load_arr=load_data, w_timestamp=w_timestamp, w_arr=w_data)
 
-    # wds = WeatherDataSet(flag='cv_train',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=0, fst_horizon_ind=0)
-    wds1 = WeatherDataSet(flag='final_train',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=0, fst_horizon_ind=1)
+    # wds = WeatherDataSet(flag='cv_train',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=0, )
+    wds1 = WeatherDataSet(flag='final_train',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=0,)
 
     sample = wds1.__getitem__(1)
     assert len(sample)  == 6
 
+    def to_np(x):
+        # add batch dimesion
+        return torch.from_numpy(x.astype(np.float32))[None,...]
+    sample = map(to_np, sample)
     [seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target] = sample
 
-    wea_input_shape = [20, 12, 8, 8, 10] # B, seq, x, y, channel
+    wea_input_shape = list(seq_wea_arr.shape)
+    
+    #wea_input_shape = [20, 12, 8, 8, 16] # B, seq, x, y, channel
 
-    m = TSWeatherNet(wea_arr_shape=wea_input_shape, config=config, fst_ind=0)
+    m = TSWeatherNet(wea_arr_shape=wea_input_shape, config=config)
     y = m.forward(seq_wea_arr=seq_wea_arr, seq_ext_arr=seq_ext_arr, seq_target=seq_arr, wea_arr=wea_arr, ext_arr=ext_arr)
     assert y.shape == target.shape
 

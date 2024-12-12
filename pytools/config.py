@@ -197,6 +197,11 @@ class Config:
         self.load_pdt = Load(**self.toml_dict['load'])
         self.weather_pdt = Weather(**self.toml_dict['weather'])
         self.model_pdt = Model(**self.toml_dict['model'])
+        self.target_dim = 1 if isinstance(self.model_pdt.target_ind, int) else len(self.model_pdt.target_ind)
+        self._filternet_input =  self.model_pdt.ext_net['output_channel'] + self.target_dim + self.model_pdt.cov_net['last']['channel']
+
+        if self.model_pdt.seq_length < max(self.model_pdt.wea_ar_embedding_dim, self.model_pdt.ext_ar_embedding_dim):
+            raise ValueError('weather or ext AR embedding exceeds seq length!') 
 
     def _add_base_folder(self, dict_to_update, key):
         dict_to_update[key] = os.path.join(self._base_folder, dict_to_update[key])
@@ -235,6 +240,10 @@ class Config:
             self.site_parent_folder,
             prefix + self.site_pdt.alias + '_' + class_name + suffix + extension,
         )
+
+    @property
+    def filternet_input(self):
+        return self._filternet_input
 
     @property
     def base_folder(self):
@@ -360,7 +369,6 @@ class Config:
             return x<full_length
         return filter(fun, train_borders), filter(fun, test_borders), \
             filter(fun, val_borders)
-
 
     
     @property

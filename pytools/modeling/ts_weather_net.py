@@ -163,6 +163,7 @@ class TSWeatherNet(pl.LightningModule):
         fst_ind=0        
         pred_length = config.model_pdt.forecast_horizon[fst_ind][1] - config.model_pdt.forecast_horizon[fst_ind][0] + 1
         self._seq_dim = seq_dim
+        self._seq_length = config.model_pdt.seq_length
         del wea_arr_shape[seq_dim]
         self.wea_net = WeaCov(input_shape=wea_arr_shape, layer_paras=wea_layer_paras)
         # lstm hidden state + ext channel * length  + ext weather channel * length
@@ -175,9 +176,10 @@ class TSWeatherNet(pl.LightningModule):
         #filter_net
         in_channel = 1 if isinstance(config.model_pdt.target_ind, int) else len(config.model_pdt.target_ind)
         self.revin_layer = RevIN(in_channel, affine=True, subtract_last=False)
-        self.filter_net = SeqModel(seq_len=seq_dim, filter_net_paras=filter_net_paras)
-
-        self.ext_net = nn.Linear(in_features=config.model_pdt.ext_net['input_channel'], out_features=config.model_pdt.ext_net['output_channel'])
+        self.filter_net = SeqModel(seq_len=config.filternet_input, filter_net_paras=filter_net_paras)
+        self.ext_channels = config.model_pdt.ext_net['output_channel']
+        self.ext_net = nn.Linear(in_features=config.model_pdt.ext_net['input_channel'], out_features=self.ext_channels)
+        
         
         # prediction weather 1D cov
         self.mixed_output = MixedOutput(
@@ -199,23 +201,25 @@ class TSWeatherNet(pl.LightningModule):
                                 weight_decay=self.model_settings['weight_decay'], lr=self.model_settings['lr'])
     
     def forward(self, seq_wea_arr, seq_ext_arr, seq_target, wea_arr, ext_arr):
+        B= seq_wea_arr.shape[0]
         seq_wea_arr = seq_wea_arr.detach().clone()
         seq_ext_arr = seq_ext_arr.detach().clone()
-
         # seq pass to time series
+        wea_channel_num = self.wea_net.output_shape
+        seq_length = self._seq_length
+        seq_wea_y = torch.zeros(B, seq_length, wea_channel_num)
+        wea_y = torch.zeros(B, self._pred_length, wea_channel_num)
+        seq_ext_y = torch.zeros(B, seq_length, self.ext_channels)
+        ext_y = torch.zeros([B, self._pred_length, self.ext_channels])
 
-
-        channel_num = self.wea_net.output_shape[1]
-        wea_len = wea_arr.shape[self._seq_dim]
-        seq_length = seq_wea_arr.shape[self._seq_dim]
-
-        seq_pred = torch.zeros([seq_length,channel_num])
-        wea_pred = torch.zeros(wea_arr.shape[self._seq_dim], channel_num)
         for i in range(seq_length):
-            seq_pred[:,i,:] = self.wea_net.forward(seq_wea_arr[:,i,...])
+            seq_wea_y[:,i,:] = self.wea_net(seq_wea_arr[:,i,...])
+            seq_ext_y[:,i,:] = self.ext_net(seq_ext_arr[:,i,...])
+        for i in range(self._pred_length):
+            wea_y[:,i,:] = self.wea_net(wea_arr[:,i,...])
+            ext_y[:,i,:] = self.ext_net(ext_arr[:,i,...])
+        seq_y = torch.cat([seq_target[...,None], seq_ext_y, seq_wea_y],dim=2).permute([0, 2, 1])
+        seq_y = self.filter_net(seq_y)
 
-        for i in range(wea_len):
-            wea_pred[:,i,:] = self.wea_net.forward(wea_arr[:,i,...])
+        return self.mixed_output(seq_y, ext_y, wea_y)
 
-
-        return seq_pred, wea_pred

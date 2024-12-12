@@ -26,8 +26,7 @@ class WeatherDataSet(data.Dataset):
         wea_arr: np.ndarray,
         timestamp: np.ndarray,
         config: Config,
-        sce_ind: int,
-        fst_horizon_ind: int,
+        sce_ind: int, # cv scenario
         to_scale:bool = True,
     ):
         # the scaler and model file has flag and year information
@@ -36,7 +35,7 @@ class WeatherDataSet(data.Dataset):
         self._flag = flag
         target_ind = config.model_pdt.target_ind
         seq_length = config.model_pdt.seq_length
-        fst_horizon = config.model_pdt.forecast_horizon[fst_horizon_ind]
+        fst_horizon = config.model_pdt.forecast_horizon[0]
         self._target = tabular_data[:, target_ind]
         self._ext = np.delete(tabular_data, target_ind, axis=1)
         self._wea_arr = wea_arr
@@ -93,8 +92,8 @@ class WeatherDataSet(data.Dataset):
         [self._config.model_pdt.frac_yr1, self._config.model_pdt.frac_split ]
         first_yr = fs[0]
         frac = fs[1]
-
         full_length = self._target.shape[0] - self._seq_length - self._pred_length +1 
+
         train_iter, test_iter, val_iter = self._config.get_sample_segmentation_borders(full_length=full_length, 
         fst_scenario=self._sce_ind,
         first_yr_frac=first_yr,
