@@ -5,6 +5,8 @@ import os.path as osp
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.utils.data.dataloader import DataLoader
+
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
@@ -21,6 +23,7 @@ from pytools.modeling.StandardNorm import Normalize as RevIN
 
 from pytools.config import Config
 from pytools.modeling.TexFilter import SeqModel
+from pytools.modeling.utilities import extract_a_field
 
 
 class DirectFC(nn.Module):
@@ -202,6 +205,7 @@ class TSWeatherNet(pl.LightningModule):
                                 weight_decay=self.model_settings['weight_decay'], lr=self.model_settings['lr'])
     
     def forward(self, seq_wea_arr, seq_ext_arr, seq_target, wea_arr, ext_arr):
+
         self.revin_layer(seq_target,'norm')
         B= seq_wea_arr.shape[0]
         seq_wea_arr = seq_wea_arr.detach().clone()
@@ -231,5 +235,87 @@ class TSWeatherNet(pl.LightningModule):
         y = self.mixed_output(seq_y, ext_y, wea_y)
         y = self.revin_layer(y, 'denorm')
         return y
+    
+
+    def training_step(self, batch, batch_nb):
+        # REQUIRED
+        wea, lag, c, y = batch
+        y_hat = self(wea, lag, c)
+        loss = F.mse_loss(y_hat, y)
+        return {"loss": loss}
+
+    def training_epoch_end(self, outputs):
+        #  the function is called after every epoch is completed
+        avg_loss = torch.stack([x["loss"] for x in outputs]).mean()
+        self._mdl_logger.experiment.add_scalar(
+            "loss/train", avg_loss, self.current_epoch
+        )
+        for k, v in self._busi_loss_metrics(avg_loss).items():
+            self._mdl_logger.experiment.add_scalar(k, v, self.current_epoch)
+            self.log(k, v)
+        self.log("train_loss", float(avg_loss.squeeze()))
+
+    def _busi_loss_metrics(self, scaled_loss):
+        abs_loss = self._load_scaler.inverse_transform(scaled_loss.reshape((-1, 1)))
+        relative_loss = abs_loss / self._load_mean
+        return {
+            "abs_loss": float(abs_loss.squeeze()),
+            "relative_loss": float(relative_loss.squeeze()),
+            "y_mean": self._load_mean,
+        }
+
+    def validation_step(self, batch, batch_nb):
+        # OPTIONAL
+        wea, lag, c, y = batch
+        y_hat = self(wea, lag, c)
+        loss = F.mse_loss(y_hat, y)
+        return {"loss": loss}
+
+    def validation_epoch_end(self, outputs):
+        # OPTIONAL
+        avg_loss = torch.stack([x["loss"] for x in outputs]).mean()
+        self._mdl_logger.experiment.add_scalar("loss/val", avg_loss, self.current_epoch)
+        for k, v in self._busi_loss_metrics(avg_loss).items():
+            self._mdl_logger.experiment.add_scalar(k, v, self.current_epoch)
+            self.log(k, v)
+        self.log("val_loss", float(avg_loss.squeeze()))
+
+    def test_step(self, batch, batch_nb):
+        # OPTIONAL
+        wea, lag, c, y = batch
+        y_hat = self(wea, lag, c)
+        loss = F.mse_loss(y_hat, y)
+        return {"loss": loss, **self._busi_loss_metrics(loss)}
+
+    def test_epoch_end(self, outputs):
+        # OPTIONAL
+        avg_loss = torch.stack([x["loss"] for x in outputs]).mean()
+        self._mdl_logger.experiment.add_scalar(
+            "loss/test", avg_loss, self.current_epoch
+        )
+        for k, v in self._busi_loss_metrics(avg_loss).items():
+            self._mdl_logger.experiment.add_scalar(k, v, self.current_epoch)
+            self.log(k, v)
+        self.log("test_loss", float(avg_loss.squeeze()))
+        self._mdl_logger.experiment.add_hparams(
+            dict(self.model_settings._asdict()), {"test_loss": avg_loss}
+        )
+
+    def train_dataloader(self):
+        # REQUIRED
+        batch_size =  extract_a_field(self.model_settings, "batch_size", 32)
+        return DataLoader(0, batch_size)
+
+    def val_dataloader(self):
+        # OPTIONAL
+        return None
+
+    def test_dataloader(self):
+        # OPTIONAL
+        return DataLoader()
+
+    def add_model_specific_args(self):
+        return
+
 
 

@@ -85,5 +85,26 @@ def test_ts_TSWeather(config:Config):
             print(name, p.shape)
 
 
-
+def test_weather_net_train_a_minibatch(
+    generator_data, hrrr_weather_para, model_setting
+):
+    nn = WeatherNet(
+        model_file_path="resources",
+        model_file_name="test",
+        hrs_ahead=1,
+        weather_para=hrrr_weather_para,
+        layer_paras=default_layer_sizes,
+        model_settings=model_setting,
+    )
+    for wea, embed_load, calendar, target in generator_data(
+        model_setting.batch_size, max_count=5
+    ):
+        loss = nn.training_step((wea, embed_load, calendar, target), None)
+        # print(nn.model.weather_conv2_layer[0].weight.grad[0,0])
+        print(loss)
+        assert loss["loss"] >= 0
+        loss_pre = nn.test_step((wea, embed_load, calendar, target), None)
+        assert loss_pre["test_loss"] >= 0
+        y_pre = nn(wea, embed_load, calendar)
+        assert y_pre.shape == (100, 1)
 
