@@ -108,13 +108,13 @@ cov_net.last.channel=8
 ext_net.input_channel=6
 ext_net.output_channel=3
 
-#filter_net.embed_size=12 # cov_net.last.channel + ext_net.output_channel + target.dim
 filter_net.hidden_size=8
 filter_net.dropout=0.01
 filter_net.band_width=96
 filter_net.scale=0.2
 filter_net.sparsity_threshold=0.01
 
+mixed_net.ts_latent_dim=5
 mixed_net.cov1d.kernel_size=5
 mixed_net.cov1d.padding=2
 mixed_net.cov1d.stride=1

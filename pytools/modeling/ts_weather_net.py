@@ -39,14 +39,16 @@ class DirectFC(nn.Module):
     
 
 class MixedOutput(nn.Module):
-    def __init__(self, seq_arr_dim, filternet_hidden_size, ext_dim, wea_arr_dim, pred_len, model_paras, ):
+    def __init__(self, seq_arr_dim, seq_latent_dim, filternet_hidden_size, ext_dim, wea_arr_dim, pred_len, model_paras, ):
         super().__init__()
         target_dim = 1
         self._pred_len = pred_len
         self.wea_cov1d = nn.Conv1d(in_channels=wea_arr_dim, **model_paras['cov1d'])
         self.ext_cov1d = nn.Conv1d(in_channels=ext_dim, **model_paras['ext_cov1d'])
 
-        in_dim = seq_arr_dim * filternet_hidden_size + model_paras['cov1d']['out_channels'] + model_paras['cov1d']['out_channels']
+        in_dim = seq_latent_dim * filternet_hidden_size + model_paras['cov1d']['out_channels'] + model_paras['ext_cov1d']['out_channels']
+
+        self.ts_latent_model = nn.Linear(in_features=seq_arr_dim,out_features=seq_latent_dim)
 
         self.mixed_model = nn.ModuleList(
             nn.Sequential(
@@ -59,7 +61,9 @@ class MixedOutput(nn.Module):
     def forward(self, seq_arr, ext_arr, wea_arr):
         # B, pred_len, channel
         B = wea_arr.shape[0]
+        seq_arr = self.ts_latent_model(seq_arr)
         seq_cross = seq_arr.shape[1] * seq_arr.shape[2]
+
         y = torch.zeros(B, self._pred_len)
         wea_arr = self.wea_cov1d.forward(torch.permute(wea_arr,[0, 2, 1]))
         ext_arr = self.ext_cov1d.forward(torch.permute(ext_arr, [0, 2, 1]))
@@ -173,14 +177,17 @@ class TSWeatherNet(pl.LightningModule):
         self.revin_layer = RevIN(in_channel, affine=True, subtract_last=False)
         self.filter_net = SeqModel(config.filternet_input, filter_net_paras=filter_net_paras)
         self.ext_channels = config.model_pdt.ext_net['output_channel']
-        self.ext_net = nn.Linear(in_features=config.model_pdt.ext_net['input_channel'], out_features=self.ext_channels)        
+        self.ext_net = nn.Linear(in_features=config.model_pdt.ext_net['input_channel'], out_features=self.ext_channels)   
+        self.wea_channels = config.model_pdt.cov_net['last']['channel']     
         
         # prediction weather 1D cov
+        mix_input_dim = in_channel + self.ext_channels + self.wea_channels
         self.mixed_output = MixedOutput(
-            seq_arr_dim=config.filternet_input,
-            filternet_hidden_size=config.model_pdt.filter_net['hidden_size'],
+            seq_arr_dim=config.model_pdt.seq_length,
+            seq_latent_dim=config.model_pdt.mixed_net['ts_latent_dim'],
+            filternet_hidden_size=mix_input_dim,
             ext_dim=config.model_pdt.ext_net['output_channel'],
-            wea_arr_dim=config.model_pdt.cov_net['last']['channel'], 
+            wea_arr_dim=self.wea_channels, 
             pred_len=self._pred_length, 
             model_paras=config.model_pdt.mixed_net)
 
