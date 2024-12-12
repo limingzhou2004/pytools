@@ -108,7 +108,7 @@ cov_net.last.channel=8
 ext_net.input_channel=6
 ext_net.output_channel=3
 
-filter_net.embed_size=12 # cov_net.last.channel + ext_net.output_channel + target.dim
+#filter_net.embed_size=12 # cov_net.last.channel + ext_net.output_channel + target.dim
 filter_net.hidden_size=8
 filter_net.dropout=0.01
 filter_net.band_width=96

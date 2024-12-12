@@ -186,7 +186,7 @@ class TSWeatherNet(pl.LightningModule):
             seq_arr_dim=config.model_pdt.filter_net['embed_size'],
             filternet_hidden_size=config.model_pdt.filter_net['hidden_size'],
             ext_dim=config.model_pdt.ext_net['output_channel'],
-            wea_arr_dim=config.model_pdt.cov_net['cov2']['output_channel'], 
+            wea_arr_dim=config.model_pdt.cov_net['last']['channel'], 
             pred_len=self._pred_length, 
             model_paras=config.model_pdt.mixed_net)
 
