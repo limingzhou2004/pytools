@@ -8,13 +8,13 @@ import torch.nn.functional as F
 
 class SeqModel(nn.Module):
 
-    def __init__(self, seq_len, filter_net_paras):
+    def __init__(self, embed_size, filter_net_paras):
         super().__init__()
         #self.seq_len = configs.seq_len
         #self.pred_len = configs.pred_len
         FNP = namedtuple('FNP',filter_net_paras)
         configs = FNP(**filter_net_paras)
-        self.embed_size = configs.embed_size
+        self.embed_size = embed_size
         self.hidden_size = configs.hidden_size
         self.dropout = configs.dropout
         self.band_width = configs.band_width
@@ -22,8 +22,8 @@ class SeqModel(nn.Module):
         self.sparsity_threshold = configs.sparsity_threshold
         #self.revin_layer = RevIN(configs.enc_in, affine=True, subtract_last=False)
 
-        self.embedding = nn.Linear(seq_len, self.embed_size)
-        self.token = nn.Conv1d(in_channels=seq_len, out_channels=self.embed_size, kernel_size=(1,))
+        self.embedding = nn.Linear(embed_size, self.embed_size)
+        self.token = nn.Conv1d(in_channels=embed_size, out_channels=self.embed_size, kernel_size=(1,))
 
         self.w = nn.Parameter(self.scale * torch.randn(2, self.embed_size))
         self.w1 = nn.Parameter(self.scale * torch.randn(2, self.embed_size))

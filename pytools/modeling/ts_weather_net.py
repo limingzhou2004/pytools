@@ -166,24 +166,18 @@ class TSWeatherNet(pl.LightningModule):
         self._seq_length = config.model_pdt.seq_length
         del wea_arr_shape[seq_dim]
         self.wea_net = WeaCov(input_shape=wea_arr_shape, layer_paras=wea_layer_paras)
-        # lstm hidden state + ext channel * length  + ext weather channel * length
-        # mcf = config.model_pdt
-        # multi_linear_input_dim = lstm_layer_paras['hidden_dim'] *2 + mcf.ext_embedding_dim * mcf.ext_layer['output'] + \
-        #     mcf.wea_embedding_dim * mcf.cov_layer['cov2']['output_channel']
-        # pred length
         self._pred_length = pred_length
 
         #filter_net
         in_channel = 1 if isinstance(config.model_pdt.target_ind, int) else len(config.model_pdt.target_ind)
         self.revin_layer = RevIN(in_channel, affine=True, subtract_last=False)
-        self.filter_net = SeqModel(seq_len=config.filternet_input, filter_net_paras=filter_net_paras)
+        self.filter_net = SeqModel(config.filternet_input, filter_net_paras=filter_net_paras)
         self.ext_channels = config.model_pdt.ext_net['output_channel']
-        self.ext_net = nn.Linear(in_features=config.model_pdt.ext_net['input_channel'], out_features=self.ext_channels)
-        
+        self.ext_net = nn.Linear(in_features=config.model_pdt.ext_net['input_channel'], out_features=self.ext_channels)        
         
         # prediction weather 1D cov
         self.mixed_output = MixedOutput(
-            seq_arr_dim=config.model_pdt.filter_net['embed_size'],
+            seq_arr_dim=config.filternet_input,
             filternet_hidden_size=config.model_pdt.filter_net['hidden_size'],
             ext_dim=config.model_pdt.ext_net['output_channel'],
             wea_arr_dim=config.model_pdt.cov_net['last']['channel'], 
