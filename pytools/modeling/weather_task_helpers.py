@@ -12,7 +12,7 @@ import pytorch_lightning as pl
 from pytools.config import Config
 from pytools.data_prep import data_prep_manager as dpm
 from pytools.data_prep.data_prep_manager import DataPrepManager
-from pytools.modeling.dataset import WeatherDataSetBuilder
+#from pytools.modeling.dataset import WeatherDataSetBuilder
 from pytools.modeling.utilities import load_npz_as_dict, extract_model_settings
 from pytools.modeling.weather_net import WeatherNet, ModelSettings, default_layer_sizes
 

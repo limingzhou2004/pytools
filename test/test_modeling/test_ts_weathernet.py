@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-
+import torch.utils.data as data
 
 from pytools.config import Config
 from pytools.modeling.dataset import WeatherDataSet, check_fix_missings, read_weather_data_from_config
@@ -85,26 +85,21 @@ def test_ts_TSWeather(config:Config):
             print(name, p.shape)
 
 
-def test_weather_net_train_a_minibatch(
-    generator_data, hrrr_weather_para, model_setting
-):
-    nn = WeatherNet(
-        model_file_path="resources",
-        model_file_name="test",
-        hrs_ahead=1,
-        weather_para=hrrr_weather_para,
-        layer_paras=default_layer_sizes,
-        model_settings=model_setting,
-    )
-    for wea, embed_load, calendar, target in generator_data(
-        model_setting.batch_size, max_count=5
-    ):
-        loss = nn.training_step((wea, embed_load, calendar, target), None)
-        # print(nn.model.weather_conv2_layer[0].weight.grad[0,0])
-        print(loss)
-        assert loss["loss"] >= 0
-        loss_pre = nn.test_step((wea, embed_load, calendar, target), None)
-        assert loss_pre["test_loss"] >= 0
-        y_pre = nn(wea, embed_load, calendar)
-        assert y_pre.shape == (100, 1)
+def test_weather_net_train_a_minibatch(config):
+    load_data, w_paras, w_timestamp, w_data = read_weather_data_from_config(config, year=-1)
+    load_arr, wea_arr, t = check_fix_missings(load_arr=load_data, w_timestamp=w_timestamp, w_arr=w_data)
+    wds = WeatherDataSet(flag='final_train',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=0,)
+
+    
+    train_loader = data.DataLoader(train_set, batch_size=256, shuffle=True, drop_last=True, pin_memory=True, num_workers=4)
+    val_loader = data.DataLoader(val_set, batch_size=256, shuffle=False, drop_last=False, num_workers=4)
+    test_loader = data.DataLoader(test_set, batch_size=256, shuffle=False, drop_last=False, num_workers=4)
+
+
+    wea_input_shape = wea_arr.shape
+    m = TSWeatherNet(wea_arr_shape=wea_input_shape, config=config)
+    train_loader = data.DataLoader(dataset=wds,)
+
+
+
 

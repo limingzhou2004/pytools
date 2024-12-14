@@ -10,8 +10,7 @@ from pytools.weather_task import (
     hist_weather_prepare_from_report,
     main,
     past_fst_weather_prepare,
-    train_data_assemble,
-    train_model,
+   # train_model,
 )
 import pytools.data_prep.weather_data_prep as wp
 from pytools.utilities import get_absolute_path
@@ -25,6 +24,11 @@ class TestWeatherTask:
         #main(cmd_str.split(' '))
         cmd_str = f'-cfg {self.config_file} task_2 -fh 2'
         main(cmd_str.split(' '))
+
+    def test_commandline_task3(self):
+        cmd_str = f'-cfg {self.config_file} task_3 --flag cv -ind 0'
+        main(cmd_str.split(' '))
+        assert 1==1
 
     def test_hist_load(self, ):
         #monkeypatch.setattr(LoadData, "query_train_data", mock_train_load)

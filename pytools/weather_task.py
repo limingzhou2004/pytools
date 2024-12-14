@@ -21,11 +21,12 @@ from pytools.arg_class import ArgClass
 from pytools.data_prep.herbie_wrapper import download_hist_fst_data
 from pytools.modeling.dataset import WeatherDataSet, check_fix_missings, read_weather_data_from_config
 from pytools.modeling.rolling_forecast import RollingForecast
+from pytools.modeling.ts_weather_net import TSWeatherNet
 from pytools.modeling.utilities import extract_model_settings
 from pytools.modeling.weather_net import WeatherNet, default_layer_sizes, ModelSettings
 from pytools.modeling.mlflow_helper import save_model, load_model
 from pytools.modeling.weather_task_helpers import (
-    get_npz_train_weather_file_name,
+  #  get_npz_train_weather_file_name,
     get_training_data,
     prepare_train_data,
     prepare_train_model,
@@ -50,6 +51,9 @@ from pytools.config import Config, DataType
 hrrr_hist_max_fst_hour = 0
 logger = get_logger("weather_tasks")
 #weather_data_file_name = 'weather_data.npz'
+
+train_loader_settings = {'batch_size':256, 'shuffle':True, 'drop_last':True, 'pin_memory':True, 'num_workers':4}
+test_loader_settings = {'batch_size':256, 'shuffle':False, 'drop_last':False, 'num_workers':4}
 
 
 def hist_load(
@@ -394,19 +398,26 @@ def task_3(**args):
     flag = args['flag']
     config = Config(args['config_file'])
     load_data, w_paras, w_timestamp, w_data = read_weather_data_from_config(config, year=-1)
+    logger.info(f'Use these weather parameters... {w_paras}')
     load_arr, wea_arr, t = check_fix_missings(load_arr=load_data, w_timestamp=w_timestamp, w_arr=w_data)
-
+    ind = args['ind']
     if flag.startswith('cv_'):
         prefix = 'cv'
+        ds_test =  WeatherDataSet(flag=f'{prefix}_test',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
+        loader_test = DataLoader(ds_test, **test_loader_settings)
+        ds_val =  WeatherDataSet(flag=f'{prefix}_val',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
+        loader_val = DataLoader(ds_val, **test_loader_settings)
     elif flag.startswith('final_'):
         prefix= 'final_train'
-    ind = args['ind']
+    
     train_flag = f'{prefix}_train'
     ds_train = WeatherDataSet(flag=train_flag,tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
-    ds_test =  WeatherDataSet(flag=f'{prefix}_test',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
-    ds_val =  WeatherDataSet(flag=f'{prefix}_val',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
+    loader_train = DataLoader(ds_train, **train_loader_settings)
+    wea_input_shape = wea_arr.shape
+    m = TSWeatherNet(wea_arr_shape=wea_input_shape, config=config)
 
-    #return train_data_assemble(**args)
+
+
 
 
 def task_4(**args):

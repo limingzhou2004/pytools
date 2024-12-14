@@ -301,21 +301,14 @@ class TSWeatherNet(pl.LightningModule):
             dict(self.model_settings._asdict()), {"test_loss": avg_loss}
         )
 
-    def train_dataloader(self):
-        # REQUIRED
-        batch_size =  extract_a_field(self.model_settings, "batch_size", 32)
-        return DataLoader(0, batch_size)
 
-    def val_dataloader(self):
-        # OPTIONAL
-        return None
+def cv_train_ts_weather_net(sce_id, config:Config):
 
-    def test_dataloader(self):
-        # OPTIONAL
-        return DataLoader()
+    return
 
-    def add_model_specific_args(self):
-        return
+def final_train_ts_weather_net(config:Config):
+
+    return
 
 
 
