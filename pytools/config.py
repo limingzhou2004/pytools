@@ -173,7 +173,6 @@ class Model(BaseModel):
     filter_net: Dict
     mixed_net: Dict
 
-
     models: List
 
 

@@ -218,9 +218,7 @@ class TSWeatherNet(pl.LightningModule):
         seq_wea_y = torch.zeros(B, seq_length, wea_channel_num)
         wea_y = torch.zeros(B, w_dim, wea_channel_num)
         seq_ext_y = torch.zeros(B, seq_length, self.ext_channels)
-        ext_y = torch.zeros([B, e_dim, self.ext_channels])
-
-        
+        ext_y = torch.zeros([B, e_dim, self.ext_channels])        
 
         for i in range(seq_length):
             seq_wea_y[:,i,:] = self.wea_net(seq_wea_arr[:,i,...])
@@ -239,9 +237,9 @@ class TSWeatherNet(pl.LightningModule):
 
     def training_step(self, batch, batch_nb):
         # REQUIRED
-        wea, lag, c, y = batch
-        y_hat = self(wea, lag, c)
-        loss = F.mse_loss(y_hat, y)
+        seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target = batch
+        y_hat = self(seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr)
+        loss = F.mse_loss(y_hat, target)
         return {"loss": loss}
 
     def training_epoch_end(self, outputs):
@@ -256,8 +254,8 @@ class TSWeatherNet(pl.LightningModule):
         self.log("train_loss", float(avg_loss.squeeze()))
 
     def _busi_loss_metrics(self, scaled_loss):
-        abs_loss = self._load_scaler.inverse_transform(scaled_loss.reshape((-1, 1)))
-        relative_loss = abs_loss / self._load_mean
+        abs_loss = self._scaler.inverse_transform(scaled_loss.reshape((-1, 1)))
+        relative_loss = abs_loss / self._mean
         return {
             "abs_loss": float(abs_loss.squeeze()),
             "relative_loss": float(relative_loss.squeeze()),
@@ -266,9 +264,9 @@ class TSWeatherNet(pl.LightningModule):
 
     def validation_step(self, batch, batch_nb):
         # OPTIONAL
-        wea, lag, c, y = batch
-        y_hat = self(wea, lag, c)
-        loss = F.mse_loss(y_hat, y)
+        seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target = batch
+        y_hat = self(seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr)
+        loss = F.mse_loss(y_hat, target)
         return {"loss": loss}
 
     def validation_epoch_end(self, outputs):
@@ -282,9 +280,9 @@ class TSWeatherNet(pl.LightningModule):
 
     def test_step(self, batch, batch_nb):
         # OPTIONAL
-        wea, lag, c, y = batch
-        y_hat = self(wea, lag, c)
-        loss = F.mse_loss(y_hat, y)
+        seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target = batch
+        y_hat = self(seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr)
+        loss = F.mse_loss(y_hat, target)
         return {"loss": loss, **self._busi_loss_metrics(loss)}
 
     def test_epoch_end(self, outputs):
@@ -300,6 +298,10 @@ class TSWeatherNet(pl.LightningModule):
         self._mdl_logger.experiment.add_hparams(
             dict(self.model_settings._asdict()), {"test_loss": avg_loss}
         )
+
+    def setup_mean(self, target_arr, scaler):
+        self._mean = target_arr.mean()
+        self._scaler = scaler
 
 
 def cv_train_ts_weather_net(sce_id, config:Config):

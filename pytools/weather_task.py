@@ -15,6 +15,7 @@ import pandas as pd
 
 # from pytools.modeling.dataset import WeatherDataSet
 from pytorch_lightning.callbacks import EarlyStopping
+import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 
 from pytools.arg_class import ArgClass
@@ -150,6 +151,37 @@ def past_fst_weather_prepare(config_file:str, fst_hour=48, year=-1, month=-1):
         pickle.dump([spot_time, weather_arr],f)
     
 
+def get_trainer(config:Config):
+    trainer = pl.Trainer(
+        default_root_dir=os.path.join(CHECKPOINT_PATH, "cifar10_%i" % latent_dim),
+        accelerator="auto",
+        devices=1,
+        max_epochs=500,
+        callbacks=[
+            ModelCheckpoint(save_weights_only=True),
+            GenerateCallback(get_train_images(8), every_n_epochs=10),
+            LearningRateMonitor("epoch"),
+        ],
+    )
+    trainer.logger._log_graph = True  # If True, we plot the computation graph in tensorboard
+    trainer.logger._default_hp_metric = None  # Optional logging argument that we don't need
+
+    # Check whether pretrained model exists. If yes, load it and skip training
+    pretrained_filename = os.path.join(CHECKPOINT_PATH, "cifar10_%i.ckpt" % latent_dim)
+    if os.path.isfile(pretrained_filename):
+        print("Found pretrained model, loading...")
+        model = Autoencoder.load_from_checkpoint(pretrained_filename)
+    else:
+        model = Autoencoder(base_channel_size=32, latent_dim=latent_dim)
+        trainer.fit(model, train_loader, val_loader)
+    # Test best model on validation and test set
+    val_result = trainer.test(model, dataloaders=val_loader, verbose=False)
+    test_result = trainer.test(model, dataloaders=test_loader, verbose=False)
+    result = {"test": test_result, "val": val_result}
+    return model, result
+    return
+
+
 # def train_data_assemble(
 #     config_file: str, suffix='v0', 
 # ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
@@ -203,7 +235,7 @@ def past_fst_weather_prepare(config_file:str, fst_hour=48, year=-1, month=-1):
 
 def train_model(
     config_file: str,
-    fst_hours: int,
+   # fst_hours: int,
     train_options,
     tracking_uri,
     model_uri,
@@ -415,6 +447,7 @@ def task_3(**args):
     loader_train = DataLoader(ds_train, **train_loader_settings)
     wea_input_shape = wea_arr.shape
     m = TSWeatherNet(wea_arr_shape=wea_input_shape, config=config)
+
 
 
 
