@@ -14,15 +14,16 @@ import pandas as pd
 # from torch.utils.data.dataloader import DataLoader
 
 # from pytools.modeling.dataset import WeatherDataSet
-from pytorch_lightning.callbacks import EarlyStopping
-import pytorch_lightning as pl
+from lightning.pytorch.callbacks import EarlyStopping
+from lightning.pytorch.tuner import Tuner
+import lightning as pl
 from torch.utils.data import DataLoader
 
 from pytools.arg_class import ArgClass
 from pytools.data_prep.herbie_wrapper import download_hist_fst_data
 from pytools.modeling.dataset import WeatherDataSet, check_fix_missings, read_weather_data_from_config
 from pytools.modeling.rolling_forecast import RollingForecast
-from pytools.modeling.ts_weather_net import TSWeatherNet
+from pytools.modeling.ts_weather_net import TSWeatherNet, TsWeaDataModule
 from pytools.modeling.utilities import extract_model_settings
 from pytools.modeling.weather_net import WeatherNet, default_layer_sizes, ModelSettings
 from pytools.modeling.mlflow_helper import save_model, load_model
@@ -162,7 +163,7 @@ def get_trainer(config:Config):
         mode="min",
     )
     trainer = pl.Trainer(
-        auto_lr_find=True,
+      #  auto_lr_find=True,
         callbacks=early_stop_callback,
         check_val_every_n_epoch=setting['epoch_step'],
         max_epochs=setting['epoch_num'],
@@ -420,25 +421,58 @@ def task_3(**args):
     load_data, w_paras, w_timestamp, w_data = read_weather_data_from_config(config, year=-1)
     logger.info(f'Use these weather parameters... {w_paras}')
     load_arr, wea_arr, t = check_fix_missings(load_arr=load_data, w_timestamp=w_timestamp, w_arr=w_data)
+    wea_arr = wea_arr.astype(np.float32)
+    load_arr = load_arr.astype(np.float32)
+
     ind = args['ind']
-    if flag.startswith('cv_'):
+    if flag.startswith('cv'):
         prefix = 'cv'
         ds_test =  WeatherDataSet(flag=f'{prefix}_test',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
         loader_test = DataLoader(ds_test, **test_loader_settings)
         ds_val =  WeatherDataSet(flag=f'{prefix}_val',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
         loader_val = DataLoader(ds_val, **test_loader_settings)
-    elif flag.startswith('final_'):
+    elif flag.startswith('final'):
         prefix= 'final_train'
     
     train_flag = f'{prefix}_train'
     ds_train = WeatherDataSet(flag=train_flag,tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
-    loader_train = DataLoader(ds_train, **train_loader_settings)
-    wea_input_shape = wea_arr.shape
-    m = TSWeatherNet(wea_arr_shape=wea_input_shape, config=config)
-    trainer = get_trainer(config)
     
+    loader_train = DataLoader(ds_train, **train_loader_settings)
+    # add the batch dim
+    wea_input_shape = [1, *wea_arr.shape]
+    m = TSWeatherNet(wea_arr_shape=wea_input_shape, config=config)
+    m.setup_mean(scaler=ds_train.scaler, target_mean=ds_train.target_mean)
+    trainer = get_trainer(config)
+    tuner = Tuner(trainer)
 
+    #m.to('mps')
+    #ldm_loader_train = pl.LightningDataModule(loader_train)
+    def train_dl():
+        return DataLoader(ds_train, batch_size=m.batch_size)
+    
+    dm = TsWeaDataModule(batch_size=m.batch_size)
+    dm.train_dataloader = train_dl
+    #tuner.scale_batch_size(m, datamodule=dm)
+    lr_finder = tuner.lr_find(m, datamodule=dm)
 
+    print(lr_finder.results)
+
+    # Plot with
+    fig = lr_finder.plot(suggest=True)
+    fig.show()
+
+    # Pick point based on plot, or get suggestion
+    new_lr = lr_finder.suggestion()
+
+    # update hparams of the model
+    m.hparams.lr = new_lr
+
+    # Fit model
+    trainer.fit(m)
+
+    trainer.fit(m, loader_train, loader_val)
+    test_res = trainer.test(m, loader_test, verbose=False)
+    logger.info(f'test results: {test_res}')
 
 
 

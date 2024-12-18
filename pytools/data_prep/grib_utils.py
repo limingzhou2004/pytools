@@ -157,7 +157,7 @@ def extract_data_from_grib2(fn_arr:str, lon:float=None, lat:float=None, radius:U
         envelope (List): index [left-west, right-east, lower-south, upper-north] 
 
     Returns:
-        np.ndarray: 3D tensor extracted np array, envelopes, west->east:south->north:parameter 
+        np.ndarray[np.float32]: 3D tensor extracted np array, envelopes, west->east:south->north:parameter 
     """
 
     if paras is None:
@@ -186,7 +186,7 @@ def extract_data_from_grib2(fn_arr:str, lon:float=None, lat:float=None, radius:U
             if len(x.shape)>2:
                 x = ds[p].data[ground_2m_dim, south_ind:(north_ind+1), west_ind:(east_ind+1)]
                 
-            arr_list.append(x)
+            arr_list.append(x.astype(np.float32))
 
     if return_latlon:
         return (np.stack(arr_list, axis=2), envelope,

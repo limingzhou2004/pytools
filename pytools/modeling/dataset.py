@@ -14,8 +14,7 @@ from torch.utils import data
 from pytools.config import Config
 from pytools.config import DataType
 from pytools.modeling.scaler import Scaler, load
-from pytools.modeling.weather_net import WeatherPara
-
+#from pytools.modeling.weather_net import WeatherPara
 
 
 class WeatherDataSet(data.Dataset):
@@ -57,8 +56,12 @@ class WeatherDataSet(data.Dataset):
                 scaler = Scaler(self._target, self._wea_arr, scaler_type=config.model_pdt.scaler_type)
                 scaler.save(self._fn_scaler)
 
+            self.target_mean = self._target.mean()
             self._target = scaler.scale_target(self._target)
             self._wea_arr = scaler.scale_arr([self._wea_arr])[0]
+
+            self.scaler = scaler
+
       
         # load the data, and selec the subset, based on flag, ind
         # filter by t0 and t1
@@ -118,7 +121,7 @@ class WeatherDataSet(data.Dataset):
 
         """
  
-        return len(self._sample_iter)
+        return len(self._sample_list)
 
     def __getitem__(self, index) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
         """
@@ -142,12 +145,12 @@ class WeatherDataSet(data.Dataset):
         ar_ind1 = index + self._seq_length
         target_ind0 += self._fst_horizeon[0] - 1
         return (
-            self._wea_arr[ar_ind0:ar_ind1, ...],
-            self._ext[ar_ind0:ar_ind1, :],
-            self._target[ar_ind0:ar_ind1,...],
-            self._wea_arr[wea_ind0:wea_ind1, ...],
-            self._ext[ext_ind0:ext_ind1, :],
-            self._target[target_ind0:target_ind1,...]
+            torch.tensor(self._wea_arr[ar_ind0:ar_ind1, ...]),
+            torch.tensor(self._ext[ar_ind0:ar_ind1, :]),
+            torch.tensor(self._target[ar_ind0:ar_ind1,...]),
+            torch.tensor(self._wea_arr[wea_ind0:wea_ind1, ...]),
+            torch.tensor(self._ext[ext_ind0:ext_ind1, :]),
+            torch.tensor(self._target[target_ind0:target_ind1,...])
         )
 
 

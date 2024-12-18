@@ -26,7 +26,7 @@ class TestWeatherDataPrep:
         fn_generate = wp.get_datetime_from_grib_file_name(fn, hour_offset=-5)
         assert fn_generate == np.datetime64("2019-06-23T12:00:00.000000")
 
-
+    @DeprecationWarning
     def test_make_npy_data_from_inventory(self, cur_toml_file):
         config = Config(filename=cur_toml_file)
         d = hist_load(config_file=cur_toml_file, create=False)
@@ -37,11 +37,11 @@ class TestWeatherDataPrep:
         rect=config.site["rect"],)
         
         w_obj = d.weather.make_npy_data_from_inventory(
-            center=config.site['center'],
-            rect=config.site['rect'],
+           #center=config.site['center'],
+           # rect=config.site['rect'],
             inventory_file=config.weather_pdt.hist_weather_pickle,
             parallel=False,
-            folder_col_name=config.weather_pdt.folder_col_name,
+            folder_col_name=config.weather_pdt.fullfile_col_name,
             filename_col_name=config.weather_pdt.filename_col_name,
             type_col_name=config.weather_pdt.type_col_name,
             t0=np.datetime64('2018-01-01'),
@@ -51,6 +51,7 @@ class TestWeatherDataPrep:
         w_obj.save_unscaled_npz('albany_test.npz')
         assert w_obj.shape[0]>0
 
+    @DeprecationWarning
     def test_make_npy_data(self, cur_toml_file, weather_type):
         config = Config(filename=cur_toml_file)
         d: dm.DataPrepManager = dm.load(

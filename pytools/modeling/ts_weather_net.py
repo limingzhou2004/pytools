@@ -1,3 +1,4 @@
+from copy import deepcopy
 from functools import reduce
 from operator import mul
 import os.path as osp
@@ -7,9 +8,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data.dataloader import DataLoader
 
-import pytorch_lightning as pl
-from pytorch_lightning.loggers import TensorBoardLogger
-from pytorch_lightning.callbacks import ModelCheckpoint
+import lightning as pl
+from lightning.pytorch.loggers import TensorBoardLogger
+from lightning.pytorch.callbacks import ModelCheckpoint
 # from einops import rearrange, repeat, pack, unpack
 # from xlstm import (
 #     xLSTMBlockStack,
@@ -154,6 +155,8 @@ class TSWeatherNet(pl.LightningModule):
         super().__init__()
         self.model_settings = config.model_pdt.model_settings
         fn = config.get_model_file_name(class_name='model', extension='.ckpt')
+        self.lr = config.model_pdt.model_settings['lr']
+        self.batch_size = config.model_pdt.model_settings['batch_size']
         self.checkpoint_callback = ModelCheckpoint(
             dirpath=osp.dirname(fn),
             filename=osp.basename(fn),
@@ -162,7 +165,7 @@ class TSWeatherNet(pl.LightningModule):
             mode="min",
         )
         self._mdl_logger: TensorBoardLogger = None
-        self._wea_arr_shape = wea_arr_shape.copy()
+        self._wea_arr_shape = deepcopy(wea_arr_shape)
 
         seq_dim = config.model_pdt.seq_dim
         wea_layer_paras = config.model_pdt.cov_net
@@ -198,14 +201,15 @@ class TSWeatherNet(pl.LightningModule):
 
     def configure_optimizers(self, label='multi_linear'):
         # REQUIRED
-        m_linear = [p for name, p in self.named_parameters() if label in name]
-        others = [p for name, p in self.named_parameters() if label not in name]
+        # m_linear = [p for name, p in self.named_parameters() if label in name]
+        # others = [p for name, p in self.named_parameters() if label not in name]
 
-        return torch.optim.Adam([{'paras':m_linear}, {'paras':others, 'weight_decay':0}], 
-                                weight_decay=self.model_settings['weight_decay'], lr=self.model_settings['lr'])
+        #return torch.optim.Adam([{'paras':m_linear}, {'paras':others, 'weight_decay':0}], 
+                                #weight_decay=self.model_settings['weight_decay'], lr=self.#model_settings['lr'])
+        return torch.optim.Adam(self.parameters(), lr=(self.lr))
     
     def forward(self, seq_wea_arr, seq_ext_arr, seq_target, wea_arr, ext_arr):
-
+        device = seq_wea_arr.device
         self.revin_layer(seq_target,'norm')
         B= seq_wea_arr.shape[0]
         seq_wea_arr = seq_wea_arr.detach().clone()
@@ -215,10 +219,11 @@ class TSWeatherNet(pl.LightningModule):
         seq_length = self._seq_length
         w_dim = wea_arr.shape[1]
         e_dim = ext_arr.shape[1]
-        seq_wea_y = torch.zeros(B, seq_length, wea_channel_num)
-        wea_y = torch.zeros(B, w_dim, wea_channel_num)
-        seq_ext_y = torch.zeros(B, seq_length, self.ext_channels)
-        ext_y = torch.zeros([B, e_dim, self.ext_channels])        
+        
+        seq_wea_y = torch.zeros(B, seq_length, wea_channel_num, device=device)
+        wea_y = torch.zeros(B, w_dim, wea_channel_num, device=device)
+        seq_ext_y = torch.zeros(B, seq_length, self.ext_channels, device=device)
+        ext_y = torch.zeros([B, e_dim, self.ext_channels], device=device)        
 
         for i in range(seq_length):
             seq_wea_y[:,i,:] = self.wea_net(seq_wea_arr[:,i,...])
@@ -232,8 +237,7 @@ class TSWeatherNet(pl.LightningModule):
 
         y = self.mixed_output(seq_y, ext_y, wea_y)
         y = self.revin_layer(y, 'denorm')
-        return y
-    
+        return y    
 
     def training_step(self, batch, batch_nb):
         # REQUIRED
@@ -242,7 +246,7 @@ class TSWeatherNet(pl.LightningModule):
         loss = F.mse_loss(y_hat, target)
         return {"loss": loss}
 
-    def training_epoch_end(self, outputs):
+    def on_training_epoch_end(self, outputs):
         #  the function is called after every epoch is completed
         avg_loss = torch.stack([x["loss"] for x in outputs]).mean()
         self._mdl_logger.experiment.add_scalar(
@@ -269,7 +273,7 @@ class TSWeatherNet(pl.LightningModule):
         loss = F.mse_loss(y_hat, target)
         return {"loss": loss}
 
-    def validation_epoch_end(self, outputs):
+    def on_validation_epoch_end(self, outputs):
         # OPTIONAL
         avg_loss = torch.stack([x["loss"] for x in outputs]).mean()
         self._mdl_logger.experiment.add_scalar("loss/val", avg_loss, self.current_epoch)
@@ -299,9 +303,15 @@ class TSWeatherNet(pl.LightningModule):
             dict(self.model_settings._asdict()), {"test_loss": avg_loss}
         )
 
-    def setup_mean(self, target_arr, scaler):
-        self._mean = target_arr.mean()
+    def setup_mean(self, target_mean, scaler):
+        self._mean = target_mean
         self._scaler = scaler
+
+
+class TsWeaDataModule(pl.LightningDataModule):
+    def __init__(self, batch_size):
+        self.batch_size = batch_size
+        self.allow_zero_length_dataloader_with_multiple_devices = True
 
 
 def cv_train_ts_weather_net(sce_id, config:Config):
