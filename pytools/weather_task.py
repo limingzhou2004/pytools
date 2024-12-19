@@ -156,14 +156,13 @@ def get_trainer(config:Config):
     setting = config.model_pdt.model_settings
 
     early_stop_callback = EarlyStopping(
-        monitor="val_loss",
+        monitor="validation_epoch_average",
         min_delta=setting['min_delta'],
         patience=setting['patience'],
         verbose=False,
         mode="min",
     )
     trainer = pl.Trainer(
-      #  auto_lr_find=True,
         callbacks=early_stop_callback,
         check_val_every_n_epoch=setting['epoch_step'],
         max_epochs=setting['epoch_num'],
@@ -437,7 +436,7 @@ def task_3(**args):
     train_flag = f'{prefix}_train'
     ds_train = WeatherDataSet(flag=train_flag,tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
     
-    loader_train = DataLoader(ds_train, **train_loader_settings)
+    #loader_train = DataLoader(ds_train, **train_loader_settings)
     # add the batch dim
     wea_input_shape = [1, *wea_arr.shape]
     m = TSWeatherNet(wea_arr_shape=wea_input_shape, config=config)
@@ -450,31 +449,39 @@ def task_3(**args):
     def train_dl():
         return DataLoader(ds_train, batch_size=m.batch_size)
     
+    def test_dl():
+        return DataLoader(ds_test, batch_size=m.batch_size)
+    
+    def val_dl():
+        return DataLoader(ds_val, batch_size=m.batch_size)
+    
     dm = TsWeaDataModule(batch_size=m.batch_size)
     dm.train_dataloader = train_dl
-    #tuner.scale_batch_size(m, datamodule=dm)
-    lr_finder = tuner.lr_find(m, datamodule=dm)
+    dm.test_dataloader = test_dl
+    dm.val_dataloader = val_dl
+    sub_task = args['sub']
+    if sub_task == 'find_batch_size':
+        tuner.scale_batch_size(m, datamodule=dm)
+        return
+    if sub_task == 'find_lr':
+        lr_finder = tuner.lr_find(m, datamodule=dm)
+        print(lr_finder.results)
+        # Plot with
+        fig = lr_finder.plot(suggest=True)
+        fig.show()
 
-    print(lr_finder.results)
-
-    # Plot with
-    fig = lr_finder.plot(suggest=True)
-    fig.show()
-
-    # Pick point based on plot, or get suggestion
-    new_lr = lr_finder.suggestion()
+        # Pick point based on plot, or get suggestion
+        new_lr = lr_finder.suggestion()
+        logger.info(f'suggested lr: {new_lr}')
+        return
 
     # update hparams of the model
-    m.hparams.lr = new_lr
-
+    #m.hparams.lr = new_lr
     # Fit model
-    trainer.fit(m)
+    trainer.fit(m, datamodule=dm)
 
-    trainer.fit(m, loader_train, loader_val)
-    test_res = trainer.test(m, loader_test, verbose=False)
+    test_res = trainer.test(m, datamodule=dm, verbose=False)
     logger.info(f'test results: {test_res}')
-
-
 
 
 

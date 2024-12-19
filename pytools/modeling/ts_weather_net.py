@@ -6,7 +6,7 @@ import os.path as osp
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data.dataloader import DataLoader
+#from torch.utils.data.dataloader import DataLoader
 
 import lightning as pl
 from lightning.pytorch.loggers import TensorBoardLogger
@@ -20,7 +20,7 @@ from lightning.pytorch.callbacks import ModelCheckpoint
 #     mLSTMBlockConfig,
 # )
 
-from pytools.modeling.StandardNorm import Normalize as RevIN
+from pytools.modeling.RevIN import  RevIN
 
 from pytools.config import Config
 from pytools.modeling.TexFilter import SeqModel
@@ -64,11 +64,12 @@ class MixedOutput(nn.Module):
 
     def forward(self, seq_arr, ext_arr, wea_arr):
         # B, pred_len, channel
+        device = seq_arr.device
         B = wea_arr.shape[0]
         seq_arr = self.ts_latent_model(seq_arr)
         seq_cross = seq_arr.shape[1] * seq_arr.shape[2]
 
-        y = torch.zeros(B, self._pred_len)
+        y = torch.zeros(B, self._pred_len, device=device)
         wea_arr = self.wea_cov1d.forward(torch.permute(wea_arr,[0, 2, 1]))
         ext_arr = self.ext_cov1d.forward(torch.permute(ext_arr, [0, 2, 1]))
         delta =  wea_arr.shape[-1] - self._pred_len
@@ -178,6 +179,8 @@ class TSWeatherNet(pl.LightningModule):
         self.wea_net = WeaCov(input_shape=wea_arr_shape, layer_paras=wea_layer_paras)
         self._pred_length = pred_length
 
+        self.validation_step_outputs = []
+
         #filter_net
         in_channel = 1 if isinstance(config.model_pdt.target_ind, int) else len(config.model_pdt.target_ind)
         self.revin_layer = RevIN(in_channel, affine=True, subtract_last=False)
@@ -271,16 +274,21 @@ class TSWeatherNet(pl.LightningModule):
         seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target = batch
         y_hat = self(seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr)
         loss = F.mse_loss(y_hat, target)
+        self.validation_step_outputs.append(loss)
         return {"loss": loss}
 
-    def on_validation_epoch_end(self, outputs):
+    def on_validation_epoch_end(self):
         # OPTIONAL
-        avg_loss = torch.stack([x["loss"] for x in outputs]).mean()
-        self._mdl_logger.experiment.add_scalar("loss/val", avg_loss, self.current_epoch)
-        for k, v in self._busi_loss_metrics(avg_loss).items():
-            self._mdl_logger.experiment.add_scalar(k, v, self.current_epoch)
-            self.log(k, v)
-        self.log("val_loss", float(avg_loss.squeeze()))
+        # avg_loss = torch.stack([x["loss"] for x in outputs]).mean()
+        # self._mdl_logger.experiment.add_scalar("loss/val", avg_loss, self.current_epoch)
+        # for k, v in self._busi_loss_metrics(avg_loss).items():
+        #     self._mdl_logger.experiment.add_scalar(k, v, self.current_epoch)
+        #     self.log(k, v)
+        # self.log("val_loss", float(avg_loss.squeeze()))
+        epoch_average = torch.stack(self.validation_step_outputs).mean()
+        self.log("validation_epoch_average", epoch_average)
+        self.validation_step_outputs.clear()  # free memory
+
 
     def test_step(self, batch, batch_nb):
         # OPTIONAL
@@ -289,7 +297,7 @@ class TSWeatherNet(pl.LightningModule):
         loss = F.mse_loss(y_hat, target)
         return {"loss": loss, **self._busi_loss_metrics(loss)}
 
-    def test_epoch_end(self, outputs):
+    def on_test_epoch_end(self, outputs):
         # OPTIONAL
         avg_loss = torch.stack([x["loss"] for x in outputs]).mean()
         self._mdl_logger.experiment.add_scalar(
@@ -310,6 +318,7 @@ class TSWeatherNet(pl.LightningModule):
 
 class TsWeaDataModule(pl.LightningDataModule):
     def __init__(self, batch_size):
+        super().__init__()
         self.batch_size = batch_size
         self.allow_zero_length_dataloader_with_multiple_devices = True
 
