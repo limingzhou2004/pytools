@@ -7,8 +7,8 @@
  state = "NY"
  base_folder = "~/zhoul/work/energy/sites/albany-test"
  name = "Albany-NY"
- # alias is the name for each project
- alias = "albany-test"
+ # alias is the folder name for each project
+ folder_name = "albany-test"
  sql_location = "CAPITL"
  back_fst_window = ["2020-01-01 00:00", "2025-01-01 00:00"]
  #site_folder = "nyiso"
@@ -88,11 +88,11 @@ model_settings.weight_decay=0.001
 model_settings.epoch=20
 model_settings.batch_size=1
 model_settings.check_val_every_n_epoch=1
-model_settings.max_epochs=3
+model_settings.max_epochs=30
 model_settings.min_delta=1
 model_settings.patience=1
 model_settings.epoch_step=1
-model_settings.epoch_num=3
+#model_settings.epoch_num=3
 
 #----- model layer configuration parameters
 cov_net.cov1.kernel=3

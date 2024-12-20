@@ -148,10 +148,7 @@ class WeaCov(nn.Module):
 
 class TSWeatherNet(pl.LightningModule):
 
-    def __init__(self, wea_arr_shape, 
-                 #wea_layer_paras, lstm_layer_paras, pred_length, seq_dim=1,
-                 config:Config,
-                  ):
+    def __init__(self, wea_arr_shape, config:Config):
         # wea_arr_shape, N, Seq, x, y, channel/para
         super().__init__()
         self.model_settings = config.model_pdt.model_settings
@@ -162,12 +159,11 @@ class TSWeatherNet(pl.LightningModule):
             dirpath=osp.dirname(fn),
             filename=osp.basename(fn),
             verbose=True,
-            monitor="val_loss",
-            mode="min",
+            monitor='validation_epoch_average',
+            mode='min',
         )
-        self._mdl_logger: TensorBoardLogger = None
+        #self._mdl_logger: TensorBoardLogger = None
         self._wea_arr_shape = deepcopy(wea_arr_shape)
-
         seq_dim = config.model_pdt.seq_dim
         wea_layer_paras = config.model_pdt.cov_net
         filter_net_paras = config.model_pdt.filter_net
@@ -247,72 +243,75 @@ class TSWeatherNet(pl.LightningModule):
         seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target = batch
         y_hat = self(seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr)
         loss = F.mse_loss(y_hat, target)
-        return {"loss": loss}
+        self.log('training RMSE loss',torch.sqrt(loss))
+        return torch.sqrt(loss)
 
-    def on_training_epoch_end(self, outputs):
-        #  the function is called after every epoch is completed
-        avg_loss = torch.stack([x["loss"] for x in outputs]).mean()
-        self._mdl_logger.experiment.add_scalar(
-            "loss/train", avg_loss, self.current_epoch
-        )
-        for k, v in self._busi_loss_metrics(avg_loss).items():
-            self._mdl_logger.experiment.add_scalar(k, v, self.current_epoch)
-            self.log(k, v)
-        self.log("train_loss", float(avg_loss.squeeze()))
+    # def on_training_epoch_end(self, outputs):
+    #     #  the function is called after every epoch is completed
+    #     avg_loss = torch.stack([x["RMSE loss"] for x in outputs]).mean()
+    #     # self._mdl_logger.experiment.add_scalar(
+    #     #     "loss/train", avg_loss, self.current_epoch
+    #     # )
+    #     # for k, v in self._busi_loss_metrics(avg_loss).items():
+    #     #     self._mdl_logger.experiment.add_scalar(k, v, self.current_epoch)
+    #     #     self.log(k, v)
+    #     self.log("train_rmse_loss", float(avg_loss.squeeze()))
 
     def _busi_loss_metrics(self, scaled_loss):
-        abs_loss = self._scaler.inverse_transform(scaled_loss.reshape((-1, 1)))
-        relative_loss = abs_loss / self._mean
+        abs_loss = self._scaler.unscale_target(scaled_loss.cpu().reshape((-1, 1)))
+        relative_loss = abs_loss / self._target_mean
         return {
-            "abs_loss": float(abs_loss.squeeze()),
-            "relative_loss": float(relative_loss.squeeze()),
-            "y_mean": self._load_mean,
+            "abs_loss(MAE)": float(abs_loss.squeeze()),
+            "relative_loss(RMAE)": float(relative_loss.squeeze()),
+            "y_mean": self._target_mean,
         }
 
     def validation_step(self, batch, batch_nb):
         # OPTIONAL
         seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target = batch
         y_hat = self(seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr)
-        loss = F.mse_loss(y_hat, target)
-        self.validation_step_outputs.append(loss)
-        return {"loss": loss}
+        loss = torch.sqrt(F.mse_loss(y_hat, target))
+       # self.validation_step_outputs.append(loss)
+        self.log('val RSME loss', torch.sqrt(loss))
+        return torch.sqrt(loss)
 
-    def on_validation_epoch_end(self):
-        # OPTIONAL
-        # avg_loss = torch.stack([x["loss"] for x in outputs]).mean()
-        # self._mdl_logger.experiment.add_scalar("loss/val", avg_loss, self.current_epoch)
-        # for k, v in self._busi_loss_metrics(avg_loss).items():
-        #     self._mdl_logger.experiment.add_scalar(k, v, self.current_epoch)
-        #     self.log(k, v)
-        # self.log("val_loss", float(avg_loss.squeeze()))
-        epoch_average = torch.stack(self.validation_step_outputs).mean()
-        self.log("validation_epoch_average", epoch_average)
-        self.validation_step_outputs.clear()  # free memory
+    # def on_validation_epoch_end(self):
+    #     # OPTIONAL
+    #     # avg_loss = torch.stack([x["loss"] for x in outputs]).mean()
+    #     # self._mdl_logger.experiment.add_scalar("loss/val", avg_loss, self.current_epoch)
+    #     # for k, v in self._busi_loss_metrics(avg_loss).items():
+    #     #     self._mdl_logger.experiment.add_scalar(k, v, self.current_epoch)
+    #     #     self.log(k, v)
+    #     # self.log("val_loss", float(avg_loss.squeeze()))
+    #     epoch_average = torch.stack(self.validation_step_outputs).mean()
+    #     self.log('validation_epoch_average', epoch_average)
+    #     self.validation_step_outputs.clear()  # free memory
 
 
     def test_step(self, batch, batch_nb):
         # OPTIONAL
         seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target = batch
         y_hat = self(seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr)
-        loss = F.mse_loss(y_hat, target)
-        return {"loss": loss, **self._busi_loss_metrics(loss)}
+        loss = torch.sqrt(F.mse_loss(y_hat, target))
+        self.log('test RSME loss', loss, **self._busi_loss_metrics(loss))
+        return loss
 
-    def on_test_epoch_end(self, outputs):
-        # OPTIONAL
-        avg_loss = torch.stack([x["loss"] for x in outputs]).mean()
-        self._mdl_logger.experiment.add_scalar(
-            "loss/test", avg_loss, self.current_epoch
-        )
-        for k, v in self._busi_loss_metrics(avg_loss).items():
-            self._mdl_logger.experiment.add_scalar(k, v, self.current_epoch)
-            self.log(k, v)
-        self.log("test_loss", float(avg_loss.squeeze()))
-        self._mdl_logger.experiment.add_hparams(
-            dict(self.model_settings._asdict()), {"test_loss": avg_loss}
-        )
+    # def on_test_epoch_end(self):
+    #     # OPTIONAL
+    #     #avg_loss = torch.stack([x["loss"] for x in outputs]).mean()
+    #     self._mdl_logger.experiment.add_scalar(
+    #         "loss/test", avg_loss, self.current_epoch
+    #     )
+    #     for k, v in self._busi_loss_metrics(avg_loss).items():
+    #         self._mdl_logger.experiment.add_scalar(k, v, self.current_epoch)
+    #         self.log(k, v)
+    #     self.log("test_loss", float(avg_loss.squeeze()))
+    #     self._mdl_logger.experiment.add_hparams(
+    #         dict(self.model_settings._asdict()), {"test_loss": avg_loss}
+    #     )
 
     def setup_mean(self, target_mean, scaler):
-        self._mean = target_mean
+        self._target_mean = target_mean
         self._scaler = scaler
 
 
