@@ -293,7 +293,8 @@ class TSWeatherNet(pl.LightningModule):
         seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target = batch
         y_hat = self(seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr)
         loss = torch.sqrt(F.mse_loss(y_hat, target))
-        self.log('test RSME loss', loss, **self._busi_loss_metrics(loss))
+        self.log('test RSME loss', loss)
+        self.log_dict(self._busi_loss_metrics(loss))
         return loss
 
     # def on_test_epoch_end(self):
