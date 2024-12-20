@@ -6,7 +6,6 @@ import os.path as osp
 from typing import Tuple
 
 import torch
-from dateutil import parser
 import mlflow
 import numpy as np
 import pandas as pd
@@ -164,7 +163,7 @@ def get_trainer(config:Config):
     tb_logger = TensorBoardLogger(model_path, name='tensorboard_logger')
     csv_logger = CSVLogger(save_dir=model_path, name='csv_logger')
     trainer = pl.Trainer(
-        default_root_dir=config.site_parent_folder,
+        default_root_dir=model_path,
         callbacks=early_stop_callback,
         check_val_every_n_epoch=setting['epoch_step'],
         max_epochs=setting['max_epochs'],   
@@ -426,15 +425,27 @@ def task_3(**args):
     # update hparams of the model
     #m.hparams.lr = new_lr
     # Fit model
-    trainer.fit(m, datamodule=dm)
+    trainer.fit(m, datamodule=dm,ckpt_path=trainer.ckpt_path)
 
     test_res = trainer.test(m, datamodule=dm, verbose=False)
     logger.info(f'test results: {test_res}')
+    model_name='test.ckpt'
+    ckpt_path = osp.join(config.site_parent_folder,'model', model_name)
 
+    trainer.save_checkpoint(ckpt_path)
+
+    m2 =TSWeatherNet.load_from_checkpoint(ckpt_path)
+
+    m2.eval()
+
+    #y = m2()
 
 
 def task_4(**args):
-    return train_model(**args)
+    # load the model for predictions
+
+
+    return 
 
 
 def task_5(**args):

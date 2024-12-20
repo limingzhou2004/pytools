@@ -150,6 +150,7 @@ class TSWeatherNet(pl.LightningModule):
 
     def __init__(self, wea_arr_shape, config:Config):
         # wea_arr_shape, N, Seq, x, y, channel/para
+        self.save_hyperparameters()
         super().__init__()
         self.model_settings = config.model_pdt.model_settings
         fn = config.get_model_file_name(class_name='model', extension='.ckpt')
@@ -171,8 +172,8 @@ class TSWeatherNet(pl.LightningModule):
         pred_length = config.model_pdt.forecast_horizon[fst_ind][1] - config.model_pdt.forecast_horizon[fst_ind][0] + 1
         self._seq_dim = seq_dim
         self._seq_length = config.model_pdt.seq_length
-        del wea_arr_shape[seq_dim]
-        self.wea_net = WeaCov(input_shape=wea_arr_shape, layer_paras=wea_layer_paras)
+        del self._wea_arr_shape[seq_dim]
+        self.wea_net = WeaCov(input_shape=self._wea_arr_shape, layer_paras=wea_layer_paras)
         self._pred_length = pred_length
 
         self.validation_step_outputs = []
@@ -243,7 +244,7 @@ class TSWeatherNet(pl.LightningModule):
         seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target = batch
         y_hat = self(seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr)
         loss = F.mse_loss(y_hat, target)
-        self.log('training RMSE loss',torch.sqrt(loss))
+        self.log('training RMSE loss',torch.sqrt(loss), on_epoch=True)
         return torch.sqrt(loss)
 
     # def on_training_epoch_end(self, outputs):
@@ -272,7 +273,7 @@ class TSWeatherNet(pl.LightningModule):
         y_hat = self(seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr)
         loss = torch.sqrt(F.mse_loss(y_hat, target))
        # self.validation_step_outputs.append(loss)
-        self.log('val RSME loss', torch.sqrt(loss))
+        self.log('val RSME loss', torch.sqrt(loss), on_epoch=True)
         return torch.sqrt(loss)
 
     # def on_validation_epoch_end(self):
@@ -293,7 +294,7 @@ class TSWeatherNet(pl.LightningModule):
         seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target = batch
         y_hat = self(seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr)
         loss = torch.sqrt(F.mse_loss(y_hat, target))
-        self.log('test RSME loss', loss)
+        self.log('test RSME loss', loss, on_epoch=True)
         self.log_dict(self._busi_loss_metrics(loss))
         return loss
 
