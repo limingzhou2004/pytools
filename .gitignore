@@ -2,5 +2,6 @@
 *.nc
 *.grib2
 *.npy
+*.ckpt
 pytools.egg-info/*
 .DS_Store

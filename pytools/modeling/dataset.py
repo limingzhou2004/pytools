@@ -14,8 +14,7 @@ from torch.utils import data
 from pytools.config import Config
 from pytools.config import DataType
 from pytools.modeling.scaler import Scaler, load
-from pytools.modeling.weather_net import WeatherPara
-
+#from pytools.modeling.weather_net import WeatherPara
 
 
 class WeatherDataSet(data.Dataset):
@@ -26,7 +25,7 @@ class WeatherDataSet(data.Dataset):
         wea_arr: np.ndarray,
         timestamp: np.ndarray,
         config: Config,
-        sce_ind: int,
+        sce_ind: int, # cv scenario
         to_scale:bool = True,
     ):
         # the scaler and model file has flag and year information
@@ -35,7 +34,7 @@ class WeatherDataSet(data.Dataset):
         self._flag = flag
         target_ind = config.model_pdt.target_ind
         seq_length = config.model_pdt.seq_length
-        fst_horizon = config.model_pdt.forecast_horizon
+        fst_horizon = config.model_pdt.forecast_horizon[0]
         self._target = tabular_data[:, target_ind]
         self._ext = np.delete(tabular_data, target_ind, axis=1)
         self._wea_arr = wea_arr
@@ -45,8 +44,8 @@ class WeatherDataSet(data.Dataset):
         self._pred_length = fst_horizon[-1]
         self._fst_horizeon = fst_horizon
         self._wea_ar_embedding_dim = config.model_pdt.wea_ar_embedding_dim
-        self._wea_embedding_dim = config.model_pdt.wea_embedding_dim
-        self._ext_embedding_dim = config.model_pdt.ext_embedding_dim
+        self._wea_embedding_dim = config.model_pdt.wea_ar_embedding_dim
+        self._ext_embedding_dim = config.model_pdt.ext_ar_embedding_dim
 
         self._fn_scaler = config.get_model_file_name(class_name='scaler')
 
@@ -57,8 +56,12 @@ class WeatherDataSet(data.Dataset):
                 scaler = Scaler(self._target, self._wea_arr, scaler_type=config.model_pdt.scaler_type)
                 scaler.save(self._fn_scaler)
 
+            self.target_mean = self._target.mean()
             self._target = scaler.scale_target(self._target)
             self._wea_arr = scaler.scale_arr([self._wea_arr])[0]
+
+            self.scaler = scaler
+
       
         # load the data, and selec the subset, based on flag, ind
         # filter by t0 and t1
@@ -67,10 +70,12 @@ class WeatherDataSet(data.Dataset):
             tt = config.model_pdt.cv_settings[sce_ind]
             t0 = tt[0]
             t1 = tt[1]
+            self._flag = self._flag.split('_')[-1]
         elif flag.startswith('final_train'):
             tt = config.model_pdt.final_train_hist[sce_ind]
             t0 = tt[0]
             t1 = tt[1]
+            self._flag = self._flag.split('_')[-1]
         elif flag.startswith('forward_forecast'):
             tt = config.model_pdt.final_train_hist[sce_ind]
             t0 = tt[2]
@@ -79,29 +84,32 @@ class WeatherDataSet(data.Dataset):
             raise ValueError(f'Unkown flag of{flag}.  It has to be cv|final_train|forward_forecast')
 
         # weather dim batch, height, width, channel --> batch, channel, height, width
-        t_flag = (pd.DataFrame(timestamp) >= pd.Timestamp(t0)) & (pd.DataFrame(timestamp) <= pd.Timestamp(t1))
+        t_flag = (timestamp >= pd.Timestamp(t0,tz='UTC')) & (timestamp<= pd.Timestamp(t1,tz='UTC'))
+        t_flag = t_flag.to_numpy().reshape((-1))
         self._target = self._target[t_flag]
         self._ext = self._ext[t_flag]
         self._wea_arr = self._wea_arr[t_flag, ...]       
 
-        fs = [self._config.model_pdt.final_train_frac, self._config.model_pdt.final_train_frac_yr1]\
+        fs = [self._config.model_pdt.final_train_frac_yr1, self._config.model_pdt.final_train_frac]\
               if self._flag.startswith('final_train') else \
         [self._config.model_pdt.frac_yr1, self._config.model_pdt.frac_split ]
         first_yr = fs[0]
         frac = fs[1]
-
         full_length = self._target.shape[0] - self._seq_length - self._pred_length +1 
+
         train_iter, test_iter, val_iter = self._config.get_sample_segmentation_borders(full_length=full_length, 
-                                                     fst_scenario=self._sce_ind,
-                                                     first_yr_frac=first_yr,
-                                                     fractions=frac)
+        fst_scenario=self._sce_ind,
+        first_yr_frac=first_yr,
+        fractions=frac)
         
-        if 'test' in self._flag:
+        if 'train' in self._flag:
             self._sample_iter = train_iter
-        elif 'val' in self._flag:
+        elif 'test' in self._flag:
             self._sample_iter = test_iter
-        else: 
+        elif 'val' in self._flag: 
             self._sample_iter = val_iter
+        else:
+            raise ValueError('flag must be ened as _train|_test|_val')
 
         self._sample_list = list(self._sample_iter)
 
@@ -113,34 +121,36 @@ class WeatherDataSet(data.Dataset):
 
         """
  
-        return len(self._sample_iter)
+        return len(self._sample_list)
 
-
-    def __getitem__(self, index) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+    def __getitem__(self, index) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
         """
-        Generates one sample of data
+        Generates one sample of data [seq_wea, seq_ext, seq_target, wea_arr, ext_arr, target]
 
         Args:
             index: an int
 
-        Returns: weather, tabular(calendar), target-AR, target
+        Returns: seq weather, seq ext vars, seq target, weather array, 
+        tabular(calendar), target
 
         """
         index = self._sample_list[index]
-
         target_ind0 = index + self._seq_length 
         target_ind1 = target_ind0 + self._pred_length
-        wea_ind0 = target_ind0 - self._wea_embedding_dim
+        wea_ind0 = target_ind0 - self._wea_embedding_dim + self._fst_horizeon[0] - 1
         wea_ind1 = target_ind1 
-        ext_ind0 = target_ind0 - self._ext_embedding_dim
+        ext_ind0 = target_ind0 - self._ext_embedding_dim + self._fst_horizeon[0] - 1
         ext_ind1 = target_ind1 
         ar_ind0 = index
         ar_ind1 = index + self._seq_length
+        target_ind0 += self._fst_horizeon[0] - 1
         return (
-            self._wea_arr[wea_ind0:wea_ind1, ...],
-            self._ext[ext_ind0:ext_ind1, :],
-            self._target[ar_ind0:ar_ind1, :],
-            self._target[target_ind0:target_ind1,:]
+            torch.tensor(self._wea_arr[ar_ind0:ar_ind1, ...]),
+            torch.tensor(self._ext[ar_ind0:ar_ind1, :]),
+            torch.tensor(self._target[ar_ind0:ar_ind1,...]),
+            torch.tensor(self._wea_arr[wea_ind0:wea_ind1, ...]),
+            torch.tensor(self._ext[ext_ind0:ext_ind1, :]),
+            torch.tensor(self._target[target_ind0:target_ind1,...])
         )
 
 

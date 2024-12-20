@@ -5,10 +5,10 @@ from typing import Dict
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
-from pytorch_lightning.loggers import TensorBoardLogger
+from lightning.pytorch.loggers import TensorBoardLogger
 from torch import optim
-import pytorch_lightning as pl
-from pytorch_lightning.callbacks import ModelCheckpoint
+import lightning as pl
+from lightning.pytorch.callbacks import ModelCheckpoint
 from torch.utils.data.dataloader import DataLoader
 
 from pytools.config import Config

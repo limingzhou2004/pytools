@@ -175,6 +175,15 @@ class ArgClass:
             type=int,
             help="cv or final_train ind, default 0",
         )
+        sub_parser.add_argument(
+            "-sb",
+            "--sub-task",
+            dest="sub",
+            required=False,
+            default='fit',
+            type=str,
+            help="subtask, find_batch_size|find_lr|fit, default fit",
+        )
         sub_parser.set_defaults(func=fun)
 
     def _add_task4(self, fun):

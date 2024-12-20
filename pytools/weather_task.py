@@ -6,7 +6,6 @@ import os.path as osp
 from typing import Tuple
 
 import torch
-from dateutil import parser
 import mlflow
 import numpy as np
 import pandas as pd
@@ -14,18 +13,20 @@ import pandas as pd
 # from torch.utils.data.dataloader import DataLoader
 
 # from pytools.modeling.dataset import WeatherDataSet
-from pytorch_lightning.callbacks import EarlyStopping
+from lightning.pytorch.callbacks import EarlyStopping
+from lightning.pytorch.tuner import Tuner
+import lightning as pl
+from lightning.pytorch.loggers import TensorBoardLogger, CSVLogger
 from torch.utils.data import DataLoader
 
 from pytools.arg_class import ArgClass
 from pytools.data_prep.herbie_wrapper import download_hist_fst_data
 from pytools.modeling.dataset import WeatherDataSet, check_fix_missings, read_weather_data_from_config
 from pytools.modeling.rolling_forecast import RollingForecast
-from pytools.modeling.utilities import extract_model_settings
-from pytools.modeling.weather_net import WeatherNet, default_layer_sizes, ModelSettings
+from pytools.modeling.ts_weather_net import TSWeatherNet, TsWeaDataModule
 from pytools.modeling.mlflow_helper import save_model, load_model
 from pytools.modeling.weather_task_helpers import (
-    get_npz_train_weather_file_name,
+  #  get_npz_train_weather_file_name,
     get_training_data,
     prepare_train_data,
     prepare_train_model,
@@ -50,6 +51,9 @@ from pytools.config import Config, DataType
 hrrr_hist_max_fst_hour = 0
 logger = get_logger("weather_tasks")
 #weather_data_file_name = 'weather_data.npz'
+
+train_loader_settings = {'batch_size':256, 'shuffle':True, 'drop_last':True, 'pin_memory':True, 'num_workers':4}
+test_loader_settings = {'batch_size':256, 'shuffle':False, 'drop_last':False, 'num_workers':4}
 
 
 def hist_load(
@@ -146,60 +150,31 @@ def past_fst_weather_prepare(config_file:str, fst_hour=48, year=-1, month=-1):
         pickle.dump([spot_time, weather_arr],f)
     
 
-# def train_data_assemble(
-#     config_file: str, suffix='v0', 
-# ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-#     """
-#     Assemble training data. Fill missing load and/or weather data.
-
-#     Args:
-#         config_file:
-#         fst_horizon: forecast horizon, 1, 6, 24
-#         suffix: id, will add fst_horizon
-
-#     Returns: DataPrepManager with load and hist weather organized for training
-
-#     """
-#     #d: DataPrepManager = hist_load(config_file=config_file, create=False)
-#     #h_weather = d.weather.get_weather_train()  
-#     c: Config = Config(config_file)
-
-    
-#     lag_data, calendar_data, data_standard_load = d.process_load_data(
-#         d.load_data, lag_hours=c.load_pdt.lag_hours, fst_horizon=c.load_pdt.fst_hours
-#     )
-#     cols_lag = list(lag_data.keys())
-#     cols_calendar = list(calendar_data)
-#     cols_load = list(data_standard_load)
-#     join_load, join_wdata = d.reconcile(
-#         pd.concat([lag_data, calendar_data, data_standard_load], axis=1),
-#         d.load_data.date_col,
-#         h_weather,
-#     )
-#     cols_calendar.remove(d.load_data.date_col)
-#     # Let's set up the weather data scaler, and save the file with all weather data
-#     #join_wdata = d.standardize_weather(weather_array=join_wdata)
-#     cfg = Config(config_file)
-#     dpm.save(config=cfg, dmp=d, suffix=suffix)
-#     save_fn = get_npz_train_weather_file_name(cfg=cfg, suffix=suffix)
-#     np.savez_compressed(
-#         save_fn,
-#         weather=join_wdata,
-#         load_lag=join_load[cols_lag].values,
-#         calendar=join_load[cols_calendar].values,
-#         target=join_load[cols_load].values,
-#     )
-#     return (
-#         join_wdata,
-#         join_load[cols_lag],
-#         join_load[cols_calendar],
-#         join_load[cols_load],
-#     )
+def get_trainer(config:Config):
+    model_path = osp.join(config.site_parent_folder, 'model')
+    setting = config.model_pdt.model_settings
+    early_stop_callback = EarlyStopping(
+        monitor='val RSME loss',
+        min_delta=setting['min_delta'],
+        patience=setting['patience'],
+        verbose=False,
+        mode='min',
+    )
+    tb_logger = TensorBoardLogger(model_path, name='tensorboard_logger')
+    csv_logger = CSVLogger(save_dir=model_path, name='csv_logger')
+    trainer = pl.Trainer(
+        default_root_dir=model_path,
+        callbacks=early_stop_callback,
+        check_val_every_n_epoch=setting['epoch_step'],
+        max_epochs=setting['max_epochs'],   
+        logger=[tb_logger, csv_logger],
+    )
+    return trainer
 
 
 def train_model(
     config_file: str,
-    fst_hours: int,
+   # fst_hours: int,
     train_options,
     tracking_uri,
     model_uri,
@@ -394,23 +369,83 @@ def task_3(**args):
     flag = args['flag']
     config = Config(args['config_file'])
     load_data, w_paras, w_timestamp, w_data = read_weather_data_from_config(config, year=-1)
+    logger.info(f'Use these weather parameters... {w_paras}')
     load_arr, wea_arr, t = check_fix_missings(load_arr=load_data, w_timestamp=w_timestamp, w_arr=w_data)
+    wea_arr = wea_arr.astype(np.float32)
+    load_arr = load_arr.astype(np.float32)
 
-    if flag.startswith('cv_'):
-        prefix = 'cv'
-    elif flag.startswith('final_'):
-        prefix= 'final_train'
     ind = args['ind']
+    if flag.startswith('cv'):
+        prefix = 'cv'
+        ds_test =  WeatherDataSet(flag=f'{prefix}_test',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
+      #  loader_test = DataLoader(ds_test, **test_loader_settings)
+        ds_val =  WeatherDataSet(flag=f'{prefix}_val',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
+      #  loader_val = DataLoader(ds_val, **test_loader_settings)
+    elif flag.startswith('final'):
+        prefix= 'final_train'    
     train_flag = f'{prefix}_train'
     ds_train = WeatherDataSet(flag=train_flag,tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
-    ds_test =  WeatherDataSet(flag=f'{prefix}_test',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
-    ds_val =  WeatherDataSet(flag=f'{prefix}_val',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
+    
+    # add the batch dim
+    wea_input_shape = [1, *wea_arr.shape]
+    m = TSWeatherNet(wea_arr_shape=wea_input_shape, config=config)
+    m.setup_mean(scaler=ds_train.scaler, target_mean=ds_train.target_mean)
+    trainer = get_trainer(config)
+    tuner = Tuner(trainer)
 
-    #return train_data_assemble(**args)
+    def train_dl():
+        return DataLoader(ds_train, batch_size=m.batch_size)
+    
+    def test_dl():
+        return DataLoader(ds_test, batch_size=m.batch_size)
+    
+    def val_dl():
+        return DataLoader(ds_val, batch_size=m.batch_size)
+    
+    dm = TsWeaDataModule(batch_size=m.batch_size)
+    dm.train_dataloader = train_dl
+    dm.test_dataloader = test_dl
+    dm.val_dataloader = val_dl
+    sub_task = args['sub']
+    if sub_task == 'find_batch_size':
+        tuner.scale_batch_size(m, datamodule=dm)
+        return
+    if sub_task == 'find_lr':
+        lr_finder = tuner.lr_find(m, datamodule=dm)
+        print(lr_finder.results)
+        # Plot with
+        fig = lr_finder.plot(suggest=True)
+        fig.show()
+
+        # Pick point based on plot, or get suggestion
+        new_lr = lr_finder.suggestion()
+        logger.info(f'suggested lr: {new_lr}')
+        return
+
+    # update hparams of the model
+    #m.hparams.lr = new_lr
+    # Fit model
+    trainer.fit(m, datamodule=dm,ckpt_path=trainer.ckpt_path)
+
+    test_res = trainer.test(m, datamodule=dm, verbose=False)
+    logger.info(f'test results: {test_res}')
+    model_name='test.ckpt'
+    ckpt_path = osp.join(config.site_parent_folder,'model', model_name)
+
+    trainer.save_checkpoint(ckpt_path)
+
+    m2 =TSWeatherNet.load_from_checkpoint(ckpt_path)
+
+    m2.eval()
+
+    #y = m2()
 
 
 def task_4(**args):
-    return train_model(**args)
+    # load the model for predictions
+
+
+    return 
 
 
 def task_5(**args):

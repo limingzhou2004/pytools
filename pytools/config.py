@@ -10,7 +10,7 @@ from itertools import chain
 
 import numpy as np
 import pandas as pd
-from pydantic import BaseModel, FilePath, field_validator, validator
+from pydantic import BaseModel, FilePath, field_validator
 import toml
 import envtoml
 
@@ -93,7 +93,7 @@ class DataType(Enum):
 class Site(BaseModel):
     timezone:str
     state:str
-    alias:str
+    folder_name:str
     name:str
     base_folder: str
     center: Tuple[float, float]
@@ -153,6 +153,8 @@ class Weather(BaseModel):
 class Model(BaseModel):
     y_label: str
     scaler_type: str
+    seq_dim: int
+    model_settings: Dict
     frac_yr1: float
     frac_split: list
     final_train_frac_yr1: float
@@ -162,9 +164,15 @@ class Model(BaseModel):
     final_train_hist: List
     target_ind: int
     wea_ar_embedding_dim: int
-    wea_embedding_dim: int 
-    ext_embedding_dim: int
+    #wea_embedding_dim: int 
+    ext_ar_embedding_dim: int
     seq_length: int 
+
+    cov_net: Dict 
+    ext_net: Dict
+    filter_net: Dict
+    mixed_net: Dict
+
     models: List
 
 
@@ -188,6 +196,11 @@ class Config:
         self.load_pdt = Load(**self.toml_dict['load'])
         self.weather_pdt = Weather(**self.toml_dict['weather'])
         self.model_pdt = Model(**self.toml_dict['model'])
+        self.target_dim = 1 if isinstance(self.model_pdt.target_ind, int) else len(self.model_pdt.target_ind)
+        self._filternet_input =  self.model_pdt.ext_net['output_channel'] + self.target_dim + self.model_pdt.cov_net['last']['channel']
+
+        if self.model_pdt.seq_length < max(self.model_pdt.wea_ar_embedding_dim, self.model_pdt.ext_ar_embedding_dim):
+            raise ValueError('weather or ext AR embedding exceeds seq length!') 
 
     def _add_base_folder(self, dict_to_update, key):
         dict_to_update[key] = os.path.join(self._base_folder, dict_to_update[key])
@@ -224,8 +237,15 @@ class Config:
         """
         return os.path.join(
             self.site_parent_folder,
-            prefix + self.site_pdt.alias + '_' + class_name + suffix + extension,
+            prefix + self.site_pdt.folder_name + '_' + class_name + suffix + extension,
         )
+    
+    def get_logger_folder(self):
+        return
+    
+    @property
+    def filternet_input(self):
+        return self._filternet_input
 
     @property
     def base_folder(self):
@@ -241,7 +261,7 @@ class Config:
             self._base_folder,
             #self.toml_dict["site"]["site_folder"],
             # self.toml_dict["category"]["name"],
-            # self.toml_dict["site"]["alias"],
+            # self.toml_dict["site"]["folder_name"],
         )
 
     @property
@@ -351,7 +371,6 @@ class Config:
             return x<full_length
         return filter(fun, train_borders), filter(fun, test_borders), \
             filter(fun, val_borders)
-
 
     
     @property

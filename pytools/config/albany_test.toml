@@ -7,8 +7,8 @@
  state = "NY"
  base_folder = "~/zhoul/work/energy/sites/albany-test"
  name = "Albany-NY"
- # alias is the name for each project
- alias = "albany-test"
+ # alias is the folder name for each project
+ folder_name = "albany-test"
  sql_location = "CAPITL"
  back_fst_window = ["2020-01-01 00:00", "2025-01-01 00:00"]
  #site_folder = "nyiso"
@@ -39,7 +39,7 @@
  limit = [0, 99999]
  lag_hours = 168
  utc_to_local_hours = -5
- fst_hours =[1, 6, 24]
+ #fst_hours =[1, 6, 24]
 
 [weather]
 envelope = [1548, 1568, 774, 794]
@@ -53,19 +53,21 @@ hrrr_paras_file = "data_prep/hrrr_paras_cfgrib.txt"
 hrrr_predict = "hrrr_fst"
 
 [model]
-scaler_type = 'minmax'
+scaler_type = 'standard' #'minmax'
 y_label = "load"
 forecast_horizon = [
-    [1, 30],
-    [25,48]
+[1, 3]
+    #[1, 48], 
 ]
+seq_dim = 1
+seq_length = 2 #168
 target_ind = 0
-wea_ar_embedding_dim = 162
-wea_embedding_dim =6
-ext_embedding_dim =48
-seq_length = 168
+wea_ar_embedding_dim = 1 #162
+ext_ar_embedding_dim =2
 
-frac_yr1 = 0.5
+#wea_embedding_dim = 1
+
+frac_yr1 = 0.1
 frac_split = [0.4, 0.3, 0.3]
 final_train_frac_yr1 = 0.5
 final_train_frac =[1, 0, 0]
@@ -77,5 +79,57 @@ cv_settings = [
     # ["2022-01-01", "2023-01-01", "2023-01-01","2024-01-01"],
     # ["2023-01-01", "2024-01-01", "2024-01-01","2025-01-01"]
 ]
-final_train_hist = ["2021-01-01", "2025-01-01"]
+final_train_hist = [
+    ["2018-11-03", "2018-11-05"]
+]
+
+model_settings.lr=0.001
+model_settings.weight_decay=0.001
+model_settings.epoch=20
+model_settings.batch_size=1
+model_settings.check_val_every_n_epoch=1
+model_settings.max_epochs=30
+model_settings.min_delta=1
+model_settings.patience=1
+model_settings.epoch_step=1
+#model_settings.epoch_num=3
+
+#----- model layer configuration parameters
+cov_net.cov1.kernel=3
+cov_net.cov1.padding=0
+cov_net.cov1.stride=1
+cov_net.cov1.dilation=1
+cov_net.cov1.group=1
+cov_net.cov1.output_channel=8
+cov_net.cov2.kernel=3
+cov_net.cov2.padding=0
+cov_net.cov2.stride=1
+cov_net.cov2.dilation=1
+cov_net.cov2.group=1
+cov_net.cov2.output_channel=4
+cov_net.last.channel=8
+
+ext_net.input_channel=6
+ext_net.output_channel=3
+
+filter_net.hidden_size=8
+filter_net.dropout=0.01
+filter_net.band_width=96
+filter_net.scale=0.2
+filter_net.sparsity_threshold=0.01
+
+mixed_net.ts_latent_dim=5
+mixed_net.cov1d.kernel_size=5
+mixed_net.cov1d.padding=2
+mixed_net.cov1d.stride=1
+mixed_net.cov1d.dilation=1
+mixed_net.cov1d.out_channels=3
+mixed_net.ext_cov1d.kernel_size=13
+mixed_net.ext_cov1d.padding=6
+mixed_net.ext_cov1d.stride=1
+mixed_net.ext_cov1d.dilation=1
+mixed_net.ext_cov1d.out_channels=3
+
+
+#--- model management
 models = [ ]

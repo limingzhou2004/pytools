@@ -285,10 +285,10 @@ class WeatherDataPrep:
             fn = getattr(row, config.weather_pdt.fullfile_col_name)
             file_type = getattr(row, config.weather_pdt.type_col_name)
             if file_type.startswith('hrrr') or file_type.startswith('herbie'):
-                is_utah=False
+                #is_utah=False
                 p=self.hrrr_paras
             else:
-                is_utah=True
+               # is_utah=True
                 p=self.utah_paras
 
             timestamp = getattr(row,'timestamp')
