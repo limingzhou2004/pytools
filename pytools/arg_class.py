@@ -225,7 +225,6 @@ class ArgClass:
             help="model name to load from checkpoint",
         )
         sub_parser.set_defaults(func=fun)
-
         
     def _add_task5(self, fun):
         sub_parser = self.sub_parsers.add_parser("task_5")

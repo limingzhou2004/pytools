@@ -26,12 +26,12 @@ class TestWeatherTask:
         main(cmd_str.split(' '))
 
     def test_commandline_task3(self):
-        cmd_str = f'-cfg {self.config_file} task_3 --flag cv -ind 0'
+        cmd_str = f'-cfg {self.config_file} task_3 --flag cv -ind 0 -mn test0'
         main(cmd_str.split(' '))
         assert 1==1
 
     def test_commandLine_task4(self):
-        cmd_str = f'-cfg {self.config_file} task_4 -mn test -ind 0'
+        cmd_str = f'-cfg {self.config_file} task_4 --flag test -mn test0 -ind 0'
         main(cmd_str.split(' '))
         assert 1==1
 
