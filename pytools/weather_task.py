@@ -434,9 +434,9 @@ def task_3(**args):
     ckpt_path = osp.join(config.site_parent_folder,'model', model_name)
     trainer.save_checkpoint(ckpt_path)
 
-    m2 =TSWeatherNet.load_from_checkpoint(ckpt_path)
+    #m2 =TSWeatherNet.load_from_checkpoint(ckpt_path)
 
-    m2.eval()
+    #m2.eval()
 
     #y = m2()
 
@@ -446,6 +446,7 @@ def task_4(**args):
     config = Config(args['config_file'])
 
     # get prediction data
+    
 
     ckpt_path = osp.join(config.site_parent_folder, 'model', args['model_name'])
     m2 =TSWeatherNet.load_from_checkpoint(ckpt_path)
