@@ -429,7 +429,7 @@ def task_3(**args):
 
     test_res = trainer.test(m, datamodule=dm, verbose=False)
     logger.info(f'test results: {test_res}')
-    model_name='test.ckpt'
+    #$model_name='test.ckpt'
     model_name = args['model_name']
     ckpt_path = osp.join(config.site_parent_folder,'model', model_name)
     trainer.save_checkpoint(ckpt_path)
@@ -451,7 +451,7 @@ def task_4(**args):
     m2 =TSWeatherNet.load_from_checkpoint(ckpt_path)
 
 
-    y = m2()
+    #y = m2()
 
 
     return 

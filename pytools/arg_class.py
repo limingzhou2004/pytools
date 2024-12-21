@@ -196,7 +196,7 @@ class ArgClass:
         sub_parser.set_defaults(func=fun)
 
     def _add_task4(self, fun):
-        sub_parser = self.sub_parsers.add_parser("task_3")
+        sub_parser = self.sub_parsers.add_parser("task_4")
         sub_parser.add_argument(
             "-flag",
             "--flag",
