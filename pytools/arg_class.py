@@ -63,7 +63,7 @@ class ArgClass:
         self._add_task1(fun_list[0])
         self._add_task2(fun_list[1])
         self._add_task3(fun_list[2])
-        # self._add_task4()
+        self._add_task4(fun_list[3])
         # self._add_task5()
         # self._add_task6()
         # self._add_task7()
@@ -184,66 +184,49 @@ class ArgClass:
             type=str,
             help="subtask, find_batch_size|find_lr|fit, default fit",
         )
+        sub_parser.add_argument(
+            "-mn",
+            "--model-name",
+            dest="model_name",
+            required=False,
+            default='test',
+            type=str,
+            help="model name to save to checkpoint",
+        )
         sub_parser.set_defaults(func=fun)
 
     def _add_task4(self, fun):
-        sub_parser = self.sub_parsers.add_parser("task_4")
+        sub_parser = self.sub_parsers.add_parser("task_3")
         sub_parser.add_argument(
-            "-to",
-            "--train-options",
-            dest="train_options",
-            required=True,
-            default=None,
-            action=ActionJsonnetExtVars(),
-            help="training options as a json",
-        )
-        sub_parser.add_argument(
-            "-ah",
-            "--ahead-hours",
-            dest="ahead_hours",
+            "-flag",
+            "--flag",
+            dest="flag",
             required=False,
-            default=1,
-            type=int,
-            help="hours ahead to forecast",
-        )
-        sub_parser.add_argument(
-            "-uri",
-            "--tracking-uri",
-            dest="tracking_uri",
-            required=False,
-            default=f"file://{os.path.dirname(os.path.realpath(__file__))}/modeling/mlruns",
+            default='cv_0',
             type=str,
-            help="airflow tracking server uri",
+            help="test|predict",
         )
         sub_parser.add_argument(
-            "-muri",
-            "--model-uri",
-            dest="model_uri",
-            required=False,
-            default=f"file://{os.path.dirname(os.path.realpath(__file__))}/modeling/mlruns",
-            type=str,
-            help="airflow model registry uri",
-        )
-        sub_parser.add_argument(
-            "-env",
-            "--experiment-name",
-            dest="experiment_name",
+            "-ind",
+            "--sce-ind",
+            dest="ind",
             required=False,
             default=0,
-            type=str,
-            help="airflow experiment name",
+            type=int,
+            help="ind for test with fst weather, default 0, -1 for real time weather forecast",
         )
         sub_parser.add_argument(
-            "-tags",
-            "--tags",
-            dest="tags",
+            "-mn",
+            "--model-name",
+            dest="model_name",
             required=False,
-            default="",
+            default='test',
             type=str,
-            help="--tags k1=v1,k2=v2",
+            help="model name to load from checkpoint",
         )
         sub_parser.set_defaults(func=fun)
 
+        
     def _add_task5(self, fun):
         sub_parser = self.sub_parsers.add_parser("task_5")
         sub_parser.add_argument(

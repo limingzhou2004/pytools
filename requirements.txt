@@ -32,7 +32,7 @@ scikit-learn>=1.4.2
 shapely>=2.0.0 # 2.0.4
 sqlalchemy==1.4.46 #2.0.30
 toml>=0.10.2
-torch>=1.13 
+torch>=2.4
 tqdm>=4.66.4
 xarray>=2022.12.0 # 2024.7.0
 xlstm==1.0.8

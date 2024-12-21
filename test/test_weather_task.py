@@ -30,6 +30,11 @@ class TestWeatherTask:
         main(cmd_str.split(' '))
         assert 1==1
 
+    def test_commandLine_task4(self):
+        cmd_str = f'-cfg {self.config_file} task_4 -mn test -ind 0'
+        main(cmd_str.split(' '))
+        assert 1==1
+
     def test_hist_load(self, ):
         #monkeypatch.setattr(LoadData, "query_train_data", mock_train_load)
         res = hist_load(config_file=self.config_file,create=True)
