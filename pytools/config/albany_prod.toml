@@ -5,7 +5,7 @@
 [site]
  timezone = "US/Eastern"
  state = "NY"
- base_folder = "~/zhoul/work/energy/sites/albany-test"
+ base_folder = "~/zhoul/work/energy/sites/albany-prod"
  name = "Albany-NY"
  # alias is the folder name for each project
  folder_name = "albany-test"
@@ -17,11 +17,9 @@
  #[east, west, south, north]
  rect = [30.0, 30.0, 30.0, 30.0]
  t0="2018-11-03"
- t1="2018-11-05"
+ t1="2024-11-05"
  description = "Zone Capital of NYISO"
- comments = """name is used for database query and must match what the database use; while alias is used for setting up
-  the folder structure"""
- #envtest = "$ENV_TEST"
+ comments = """name is used for database query and must match what the database use; """
 
 [load]
  db_name="daf"
@@ -49,50 +47,43 @@ filename_col_name = "filename"
 type_col_name = "type"
 hrrr_paras_file = "data_prep/hrrr_paras_cfgrib.txt"
 
-#hrrr_hist = ["utah"] #["hrrr2", "utah"]
 hrrr_predict = "hrrr_fst"
 
 [model]
 scaler_type = 'standard' #'minmax'
 y_label = "load"
-forecast_horizon = [
-[1, 3]
-    #[1, 48], 
-]
-seq_dim = 1
-seq_length = 2 #168
+forecast_horizon = [[1, 48]]
+seq_dim = 1 # the dimension of AR target, 1 in dataset
+seq_length = 168
 target_ind = 0
-wea_ar_embedding_dim = 1 #162
-ext_ar_embedding_dim =2
-
-#wea_embedding_dim = 1
+wea_ar_embedding_dim = 168
+ext_ar_embedding_dim = 168
 
 frac_yr1 = 0.1
 frac_split = [0.4, 0.3, 0.3]
 final_train_frac_yr1 = 0.5
 final_train_frac =[1, 0, 0]
 cv_settings = [
-   ["2018-11-03","2018-11-04 12:00","2018-11-04 13:00","2018-11-05"]
-    # ["2018-01-01", "2020-01-01", "2020-01-01", "2021-01-01"],
-    # ["2020-01-01", "2021-01-01", "2021-01-01","2022-01-01"],
-    # ["2021-01-01", "2022-01-01", "2022-01-01","2023-01-01"],
-    # ["2022-01-01", "2023-01-01", "2023-01-01","2024-01-01"],
-    # ["2023-01-01", "2024-01-01", "2024-01-01","2025-01-01"]
+  # ["2018-11-03","2018-11-04 12:00","2018-11-04 13:00","2018-11-05"]
+   ["2018-01-01", "2020-01-01", "2020-01-01", "2021-01-01"],
+   ["2020-01-01", "2021-01-01", "2021-01-01","2022-01-01"],
+   ["2021-01-01", "2022-01-01", "2022-01-01","2023-01-01"],
+   ["2022-01-01", "2023-01-01", "2023-01-01","2024-01-01"],
+   ["2023-01-01", "2024-01-01", "2024-01-01","2025-01-01"]
 ]
 final_train_hist = [
-    ["2018-11-03", "2018-11-05"]
+    ["2023-01-01", "2024-11-05"]
 ]
 
 model_settings.lr=0.001
 model_settings.weight_decay=0.001
 model_settings.epoch=20
-model_settings.batch_size=1
+model_settings.batch_size=20
 model_settings.check_val_every_n_epoch=1
 model_settings.max_epochs=30
 model_settings.min_delta=1
 model_settings.patience=1
 model_settings.epoch_step=1
-#model_settings.epoch_num=3
 
 #----- model layer configuration parameters
 cov_net.cov1.kernel=3
