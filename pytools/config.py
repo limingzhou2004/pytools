@@ -153,7 +153,7 @@ class Weather(BaseModel):
 class Model(BaseModel):
     y_label: str
     scaler_type: str
-    seq_dim: int
+    sample_data_seq_dim: int
     model_settings: Dict
     frac_yr1: float
     frac_split: list

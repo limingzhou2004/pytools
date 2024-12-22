@@ -165,7 +165,7 @@ class TSWeatherNet(pl.LightningModule):
         )
         #self._mdl_logger: TensorBoardLogger = None
         self._wea_arr_shape = deepcopy(wea_arr_shape)
-        seq_dim = config.model_pdt.seq_dim
+        seq_dim = config.model_pdt.sample_data_seq_dim
         wea_layer_paras = config.model_pdt.cov_net
         filter_net_paras = config.model_pdt.filter_net
         fst_ind=0        
