@@ -171,7 +171,7 @@ class ArgClass:
             "--years",
             dest="years",
             required=False,
-            default=-1,
+            default='-1',
             type=str,
             help="years of weather data, e.g. -1|2018-2024",
         )

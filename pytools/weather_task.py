@@ -535,4 +535,6 @@ if __name__ == "__main__":
 # python -m pytools.weather_task -cfg pytools/config/albany_test.toml task_2 -fh 2 --n-cores 1 -year 2020 -flag hf
 # python -m pytools.weather_task -cfg pytools/config/albany_prod.toml task_2 --n-cores 1 -year 2018 -flag h
 # python -m pytools.weather_task -cfg pytools/config/albany_prod.toml task_2 -fh 48 --n-cores 1 -year 2024 -flag f
+
+# python -m pytools.weather_task -cfg pytools/config/albany_test.toml task_3 --flag cv --ind 0 -sb [find_batch_size|find_lr|fit] -mn test0
     main(sys.argv[1:])
