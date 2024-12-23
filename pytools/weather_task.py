@@ -160,8 +160,8 @@ def load_training_data(config:Config, yrs):
     w_data_list = []
     for yr in range(y0, y1+1):
         load_data, w_paras, w_timestamp, w_data = read_weather_data_from_config(config, year=yr)
-    w_timestamp_list.append(w_timestamp)
-    w_data_list.append(w_data)
+        w_timestamp_list.append(w_timestamp)
+        w_data_list.append(w_data)
     return load_data, w_paras, np.concatenate(w_timestamp_list,axis=0), np.concatenate(w_data_list,axis=0)
 
 def get_trainer(config:Config):

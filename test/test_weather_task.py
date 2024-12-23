@@ -50,7 +50,7 @@ class TestWeatherTask:
     def test_load_weather_data(self, ):
         c = Config(get_absolute_path(__file__,'../pytools/config/albany_prod.toml'))
         res = load_training_data(config=c, yrs='2020-2023')
-        assert res[3].shape[0] == 8756
+        assert res[3].shape[0] > 30000
 
     def test_past_weather_fst(self):
         past_fst_weather_prepare(self.config_file, fst_hour=2, year=2020)
