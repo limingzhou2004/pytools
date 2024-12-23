@@ -164,7 +164,16 @@ class ArgClass:
             required=False,
             default='cv_0',
             type=str,
-            help="train type, e.g. cv_0|final_train_0",
+            help="train type, e.g. cv|final_train",
+        )
+        sub_parser.add_argument(
+            "-yr",
+            "--years",
+            dest="years",
+            required=False,
+            default=-1,
+            type=str,
+            help="years of weather data, e.g. -1|2018-2024",
         )
         sub_parser.add_argument(
             "-ind",

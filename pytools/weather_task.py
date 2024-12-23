@@ -150,6 +150,20 @@ def past_fst_weather_prepare(config_file:str, fst_hour=48, year=-1, month=-1):
         pickle.dump([spot_time, weather_arr],f)
     
 
+def load_training_data(config:Config, yrs):
+    if yrs=='-1':
+        return read_weather_data_from_config(config, year=-1)
+    years = yrs.split('-')
+    y0 = int(years[0])
+    y1 = int(years[-1])
+    w_timestamp_list = []
+    w_data_list = []
+    for yr in range(y0, y1+1):
+        load_data, w_paras, w_timestamp, w_data = read_weather_data_from_config(config, year=yr)
+    w_timestamp_list.append(w_timestamp)
+    w_data_list.append(w_data)
+    return load_data, w_paras, np.concatenate(w_timestamp_list,axis=0), np.concatenate(w_data_list,axis=0)
+
 def get_trainer(config:Config):
     model_path = osp.join(config.site_parent_folder, 'model')
     setting = config.model_pdt.model_settings
@@ -368,7 +382,7 @@ def task_2(**args):
 def task_3(**args):
     flag = args['flag']
     config = Config(args['config_file'])
-    load_data, w_paras, w_timestamp, w_data = read_weather_data_from_config(config, year=-1)
+    load_data, w_paras, w_timestamp, w_data = load_training_data(config=config, yrs=args['years']) 
     logger.info(f'Use these weather parameters... {w_paras}')
     load_arr, wea_arr, t = check_fix_missings(load_arr=load_data, w_timestamp=w_timestamp, w_arr=w_data)
     wea_arr = wea_arr.astype(np.float32)
@@ -517,6 +531,7 @@ def task_7(**args):
 
 if __name__ == "__main__":
 # python -m pytools.weather_task -cfg pytools/config/albany_test.toml --create task_1 
+# -fh, forecast hours
 # python -m pytools.weather_task -cfg pytools/config/albany_test.toml task_2 -fh 2 --n-cores 1 -year 2020 -flag hf
 # python -m pytools.weather_task -cfg pytools/config/albany_prod.toml task_2 --n-cores 1 -year 2018 -flag h
 # python -m pytools.weather_task -cfg pytools/config/albany_prod.toml task_2 -fh 48 --n-cores 1 -year 2024 -flag f

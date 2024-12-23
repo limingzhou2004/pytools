@@ -16,6 +16,9 @@ from pytools.config import DataType
 from pytools.modeling.scaler import Scaler, load
 #from pytools.modeling.weather_net import WeatherPara
 
+np_load_old = np.load
+np.load = lambda *a,**k: np_load_old(*a, allow_pickle=True, **k)
+
 
 class WeatherDataSet(data.Dataset):
     def __init__(
@@ -192,8 +195,8 @@ def check_fix_missings(load_arr:np.ndarray, w_timestamp:np.ndarray, w_arr:np.nda
     return df_tl.values.astype(float), w_arr.astype(float), t
 
 def read_weather_data_from_config(config:Config, year=-1):
-    np_load_old = np.load
-    np.load = lambda *a,**k: np_load_old(*a, allow_pickle=True, **k)
+
+    # load data are not separated by year
     fn_load = config.get_load_data_full_fn(DataType.LoadData, 'npz', year=-1)
     fn_wea = config.get_load_data_full_fn(DataType.Hist_weatherData, 'npz', year=year)
     with np.load(fn_load) as dat:

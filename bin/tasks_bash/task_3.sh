@@ -3,7 +3,7 @@
 cd src/python/pytools
 echo $(pwd)
 
-config_file="pytools/config/albany_test.toml"
+config_file="pytools/config/albany_prod.toml"
 echo $config_file
 
-python -m pytools.data_prep.weather_task -c $config_file  task_3 --fst-horizon 1
+python -m pytools.weather_task -cfg pytools/config/albany_prod.toml task_3 --flag cv -ind 0 -sb find_batch_size -mn prod0 

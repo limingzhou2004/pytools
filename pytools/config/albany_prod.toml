@@ -56,8 +56,8 @@ forecast_horizon = [[1, 48]]
 sample_data_seq_dim = 1 # the dimension of AR target, 1 in dataset, 0 for Batch
 seq_length = 168
 target_ind = 0
-wea_ar_embedding_dim = 168
-ext_ar_embedding_dim = 168
+wea_ar_embedding_dim = 6
+ext_ar_embedding_dim = 6
 
 frac_yr1 = 0.1
 frac_split = [0.4, 0.3, 0.3]

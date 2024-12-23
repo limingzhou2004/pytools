@@ -2,12 +2,14 @@
 import numpy as np
 import pytest
 
+from pytools.config import Config
 from pytools.data_prep.load_data_prep import LoadData
 from pytools.mocking_utils import mock_train_load, mock_predict_load, mock_max_date
 from pytools.weather_task import (
     hist_load,
    # hist_weather_prepare,
     hist_weather_prepare_from_report,
+    load_training_data,
     main,
     past_fst_weather_prepare,
    # train_model,
@@ -17,7 +19,7 @@ from pytools.utilities import get_absolute_path
 
 
 class TestWeatherTask:
-    config_file = get_absolute_path(__file__, "../pytools/config/albany_test.toml")
+    config_file = get_absolute_path(__file__, '../pytools/config/albany_test.toml')
 
     def test_commandline_task1(self):
         cmd_str =f'taskk_1 -cfg {self.config_file} --create '
@@ -26,7 +28,7 @@ class TestWeatherTask:
         main(cmd_str.split(' '))
 
     def test_commandline_task3(self):
-        cmd_str = f'-cfg {self.config_file} task_3 --flag cv -ind 0 -mn test0'
+        cmd_str = f'-cfg {self.config_file} task_3 --flag cv -ind 0 -mn test0 -yr -1'
         main(cmd_str.split(' '))
         assert 1==1
 
@@ -44,6 +46,11 @@ class TestWeatherTask:
     def test_hist_weather_from_inventory(self):
         dm = hist_weather_prepare_from_report(config_file=self.config_file, n_cores=4)
         assert dm.weather.weather_train_data.standardized_data.shape==(49, 21, 21, 16)
+
+    def test_load_weather_data(self, ):
+        c = Config(get_absolute_path(__file__,'../pytools/config/albany_prod.toml'))
+        res = load_training_data(config=c, yrs='2020-2023')
+        assert res[3].shape[0] == 8756
 
     def test_past_weather_fst(self):
         past_fst_weather_prepare(self.config_file, fst_hour=2, year=2020)
