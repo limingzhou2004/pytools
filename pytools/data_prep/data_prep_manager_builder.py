@@ -45,7 +45,7 @@ class DataPrepManagerBuilder:
         dm = DataPrepManager(
             category=config.category["name"],
             site_name=config.site["name"],
-            site_alias=config.site["alias"],
+            site_alias=config.site["folder_name"],
             site_description=config.site["description"],
             site_folder=config.site_parent_folder,
             t0=self.t0,

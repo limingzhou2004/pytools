@@ -32,6 +32,12 @@ class TestWeatherTask:
         main(cmd_str.split(' '))
         assert 1==1
 
+    def test_commandline_task3_prod(self):
+        cfile = get_absolute_path(__file__,'../pytools/config/albany_prod.toml')
+        cmd_str = f'-cfg {cfile} task_3 --flag cv -ind 0 -mn prod0 -yr 2018-2023'
+        main(cmd_str.split(' '))
+        assert 1==1
+
     def test_commandLine_task4(self):
         cmd_str = f'-cfg {self.config_file} task_4 --flag test -mn test0 -ind 0'
         main(cmd_str.split(' '))

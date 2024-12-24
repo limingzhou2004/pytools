@@ -52,8 +52,8 @@ hrrr_hist_max_fst_hour = 0
 logger = get_logger("weather_tasks")
 #weather_data_file_name = 'weather_data.npz'
 
-train_loader_settings = {'batch_size':256, 'shuffle':True, 'drop_last':True, 'pin_memory':True, 'num_workers':4}
-test_loader_settings = {'batch_size':256, 'shuffle':False, 'drop_last':False, 'num_workers':4}
+train_loader_settings = {'batch_size':256, 'shuffle':True, 'drop_last':True, 'pin_memory':True, 'num_workers':7}
+test_loader_settings = {'batch_size':256, 'shuffle':False, 'drop_last':False, 'num_workers':7}
 
 
 def hist_load(
