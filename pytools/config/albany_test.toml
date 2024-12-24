@@ -85,7 +85,7 @@ final_train_hist = [
 
 model_settings.lr=0.001
 model_settings.weight_decay=0.001
-model_settings.epoch=20
+#model_settings.epoch=20
 model_settings.batch_size=1
 model_settings.check_val_every_n_epoch=1
 model_settings.max_epochs=30

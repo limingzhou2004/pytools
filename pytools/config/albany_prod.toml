@@ -75,12 +75,12 @@ final_train_hist = [
     ["2023-01-01", "2024-11-05"]
 ]
 
-model_settings.lr=0.001
+model_settings.lr=0.01
 model_settings.weight_decay=0.001
-model_settings.epoch=20
+#model_settings.epoch=20
 model_settings.batch_size=50
 model_settings.check_val_every_n_epoch=1
-model_settings.max_epochs=50
+model_settings.max_epochs=200
 model_settings.min_delta=1
 model_settings.patience=1
 model_settings.epoch_step=1
