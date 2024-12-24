@@ -19,7 +19,7 @@ from pytools.utilities import get_absolute_path
 
 
 class TestWeatherTask:
-    config_file = get_absolute_path(__file__, '../pytools/config/albany_test.toml')
+    config_file = get_absolute_path(__file__, '../pytools/config/albany_prod.toml')
 
     def test_commandline_task1(self):
         cmd_str =f'taskk_1 -cfg {self.config_file} --create '

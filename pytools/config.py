@@ -93,7 +93,7 @@ class DataType(Enum):
 class Site(BaseModel):
     timezone:str
     state:str
-    folder_name:str
+    file_base_name:str
     name:str
     base_folder: str
     center: Tuple[float, float]
@@ -237,7 +237,7 @@ class Config:
         """
         return os.path.join(
             self.site_parent_folder,
-            prefix + self.site_pdt.folder_name + '_' + class_name + suffix + extension,
+            prefix + self.site_pdt.file_base_name + '_' + class_name + suffix + extension,
         )
     
     def get_logger_folder(self):
@@ -261,7 +261,7 @@ class Config:
             self._base_folder,
             #self.toml_dict["site"]["site_folder"],
             # self.toml_dict["category"]["name"],
-            # self.toml_dict["site"]["folder_name"],
+            # self.toml_dict["site"]["file_base_name"],
         )
 
     @property

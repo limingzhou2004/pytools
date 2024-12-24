@@ -8,7 +8,7 @@
  base_folder = "~/zhoul/work/energy/sites/albany-test"
  name = "Albany-NY"
  # alias is the folder name for each project
- folder_name = "albany-test"
+ base_file_name = "albany-test"
  sql_location = "CAPITL"
  back_fst_window = ["2020-01-01 00:00", "2025-01-01 00:00"]
  #site_folder = "nyiso"
