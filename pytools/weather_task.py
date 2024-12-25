@@ -410,13 +410,13 @@ def task_3(**args):
     tuner = Tuner(trainer)
 
     def train_dl():
-        return DataLoader(ds_train, batch_size=m.batch_size,num_workers=1, shuffle=True, pin_memory=True)
+        return DataLoader(ds_train, batch_size=m.batch_size,num_workers=num_worker, persistent_workers=True, shuffle=True, pin_memory=True)
     
     def test_dl():
-        return DataLoader(ds_test, batch_size=m.batch_size,num_workers=1, shuffle=False)
+        return DataLoader(ds_test, batch_size=m.batch_size,num_workers=num_worker, shuffle=False)
     
     def val_dl():
-        return DataLoader(ds_val, batch_size=m.batch_size,num_workers=1, shuffle=False)
+        return DataLoader(ds_val, batch_size=m.batch_size,num_workers=num_worker, persistent_workers=True,shuffle=False)
     
     dm = TsWeaDataModule(batch_size=m.batch_size)
     dm.train_dataloader = train_dl
