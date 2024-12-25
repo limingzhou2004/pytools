@@ -1,5 +1,6 @@
 
 from enum import Enum
+from functools import partial
 import math
 import os
 import os.path as osp
@@ -367,10 +368,8 @@ class Config:
             val_borders = chain(val_borders, range(int((i+frac_train+frac_test)*quarter)+m, \
                                       int((i+frac_train+frac_test+frac_val)*quarter)+m))
 
-        def fun(x):
-            return x<full_length
-        return filter(fun, train_borders), filter(fun, test_borders), \
-            filter(fun, val_borders)
+        return [t for t in train_borders if t<full_length], [t for t in test_borders if t<full_length], \
+            [t for t in val_borders if t<full_length]
 
     
     @property

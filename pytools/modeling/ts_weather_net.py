@@ -56,9 +56,9 @@ class MixedOutput(nn.Module):
 
         self.mixed_model = nn.ModuleList(
             nn.Sequential(
-            nn.Linear(in_features=in_dim, out_features=in_dim//2),
-            nn.LeakyReLU(),
-            nn.Linear(in_features=in_dim//2, out_features=target_dim),
+            nn.Linear(in_features=in_dim, out_features=target_dim), #in_dim//2),
+          #  nn.LeakyReLU(),
+          #  nn.Linear(in_features=in_dim//2, out_features=target_dim),
             ) for _ in range(pred_len)
             )
 
@@ -70,8 +70,8 @@ class MixedOutput(nn.Module):
         seq_cross = seq_arr.shape[1] * seq_arr.shape[2]
 
         y = torch.zeros(B, self._pred_len, device=device)
-        wea_arr = self.wea_cov1d.forward(torch.permute(wea_arr,[0, 2, 1]))
-        ext_arr = self.ext_cov1d.forward(torch.permute(ext_arr, [0, 2, 1]))
+        wea_arr = self.wea_cov1d(torch.permute(wea_arr,[0, 2, 1]))
+        ext_arr = self.ext_cov1d(torch.permute(ext_arr, [0, 2, 1]))
         delta =  wea_arr.shape[-1] - self._pred_len
         if delta >=0:
             wea_arr = wea_arr[..., delta:]
@@ -245,7 +245,7 @@ class TSWeatherNet(pl.LightningModule):
         y_hat = self(seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr)
         loss = F.mse_loss(y_hat, target)
         self.log('training RMSE loss',torch.sqrt(loss), on_epoch=True)
-        return torch.sqrt(loss)
+        return loss #torch.sqrt(loss)
 
     # def on_training_epoch_end(self, outputs):
     #     #  the function is called after every epoch is completed
@@ -271,10 +271,9 @@ class TSWeatherNet(pl.LightningModule):
         # OPTIONAL
         seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target = batch
         y_hat = self(seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr)
-        loss = torch.sqrt(F.mse_loss(y_hat, target))
-       # self.validation_step_outputs.append(loss)
-        self.log('val RSME loss', torch.sqrt(loss), on_epoch=True)
-        return torch.sqrt(loss)
+        loss = F.mse_loss(y_hat, target)
+        self.log('val RSME loss', torch.sqrt(loss))#, on_epoch=True)
+        return loss
 
     # def on_validation_epoch_end(self):
     #     # OPTIONAL
@@ -293,7 +292,7 @@ class TSWeatherNet(pl.LightningModule):
         # OPTIONAL
         seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target = batch
         y_hat = self(seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr)
-        loss = torch.sqrt(F.mse_loss(y_hat, target))
+        loss = F.mse_loss(y_hat, target)
         self.log('test RSME loss', loss, on_epoch=True)
         self.log_dict(self._busi_loss_metrics(loss))
         return loss

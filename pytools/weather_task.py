@@ -52,9 +52,9 @@ hrrr_hist_max_fst_hour = 0
 logger = get_logger("weather_tasks")
 #weather_data_file_name = 'weather_data.npz'
 
-train_loader_settings = {'batch_size':256, 'shuffle':True, 'drop_last':True, 'pin_memory':True, 'num_workers':7}
-test_loader_settings = {'batch_size':256, 'shuffle':False, 'drop_last':False, 'num_workers':7}
-
+train_loader_settings = {'batch_size':30, 'shuffle':True, 'drop_last':True, 'pin_memory':True, 'num_workers':7}
+test_loader_settings = {'batch_size':20, 'shuffle':False, 'drop_last':False, 'num_workers':7}
+val_loader_settings = {'batch_size':20, 'shuffle':False, 'drop_last':False, 'num_workers':7}
 
 def hist_load(
     config_file: str,
@@ -388,6 +388,8 @@ def task_3(**args):
     wea_arr = wea_arr.astype(np.float32)
     load_arr = load_arr.astype(np.float32)
 
+    num_worker = args['number_of_worker']
+
     ind = args['ind']
     if flag.startswith('cv'):
         prefix = 'cv'
@@ -408,13 +410,13 @@ def task_3(**args):
     tuner = Tuner(trainer)
 
     def train_dl():
-        return DataLoader(ds_train, batch_size=m.batch_size)
+        return DataLoader(ds_train, batch_size=m.batch_size,num_workers=1, shuffle=True, pin_memory=True)
     
     def test_dl():
-        return DataLoader(ds_test, batch_size=m.batch_size)
+        return DataLoader(ds_test, batch_size=m.batch_size,num_workers=1, shuffle=False)
     
     def val_dl():
-        return DataLoader(ds_val, batch_size=m.batch_size)
+        return DataLoader(ds_val, batch_size=m.batch_size,num_workers=1, shuffle=False)
     
     dm = TsWeaDataModule(batch_size=m.batch_size)
     dm.train_dataloader = train_dl

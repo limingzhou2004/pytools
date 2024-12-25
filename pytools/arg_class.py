@@ -202,6 +202,15 @@ class ArgClass:
             type=str,
             help="model name to save to checkpoint",
         )
+        sub_parser.add_argument(
+            "-nworker",
+            "--number-of-worker",
+            dest="number_of_worker",
+            required=False,
+            default=1,
+            type=int,
+            help='number of worker to use, default 1',
+        )
         sub_parser.set_defaults(func=fun)
 
     def _add_task4(self, fun):
