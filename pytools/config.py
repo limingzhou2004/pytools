@@ -155,7 +155,7 @@ class Model(BaseModel):
     y_label: str
     scaler_type: str
     sample_data_seq_dim: int
-    model_settings: Dict
+    model_options: Dict
     frac_yr1: float
     frac_split: list
     final_train_frac_yr1: float

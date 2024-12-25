@@ -83,16 +83,16 @@ final_train_hist = [
     ["2018-11-03", "2018-11-05"]
 ]
 
-model_settings.lr=0.001
-model_settings.weight_decay=0.001
-#model_settings.epoch=20
-model_settings.batch_size=1
-model_settings.check_val_every_n_epoch=1
-model_settings.max_epochs=30
-model_settings.min_delta=1
-model_settings.patience=1
-model_settings.epoch_step=1
-#model_settings.epoch_num=3
+model_options.lr=0.001
+model_options.weight_decay=0.001
+#model_options.epoch=20
+model_options.batch_size=1
+model_options.check_val_every_n_epoch=1
+model_options.max_epochs=30
+model_options.min_delta=1
+model_options.patience=1
+model_options.epoch_step=1
+#model_options.epoch_num=3
 
 #----- model layer configuration parameters
 cov_net.cov1.kernel=3

@@ -152,10 +152,10 @@ class TSWeatherNet(pl.LightningModule):
         # wea_arr_shape, N, Seq, x, y, channel/para
         self.save_hyperparameters()
         super().__init__()
-        self.model_settings = config.model_pdt.model_settings
+        self.model_options = config.model_pdt.model_options
         fn = config.get_model_file_name(class_name='model', extension='.ckpt')
-        self.lr = config.model_pdt.model_settings['lr']
-        self.batch_size = config.model_pdt.model_settings['batch_size']
+        self.lr = config.model_pdt.model_options['lr']
+        self.batch_size = config.model_pdt.model_options['batch_size']
         self.checkpoint_callback = ModelCheckpoint(
             dirpath=osp.dirname(fn),
             filename=osp.basename(fn),
@@ -205,7 +205,7 @@ class TSWeatherNet(pl.LightningModule):
         # others = [p for name, p in self.named_parameters() if label not in name]
 
         #return torch.optim.Adam([{'paras':m_linear}, {'paras':others, 'weight_decay':0}], 
-                                #weight_decay=self.model_settings['weight_decay'], lr=self.#model_settings['lr'])
+                                #weight_decay=self.model_options['weight_decay'], lr=self.#model_options['lr'])
         return torch.optim.Adam(self.parameters(), lr=(self.lr))
     
     def forward(self, seq_wea_arr, seq_ext_arr, seq_target, wea_arr, ext_arr):
@@ -308,7 +308,7 @@ class TSWeatherNet(pl.LightningModule):
     #         self.log(k, v)
     #     self.log("test_loss", float(avg_loss.squeeze()))
     #     self._mdl_logger.experiment.add_hparams(
-    #         dict(self.model_settings._asdict()), {"test_loss": avg_loss}
+    #         dict(self.model_options._asdict()), {"test_loss": avg_loss}
     #     )
 
     def setup_mean(self, target_mean, scaler):

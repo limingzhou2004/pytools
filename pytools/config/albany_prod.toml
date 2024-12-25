@@ -50,7 +50,7 @@ hrrr_paras_file = "data_prep/hrrr_paras_cfgrib.txt"
 hrrr_predict = "hrrr_fst"
 
 [model]
-scaler_type = 'standard' #'minmax'
+scaler_type = 'minmax' #'standard' #'minmax'
 y_label = "load"
 forecast_horizon = [[1, 48]]
 sample_data_seq_dim = 1 # the dimension of AR target, 1 in dataset, 0 for Batch
@@ -75,15 +75,15 @@ final_train_hist = [
     ["2023-01-01", "2024-11-05"]
 ]
 
-model_settings.lr=0.01
-model_settings.weight_decay=0.001
-#model_settings.epoch=20
-model_settings.batch_size=50
-model_settings.check_val_every_n_epoch=2
-model_settings.max_epochs=200
-model_settings.min_delta=0.001
-model_settings.patience=3
-model_settings.epoch_step=2
+model_options.lr=0.01
+model_options.weight_decay=0.001
+#model_options.epoch=20
+model_options.batch_size=50
+model_options.check_val_every_n_epoch=2
+model_options.max_epochs=200
+model_options.min_delta=0.001
+model_options.patience=3
+model_options.epoch_step=2
 
 #----- model layer configuration parameters
 cov_net.cov1.kernel=3

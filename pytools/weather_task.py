@@ -166,7 +166,7 @@ def load_training_data(config:Config, yrs):
 
 def get_trainer(config:Config):
     model_path = osp.join(config.site_parent_folder, 'model')
-    setting = config.model_pdt.model_settings
+    setting = config.model_pdt.model_options
     early_stop_callback = EarlyStopping(
         monitor='val RSME loss',
         min_delta=setting['min_delta'],
