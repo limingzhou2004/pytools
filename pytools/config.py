@@ -351,7 +351,8 @@ class Config:
         # full ind 0: len(all samples) - pred_length 
         # first year + 40% 2nd year (train): 30% 2nd year(test): 30% 2nd year(validate)
         # fraction = [first percetage, (second train, test, validate)]
-        pre_length = self.model_pdt.forecast_horizon[fst_scenario][-1]
+        fst_ind = 0
+        pre_length = self.model_pdt.forecast_horizon[fst_ind][-1]
         full_length -= pre_length
         train_borders = range(int(full_length*fraction_yr1))
         test_borders = range(1,0)
