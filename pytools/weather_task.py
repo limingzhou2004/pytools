@@ -168,7 +168,7 @@ def get_trainer(config:Config):
     model_path = osp.join(config.site_parent_folder, 'model')
     setting = config.model_pdt.hyper_options
     early_stop_callback = EarlyStopping(
-        monitor='val RSME loss',
+        monitor='val RMSE loss',
         min_delta=setting['min_delta'],
         patience=setting['patience'],
         verbose=False,
@@ -385,11 +385,15 @@ def task_3(**args):
     load_data, w_paras, w_timestamp, w_data = load_training_data(config=config, yrs=args['years']) 
     logger.info(f'Use these weather parameters... {w_paras}')
     load_arr, wea_arr, t = check_fix_missings(load_arr=load_data, w_timestamp=w_timestamp, w_arr=w_data)
+    # import matplotlib.pyplot as plt
+    # plt.scatter(load_arr[:,0],wea_arr[:,11,11,0])
+    # #plt.show()
+    # plt.savefig('test.png')
+    # return
+
     wea_arr = wea_arr.astype(np.float32)
     load_arr = load_arr.astype(np.float32)
-
     num_worker = args['number_of_worker']
-
     ind = args['ind']
     if flag.startswith('cv'):
         prefix = 'cv'

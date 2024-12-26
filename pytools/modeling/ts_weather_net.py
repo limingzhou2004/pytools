@@ -210,7 +210,7 @@ class TSWeatherNet(pl.LightningModule):
     
     def forward(self, seq_wea_arr, seq_ext_arr, seq_target, wea_arr, ext_arr):
         device = seq_wea_arr.device
-        self.revin_layer(seq_target,'norm')
+        #seq_target = self.revin_layer(seq_target,'norm')
         B= seq_wea_arr.shape[0]
         seq_wea_arr = seq_wea_arr.detach().clone()
         seq_ext_arr = seq_ext_arr.detach().clone()
@@ -236,7 +236,7 @@ class TSWeatherNet(pl.LightningModule):
         seq_y = self.filter_net(seq_y)
 
         y = self.mixed_output(seq_y, ext_y, wea_y)
-        y = self.revin_layer(y, 'denorm')
+       # y = self.revin_layer(y, 'denorm')
         return y    
 
     def training_step(self, batch, batch_nb):
@@ -272,7 +272,7 @@ class TSWeatherNet(pl.LightningModule):
         seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target = batch
         y_hat = self(seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr)
         loss = F.mse_loss(y_hat, target)
-        self.log('val RSME loss', torch.sqrt(loss))#, on_epoch=True)
+        self.log('val RMSE loss', torch.sqrt(loss))#, on_epoch=True)
         return loss
 
     # def on_validation_epoch_end(self):
@@ -293,7 +293,7 @@ class TSWeatherNet(pl.LightningModule):
         seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target = batch
         y_hat = self(seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr)
         loss = F.mse_loss(y_hat, target)
-        self.log('test RSME loss', loss, on_epoch=True)
+        self.log('test RMSE loss', torch.sqrt(loss), on_epoch=True)
         self.log_dict(self._busi_loss_metrics(loss))
         return loss
 

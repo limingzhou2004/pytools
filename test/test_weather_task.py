@@ -22,10 +22,10 @@ class TestWeatherTask:
     config_file = get_absolute_path(__file__, '../pytools/config/albany_test.toml')
 
     def test_commandline_task1(self):
-        cmd_str =f'taskk_1 -cfg {self.config_file} --create '
-        #main(cmd_str.split(' '))
-        cmd_str = f'-cfg {self.config_file} task_2 -fh 2'
+        cmd_str =f'-cfg {self.config_file} task_2 -flag h'
         main(cmd_str.split(' '))
+        #cmd_str = f'-cfg {self.config_file} task_2 -fh 2 -flag f'
+        #main(cmd_str.split(' '))
 
     def test_commandline_task3(self):
         cmd_str = f'-cfg {self.config_file} task_3 --flag cv -ind 0 -mn test0 -yr -1 -nworker 3'
