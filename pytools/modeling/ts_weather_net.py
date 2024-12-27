@@ -58,9 +58,9 @@ class MixedOutput(nn.Module):
         dim_between =5
         self.mixed_model = nn.ModuleList(
             nn.Sequential(
-            nn.Linear(in_features=in_dim, out_features=in_dim//2),
+            nn.Linear(in_features=in_dim, out_features=in_dim//10),
             nn.LeakyReLU(),
-            nn.Linear(in_features=in_dim//2, out_features=target_dim),
+            nn.Linear(in_features=in_dim//10, out_features=target_dim),
             ) for _ in range(pred_len)
             )
 

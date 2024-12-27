@@ -75,10 +75,10 @@ final_train_hist = [
     ["2023-01-01", "2024-11-05"]
 ]
 
-hyper_options.lr=0.005
+hyper_options.lr=0.01
 hyper_options.weight_decay=0.001
 #hyper_options.epoch=20
-hyper_options.batch_size=100
+hyper_options.batch_size=60
 hyper_options.check_val_every_n_epoch=2
 hyper_options.max_epochs=200
 hyper_options.min_delta=0.001
