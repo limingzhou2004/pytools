@@ -52,13 +52,15 @@ class MixedOutput(nn.Module):
 
         in_dim = seq_latent_dim * filternet_hidden_size + model_paras['cov1d']['out_channels'] + model_paras['ext_cov1d']['out_channels']
 
+        in_dim = seq_latent_dim * filternet_hidden_size + wea_arr_dim + ext_dim
+
         self.ts_latent_model = nn.Linear(in_features=seq_arr_dim,out_features=seq_latent_dim)
         dim_between =5
         self.mixed_model = nn.ModuleList(
             nn.Sequential(
-            nn.Linear(in_features=in_dim, out_features=dim_between), #in_dim//2),
+            nn.Linear(in_features=in_dim, out_features=in_dim//2),
             nn.LeakyReLU(),
-            nn.Linear(in_features=dim_between, out_features=target_dim),
+            nn.Linear(in_features=in_dim//2, out_features=target_dim),
             ) for _ in range(pred_len)
             )
 
@@ -70,8 +72,11 @@ class MixedOutput(nn.Module):
         seq_cross = seq_arr.shape[1] * seq_arr.shape[2]
 
         y = torch.zeros(B, self._pred_len, device=device)
-        wea_arr = self.wea_cov1d(torch.permute(wea_arr,[0, 2, 1]))
-        ext_arr = self.ext_cov1d(torch.permute(ext_arr, [0, 2, 1]))
+        #wea_arr = self.wea_cov1d(torch.permute(wea_arr,[0, 2, 1]))
+        #ext_arr = self.ext_cov1d(torch.permute(ext_arr, [0, 2, 1]))
+
+        wea_arr=torch.permute(wea_arr,[0, 2, 1])
+        ext_arr=torch.permute(ext_arr, [0, 2, 1])
         delta =  wea_arr.shape[-1] - self._pred_len
         if delta >=0:
             wea_arr = wea_arr[..., delta:]
@@ -210,7 +215,7 @@ class TSWeatherNet(pl.LightningModule):
     
     def forward(self, seq_wea_arr, seq_ext_arr, seq_target, wea_arr, ext_arr):
         device = seq_wea_arr.device
-        #seq_target = self.revin_layer(seq_target,'norm')
+        seq_target = self.revin_layer(seq_target,'norm')
         B= seq_wea_arr.shape[0]
         seq_wea_arr = seq_wea_arr.detach().clone()
         seq_ext_arr = seq_ext_arr.detach().clone()
@@ -233,10 +238,11 @@ class TSWeatherNet(pl.LightningModule):
         for i in range(e_dim):
             ext_y[:,i,:] = self.ext_net(ext_arr[:,i,...])
         seq_y = torch.cat([seq_target[...,None], seq_ext_y, seq_wea_y],dim=2).permute([0, 2, 1])
+        #seq_y = torch.cat([seq_target[...,None]],dim=2).permute([0, 2, 1])
         seq_y = self.filter_net(seq_y)
 
         y = self.mixed_output(seq_y, ext_y, wea_y)
-       # y = self.revin_layer(y, 'denorm')
+        y = self.revin_layer(y, 'denorm')
         return y    
 
     def training_step(self, batch, batch_nb):
@@ -258,14 +264,20 @@ class TSWeatherNet(pl.LightningModule):
     #     #     self.log(k, v)
     #     self.log("train_rmse_loss", float(avg_loss.squeeze()))
 
-    def _busi_loss_metrics(self, scaled_loss):
-        abs_loss = self._scaler.unscale_target(scaled_loss.cpu().reshape((-1, 1)))
+    def _busi_loss_metrics(self, pred, target):
+        abs_bias = (torch.mean(pred)-torch.mean(target)).item()
+        pred = self._scaler.unscale_target(pred.cpu().reshape((-1, 1))) 
+        target = self._scaler.unscale_target(target.cpu().reshape((-1, 1))) 
+        abs_loss = F.l1_loss(torch.tensor(pred),torch.tensor(target)).item()
         relative_loss = abs_loss / self._target_mean
+        abs_bias_perc = abs_bias/self._target_mean
         return {
-            "abs_loss(MAE)": float(abs_loss.squeeze()),
-            "relative_loss(RMAE)": float(relative_loss.squeeze()),
-            "y_mean": self._target_mean,
-            "y_std": self._target_std,
+            'abs_loss(MAE)': abs_loss,
+            'relative_loss(RMAE)': relative_loss,
+            'y_mean': self._target_mean,
+            'y_std': self._target_std,
+            'abs_bias':abs_bias,
+            'abs_bias_perc':abs_bias_perc,
         }
 
     def validation_step(self, batch, batch_nb):
@@ -294,9 +306,8 @@ class TSWeatherNet(pl.LightningModule):
         seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target = batch
         y_hat = self(seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr)
         loss = F.mse_loss(y_hat, target)
-        loss2 = F.l1_loss(y_hat, target)
         self.log('test RMSE loss', torch.sqrt(loss), on_epoch=True)
-        self.log_dict(self._busi_loss_metrics(loss2))
+        self.log_dict(self._busi_loss_metrics(y_hat, target))
         return loss
 
     # def on_test_epoch_end(self):

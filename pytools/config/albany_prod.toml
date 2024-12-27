@@ -59,7 +59,7 @@ target_ind = 0
 wea_ar_embedding_dim = 6
 ext_ar_embedding_dim = 6
 
-frac_yr1 = 0.1
+frac_yr1 = 0.67
 frac_split = [0.4, 0.3, 0.3]
 final_train_frac_yr1 = 0.5
 final_train_frac =[1, 0, 0]
@@ -75,10 +75,10 @@ final_train_hist = [
     ["2023-01-01", "2024-11-05"]
 ]
 
-hyper_options.lr=0.01
+hyper_options.lr=0.005
 hyper_options.weight_decay=0.001
 #hyper_options.epoch=20
-hyper_options.batch_size=50
+hyper_options.batch_size=100
 hyper_options.check_val_every_n_epoch=2
 hyper_options.max_epochs=200
 hyper_options.min_delta=0.001
@@ -86,16 +86,16 @@ hyper_options.patience=3
 hyper_options.epoch_step=2
 
 #----- model layer configuration parameters
-cov_net.cov1.kernel=3
+cov_net.cov1.kernel=5
 cov_net.cov1.padding=0
-cov_net.cov1.stride=1
-cov_net.cov1.dilation=2
+cov_net.cov1.stride=2
+cov_net.cov1.dilation=1
 cov_net.cov1.group=1
-cov_net.cov1.output_channel=6
+cov_net.cov1.output_channel=7
 cov_net.cov2.kernel=3
 cov_net.cov2.padding=0
 cov_net.cov2.stride=1
-cov_net.cov2.dilation=2
+cov_net.cov2.dilation=1
 cov_net.cov2.group=1
 cov_net.cov2.output_channel=4
 cov_net.last.channel=7
@@ -103,22 +103,22 @@ cov_net.last.channel=7
 ext_net.input_channel=6
 ext_net.output_channel=3
 
-filter_net.hidden_size=8
-filter_net.dropout=0.01
+filter_net.hidden_size=10
+filter_net.dropout=0.02
 filter_net.band_width=96
 filter_net.scale=0.2
-filter_net.sparsity_threshold=0.01
+filter_net.sparsity_threshold=0.02
 
-mixed_net.ts_latent_dim=5
+mixed_net.ts_latent_dim=9
 mixed_net.cov1d.kernel_size=5
 mixed_net.cov1d.padding=2
 mixed_net.cov1d.stride=1
-mixed_net.cov1d.dilation=2
+mixed_net.cov1d.dilation=1
 mixed_net.cov1d.out_channels=3
 mixed_net.ext_cov1d.kernel_size=13
-mixed_net.ext_cov1d.padding=3
+mixed_net.ext_cov1d.padding=6
 mixed_net.ext_cov1d.stride=1
-mixed_net.ext_cov1d.dilation=6
+mixed_net.ext_cov1d.dilation=1
 mixed_net.ext_cov1d.out_channels=3
 
 
