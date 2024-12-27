@@ -113,12 +113,12 @@ mixed_net.ts_latent_dim=5
 mixed_net.cov1d.kernel_size=5
 mixed_net.cov1d.padding=2
 mixed_net.cov1d.stride=1
-mixed_net.cov1d.dilation=1
+mixed_net.cov1d.dilation=2
 mixed_net.cov1d.out_channels=3
 mixed_net.ext_cov1d.kernel_size=13
-mixed_net.ext_cov1d.padding=6
+mixed_net.ext_cov1d.padding=3
 mixed_net.ext_cov1d.stride=1
-mixed_net.ext_cov1d.dilation=1
+mixed_net.ext_cov1d.dilation=6
 mixed_net.ext_cov1d.out_channels=3
 
 

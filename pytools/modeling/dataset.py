@@ -60,6 +60,7 @@ class WeatherDataSet(data.Dataset):
                 scaler.save(self._fn_scaler)
 
             self.target_mean = self._target.mean()
+            self.target_std = self._target.std()
             self._target = scaler.scale_target(self._target)
             self._wea_arr = scaler.scale_arr([self._wea_arr])[0]
 

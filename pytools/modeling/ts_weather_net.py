@@ -53,12 +53,12 @@ class MixedOutput(nn.Module):
         in_dim = seq_latent_dim * filternet_hidden_size + model_paras['cov1d']['out_channels'] + model_paras['ext_cov1d']['out_channels']
 
         self.ts_latent_model = nn.Linear(in_features=seq_arr_dim,out_features=seq_latent_dim)
-
+        dim_between =5
         self.mixed_model = nn.ModuleList(
             nn.Sequential(
-            nn.Linear(in_features=in_dim, out_features=target_dim), #in_dim//2),
-          #  nn.LeakyReLU(),
-          #  nn.Linear(in_features=in_dim//2, out_features=target_dim),
+            nn.Linear(in_features=in_dim, out_features=dim_between), #in_dim//2),
+            nn.LeakyReLU(),
+            nn.Linear(in_features=dim_between, out_features=target_dim),
             ) for _ in range(pred_len)
             )
 
@@ -265,14 +265,15 @@ class TSWeatherNet(pl.LightningModule):
             "abs_loss(MAE)": float(abs_loss.squeeze()),
             "relative_loss(RMAE)": float(relative_loss.squeeze()),
             "y_mean": self._target_mean,
+            "y_std": self._target_std,
         }
 
     def validation_step(self, batch, batch_nb):
         # OPTIONAL
         seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target = batch
         y_hat = self(seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr)
-        loss = F.mse_loss(y_hat, target)
-        self.log('val RMSE loss', torch.sqrt(loss))#, on_epoch=True)
+        loss = F.mse_loss(y_hat, target)        
+        self.log('val RMSE loss', torch.sqrt(loss), on_epoch=True)
         return loss
 
     # def on_validation_epoch_end(self):
@@ -293,8 +294,9 @@ class TSWeatherNet(pl.LightningModule):
         seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target = batch
         y_hat = self(seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr)
         loss = F.mse_loss(y_hat, target)
+        loss2 = F.l1_loss(y_hat, target)
         self.log('test RMSE loss', torch.sqrt(loss), on_epoch=True)
-        self.log_dict(self._busi_loss_metrics(loss))
+        self.log_dict(self._busi_loss_metrics(loss2))
         return loss
 
     # def on_test_epoch_end(self):
@@ -311,9 +313,10 @@ class TSWeatherNet(pl.LightningModule):
     #         dict(self.hyper_options._asdict()), {"test_loss": avg_loss}
     #     )
 
-    def setup_mean(self, target_mean, scaler):
+    def setup_mean(self, target_mean, target_std, scaler):
         self._target_mean = target_mean
         self._scaler = scaler
+        self._target_std = target_std
 
 
 class TsWeaDataModule(pl.LightningDataModule):

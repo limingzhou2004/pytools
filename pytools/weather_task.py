@@ -409,7 +409,7 @@ def task_3(**args):
     # add the batch dim
     wea_input_shape = [1, *wea_arr.shape]
     m = TSWeatherNet(wea_arr_shape=wea_input_shape, config=config)
-    m.setup_mean(scaler=ds_train.scaler, target_mean=ds_train.target_mean)
+    m.setup_mean(scaler=ds_train.scaler, target_std=ds_train.target_std, target_mean=ds_train.target_mean)
     trainer = get_trainer(config)
     tuner = Tuner(trainer)
 
@@ -417,7 +417,7 @@ def task_3(**args):
         return DataLoader(ds_train, batch_size=m.batch_size,num_workers=num_worker, persistent_workers=True, shuffle=True, pin_memory=True)
     
     def test_dl():
-        return DataLoader(ds_test, batch_size=m.batch_size,num_workers=num_worker, shuffle=False)
+        return DataLoader(ds_test, batch_size=m.batch_size,num_workers=num_worker, persistent_workers=True,shuffle=False)
     
     def val_dl():
         return DataLoader(ds_val, batch_size=m.batch_size,num_workers=num_worker, persistent_workers=True,shuffle=False)
