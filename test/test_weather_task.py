@@ -43,10 +43,10 @@ class TestWeatherTask:
         main(cmd_str.split(' '))
         assert 1==1
 
-    def test_hist_load(self, ):
+    def test_task1_hist_load(self, ):
         #monkeypatch.setattr(LoadData, "query_train_data", mock_train_load)
         res = hist_load(config_file=self.config_file,create=True)
-        assert res.load_data.train_data.shape[1] == 8
+        assert res.load_data.train_data.shape[1] == 10
         assert res.load_data.train_data.shape[0] >= 2
 
     def test_hist_weather_from_inventory(self):

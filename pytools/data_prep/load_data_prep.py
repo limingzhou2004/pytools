@@ -146,6 +146,8 @@ class LoadData:
         data = self.add_hod(data, timestamp=self.date_col)
         data = self.add_dow(data, timestamp=self.date_col)
         data = self.add_holiday_dst(data, timestamp=self.date_col)
+        data = self.add_moy(data, timestamp=self.date_col)
+
         return data
 
     def query_max_load_time(self, date_col=["max_date"]) -> np.datetime64:
@@ -199,6 +201,12 @@ class LoadData:
 
     def add_dow(self, df, timestamp="timestamp"):
         cols, dw = Cp.CalendarData().get_dayofweek(df[timestamp].apply(lambda t: t.tz_convert(tz=self.timezone)))
+        for c in cols:
+            df[c] = dw[c]
+        return df
+    
+    def add_moy(self, df, timestamp="timestamp"):
+        cols, dw = Cp.CalendarData().get_monthofyear(df[timestamp].apply(lambda t: t.tz_convert(tz=self.timezone)))
         for c in cols:
             df[c] = dw[c]
         return df
