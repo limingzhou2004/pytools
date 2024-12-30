@@ -21,7 +21,7 @@ from torch.utils.data import DataLoader
 
 from pytools.arg_class import ArgClass
 from pytools.data_prep.herbie_wrapper import download_hist_fst_data
-from pytools.modeling.dataset import WeatherDataSet, check_fix_missings, read_weather_data_from_config
+from pytools.modeling.dataset import WeatherDataSet, check_fix_missings, create_datasets, read_weather_data_from_config
 from pytools.modeling.rolling_forecast import RollingForecast
 from pytools.modeling.ts_weather_net import TSWeatherNet, TsWeaDataModule
 from pytools.modeling.mlflow_helper import save_model, load_model
@@ -158,10 +158,12 @@ def load_training_data(config:Config, yrs):
     y1 = int(years[-1])
     w_timestamp_list = []
     w_data_list = []
+    inds = []
     for yr in range(y0, y1+1):
         load_data, w_paras, w_timestamp, w_data = read_weather_data_from_config(config, year=yr)
         w_timestamp_list.append(w_timestamp)
         w_data_list.append(w_data)
+        inds.append(w_data.shape[0])
     return load_data, w_paras, np.concatenate(w_timestamp_list,axis=0), np.concatenate(w_data_list,axis=0)
 
 def get_trainer(config:Config):
@@ -395,16 +397,17 @@ def task_3(**args):
     load_arr = load_arr.astype(np.float32)
     num_worker = args['number_of_worker']
     ind = args['ind']
+
+
     if flag.startswith('cv'):
         prefix = 'cv'
-        ds_test =  WeatherDataSet(flag=f'{prefix}_test',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
-      #  loader_test = DataLoader(ds_test, **test_loader_settings)
-        ds_val =  WeatherDataSet(flag=f'{prefix}_val',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
-      #  loader_val = DataLoader(ds_val, **test_loader_settings)
+        # ds_test =  WeatherDataSet(flag=f'{prefix}_test',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
+        # ds_val =  WeatherDataSet(flag=f'{prefix}_val',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
     elif flag.startswith('final'):
         prefix= 'final_train'    
     train_flag = f'{prefix}_train'
-    ds_train = WeatherDataSet(flag=train_flag,tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
+    ds_train, ds_val, ds_test = create_datasets(config, flag, tabular_data=load_arr, wea_arr=wea_arr,timestamp=t,sce_ind=ind)
+    # ds_train = WeatherDataSet(flag=train_flag,tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
     
     # add the batch dim
     wea_input_shape = [1, *wea_arr.shape]
@@ -424,8 +427,10 @@ def task_3(**args):
     
     dm = TsWeaDataModule(batch_size=m.batch_size)
     dm.train_dataloader = train_dl
-    dm.test_dataloader = test_dl
-    dm.val_dataloader = val_dl
+    if ds_test:
+        dm.test_dataloader = test_dl
+    if ds_val:
+        dm.val_dataloader = val_dl
     sub_task = args['sub']
     if sub_task == 'find_batch_size':
         tuner.scale_batch_size(m, datamodule=dm)

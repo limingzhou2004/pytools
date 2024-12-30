@@ -12,6 +12,7 @@ from itertools import chain
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel, FilePath, field_validator
+from sklearn.model_selection import train_test_split
 import toml
 import envtoml
 
@@ -156,6 +157,7 @@ class Model(BaseModel):
     scaler_type: str
     sample_data_seq_dim: int
     hyper_options: Dict
+    train_frac: float
     frac_yr1: float
     frac_split: list
     final_train_frac_yr1: float
@@ -342,7 +344,20 @@ class Config:
         )
         df.reset_index().to_csv(file_name, index=False)
 
-    def get_sample_segmentation_borders(self, full_length, fst_scenario=0, first_yr_frac=0.5, fractions=[]):
+    def get_sample_segmentation_borders(self, full_length, test_length, val_frac=0.2, fractions=[]):
+        #, fractions=[0.5, (0.4, 0.3, 0.3)]):
+        # full ind 0: len(all samples) - pred_length 
+        fst_ind = 0
+        pre_length = self.model_pdt.forecast_horizon[fst_ind][-1]
+        full_length -= pre_length
+        test_length -= pre_length
+        train_val_borders = range(int(full_length*(1-val_frac)))
+        train_ind, val_ind = train_test_split(train_val_borders, test_size=val_frac)
+        test_ind = range(test_length)
+
+        return train_ind, val_ind, test_ind
+
+    def get_sample_segmentation_borders_old(self, full_length, fst_scenario=0, first_yr_frac=0.5, fractions=[]):
         #, fractions=[0.5, (0.4, 0.3, 0.3)]):
         fraction_yr1 = first_yr_frac
         frac_train=fractions[0]

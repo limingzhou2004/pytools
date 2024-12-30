@@ -100,7 +100,7 @@ cov_net.cov2.group=1
 cov_net.cov2.output_channel=4
 cov_net.last.channel=7
 
-ext_net.input_channel=6
+ext_net.input_channel=8
 ext_net.output_channel=3
 
 filter_net.hidden_size=10
