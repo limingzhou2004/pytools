@@ -80,29 +80,29 @@ hyper_options.lr=0.01
 hyper_options.weight_decay=0.001
 #hyper_options.epoch=20
 hyper_options.batch_size=100
-hyper_options.check_val_every_n_epoch=2
+hyper_options.check_val_every_n_epoch=1
 hyper_options.max_epochs=200
 hyper_options.min_delta=0.001
-hyper_options.patience=3
+hyper_options.patience=4
 hyper_options.epoch_step=2
 
 #----- model layer configuration parameters
 cov_net.cov1.kernel=5
 cov_net.cov1.padding=0
-cov_net.cov1.stride=2
-cov_net.cov1.dilation=1
+cov_net.cov1.stride=1
+cov_net.cov1.dilation=2
 cov_net.cov1.group=1
-cov_net.cov1.output_channel=7
+cov_net.cov1.output_channel=12
 cov_net.cov2.kernel=3
 cov_net.cov2.padding=0
-cov_net.cov2.stride=2
+cov_net.cov2.stride=1
 cov_net.cov2.dilation=1
 cov_net.cov2.group=1
-cov_net.cov2.output_channel=4
-cov_net.last.channel=7
+cov_net.cov2.output_channel=6
+cov_net.last.channel=20
 
 ext_net.input_channel=8
-ext_net.output_channel=3
+ext_net.output_channel=8
 
 filter_net.hidden_size=10
 filter_net.dropout=0.02
@@ -115,12 +115,12 @@ mixed_net.cov1d.kernel_size=5
 mixed_net.cov1d.padding=2
 mixed_net.cov1d.stride=1
 mixed_net.cov1d.dilation=1
-mixed_net.cov1d.out_channels=3
+mixed_net.cov1d.out_channels=20
 mixed_net.ext_cov1d.kernel_size=13
 mixed_net.ext_cov1d.padding=6
 mixed_net.ext_cov1d.stride=1
-mixed_net.ext_cov1d.dilation=1
-mixed_net.ext_cov1d.out_channels=3
+mixed_net.ext_cov1d.dilation=2
+mixed_net.ext_cov1d.out_channels=8
 
 
 #--- model management

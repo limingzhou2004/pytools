@@ -56,11 +56,12 @@ class MixedOutput(nn.Module):
 
         self.ts_latent_model = nn.Linear(in_features=seq_arr_dim,out_features=seq_latent_dim)
         dim_between =5
+        shrink_factor=10
         self.mixed_model = nn.ModuleList(
             nn.Sequential(
-            nn.Linear(in_features=in_dim, out_features=in_dim//10),
+            nn.Linear(in_features=in_dim, out_features=in_dim//shrink_factor),
             nn.LeakyReLU(),
-            nn.Linear(in_features=in_dim//10, out_features=target_dim),
+            nn.Linear(in_features=in_dim//shrink_factor, out_features=target_dim),
             ) for _ in range(pred_len)
             )
 
@@ -77,6 +78,7 @@ class MixedOutput(nn.Module):
 
         wea_arr=torch.permute(wea_arr,[0, 2, 1])
         ext_arr=torch.permute(ext_arr, [0, 2, 1])
+
         delta =  wea_arr.shape[-1] - self._pred_len
         if delta >=0:
             wea_arr = wea_arr[..., delta:]
@@ -215,7 +217,7 @@ class TSWeatherNet(pl.LightningModule):
     
     def forward(self, seq_wea_arr, seq_ext_arr, seq_target, wea_arr, ext_arr):
         device = seq_wea_arr.device
-        seq_target = self.revin_layer(seq_target,'norm')
+        #seq_target = self.revin_layer(seq_target,'norm')
         B= seq_wea_arr.shape[0]
         seq_wea_arr = seq_wea_arr.detach().clone()
         seq_ext_arr = seq_ext_arr.detach().clone()
@@ -242,7 +244,7 @@ class TSWeatherNet(pl.LightningModule):
         seq_y = self.filter_net(seq_y)
 
         y = self.mixed_output(seq_y, ext_y, wea_y)
-        y = self.revin_layer(y, 'denorm')
+        #y = self.revin_layer(y, 'denorm')
         return y    
 
     def training_step(self, batch, batch_nb):
