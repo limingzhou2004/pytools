@@ -64,7 +64,11 @@ def create_datasets(config:Config, flag, tabular_data, wea_arr, timestamp, sce_i
 
     if flag.startswith('cv'):
         test_range = range(train_range[-1], full_length)
-        train_range, val_range = train_test_split(train_range, train_size=int(config.model_pdt.train_frac*train_size))
+        if config.model_pdt.train_frac >= 1:
+            train_range = range(1)
+            val_range = None
+        else:
+            train_range, val_range = train_test_split(train_range, train_size=int(config.model_pdt.train_frac*train_size))
 
     # elif flag.startswith('final_'):
     #     return train_range

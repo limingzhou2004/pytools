@@ -166,11 +166,11 @@ def load_training_data(config:Config, yrs):
         inds.append(w_data.shape[0])
     return load_data, w_paras, np.concatenate(w_timestamp_list,axis=0), np.concatenate(w_data_list,axis=0)
 
-def get_trainer(config:Config):
+def get_trainer(config:Config, use_val:bool=True):
     model_path = osp.join(config.site_parent_folder, 'model')
     setting = config.model_pdt.hyper_options
     early_stop_callback = EarlyStopping(
-        monitor='val RMSE loss',
+        monitor='val RMSE loss' if use_val else 'training RMSE loss',
         min_delta=setting['min_delta'],
         patience=setting['patience'],
         verbose=False,
@@ -185,6 +185,7 @@ def get_trainer(config:Config):
         max_epochs=setting['max_epochs'],   
         logger=[tb_logger, csv_logger],
     )
+
     return trainer
 
 
@@ -413,7 +414,11 @@ def task_3(**args):
     wea_input_shape = [1, *wea_arr.shape]
     m = TSWeatherNet(wea_arr_shape=wea_input_shape, config=config)
     m.setup_mean(scaler=ds_train.scaler, target_std=ds_train.target_std, target_mean=ds_train.target_mean)
-    trainer = get_trainer(config)
+    if config.model_pdt.train_frac>=1:
+        use_val = False
+    else:
+        use_val = True
+    trainer = get_trainer(config, use_val=use_val)
     tuner = Tuner(trainer)
 
     def train_dl():

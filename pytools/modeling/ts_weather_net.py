@@ -73,10 +73,10 @@ class MixedOutput(nn.Module):
         seq_cross = seq_arr.shape[1] * seq_arr.shape[2]
 
         y = torch.zeros(B, self._pred_len, device=device)
-        #wea_arr = self.wea_cov1d(torch.permute(wea_arr,[0, 2, 1]))
+        wea_arr = self.wea_cov1d(torch.permute(wea_arr,[0, 2, 1]))
         #ext_arr = self.ext_cov1d(torch.permute(ext_arr, [0, 2, 1]))
 
-        wea_arr=torch.permute(wea_arr,[0, 2, 1])
+        # wea_arr=torch.permute(wea_arr,[0, 2, 1])
         ext_arr=torch.permute(ext_arr, [0, 2, 1])
 
         delta =  wea_arr.shape[-1] - self._pred_len
