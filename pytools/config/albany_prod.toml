@@ -67,8 +67,8 @@ final_train_frac =[1, 0, 0]
 cv_settings = [
   # ["2018-11-03","2018-11-04 12:00","2018-11-04 13:00","2018-11-05"]
    ["2018-01-01", "2020-01-01", "2020-01-01", "2021-01-01"],
-   ["2020-01-01", "2021-01-01", "2021-01-01","2022-01-01"],
-   ["2021-01-01", "2022-01-01", "2022-01-01","2023-01-01"],
+   ["2018-01-01", "2021-01-01", "2021-01-01","2022-01-01"],
+   ["2018-01-01", "2022-01-01", "2022-01-01","2023-01-01"],
    ["2022-01-01", "2023-01-01", "2023-01-01","2024-01-01"],
    ["2023-01-01", "2024-01-01", "2024-01-01","2025-01-01"]
 ]
@@ -76,14 +76,15 @@ final_train_hist = [
     ["2023-01-01", "2024-11-05"]
 ]
 
+hyper_options.stopping_threshold=0.07
+hyper_options.num_nodes=6
 hyper_options.lr=0.01
 hyper_options.weight_decay=0.001
-#hyper_options.epoch=20
 hyper_options.batch_size=100
 hyper_options.check_val_every_n_epoch=1
 hyper_options.max_epochs=49 #100
 hyper_options.min_delta=0.001
-hyper_options.patience=4
+hyper_options.patience=3
 hyper_options.epoch_step=2
 
 #----- model layer configuration parameters

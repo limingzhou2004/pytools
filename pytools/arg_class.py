@@ -216,22 +216,31 @@ class ArgClass:
     def _add_task4(self, fun):
         sub_parser = self.sub_parsers.add_parser("task_4")
         sub_parser.add_argument(
-            "-flag",
-            "--flag",
-            dest="flag",
+            "-t0",
+            "--t0",
+            dest="t0",
             required=False,
-            default='cv_0',
+            default='latest',
             type=str,
-            help="test|predict",
+            help="latest, or start time for past forecast",
         )
         sub_parser.add_argument(
-            "-ind",
-            "--sce-ind",
-            dest="ind",
+            "-t1",
+            "--t1",
+            dest='t1',
             required=False,
-            default=0,
+            default='',
+            type=str,
+            help="end time for past forecast",
+        )
+        sub_parser.add_argument(
+            "-yr",
+            "--year",
+            dest='year',
+            required=False,
+            default=2023,
             type=int,
-            help="ind for test with fst weather, default 0, -1 for real time weather forecast",
+            help="year for past forecast weather",
         )
         sub_parser.add_argument(
             "-mn",

@@ -21,7 +21,7 @@ from torch.utils.data import DataLoader
 
 from pytools.arg_class import ArgClass
 from pytools.data_prep.herbie_wrapper import download_hist_fst_data
-from pytools.modeling.dataset import WeatherDataSet, check_fix_missings, create_datasets, read_weather_data_from_config
+from pytools.modeling.dataset import WeatherDataSet, check_fix_missings, create_datasets, read_past_weather_data_from_config, read_weather_data_from_config
 from pytools.modeling.rolling_forecast import RollingForecast
 from pytools.modeling.ts_weather_net import TSWeatherNet, TsWeaDataModule
 from pytools.modeling.mlflow_helper import save_model, load_model
@@ -137,7 +137,7 @@ def hist_weather_prepare_from_report(config_file:str, n_cores=1, suffix='v0', cr
     return d
 
 
-def past_fst_weather_prepare(config_file:str, fst_hour=48, year=-1, month=-1):
+def past_fst_weather_prepare(config_file, fst_hour=48, year=-1, month=-1):
     logger.info('Create past weather forecast, with forecast horizon of {fst_hour}...\n')
     if year>0:
         logger.info(f'Process year {year} only...')
@@ -166,11 +166,16 @@ def load_training_data(config:Config, yrs):
         inds.append(w_data.shape[0])
     return load_data, w_paras, np.concatenate(w_timestamp_list,axis=0), np.concatenate(w_data_list,axis=0)
 
+
+
+
+
 def get_trainer(config:Config, use_val:bool=True):
     model_path = osp.join(config.site_parent_folder, 'model')
     setting = config.model_pdt.hyper_options
     early_stop_callback = EarlyStopping(
         monitor='val RMSE loss' if use_val else 'training RMSE loss',
+        stopping_threshold=setting['stopping_threshold'],
         min_delta=setting['min_delta'],
         patience=setting['patience'],
         verbose=False,
@@ -180,8 +185,9 @@ def get_trainer(config:Config, use_val:bool=True):
     csv_logger = CSVLogger(save_dir=model_path, name='csv_logger')
     trainer = pl.Trainer(
         default_root_dir=model_path,
+        num_nodes=setting['num_nodes'],
         callbacks=early_stop_callback,
-        check_val_every_n_epoch=setting['epoch_step'],
+        check_val_every_n_epoch=setting['check_val_every_n_epoch'],
         max_epochs=setting['max_epochs'],   
         logger=[tb_logger, csv_logger],
     )
@@ -475,11 +481,16 @@ def task_4(**args):
     # load the model for predictions
     config = Config(args['config_file'])
 
-    # get prediction data
+    year = args['year']
+
+    # get weather data
+    if args['t0'] != 'latest':
+       load_data, wea_data =  read_past_weather_data_from_config(config=config, year=year)
     
 
     ckpt_path = osp.join(config.site_parent_folder, 'model', args['model_name'])
     m2 =TSWeatherNet.load_from_checkpoint(ckpt_path)
+
 
 
     #y = m2()

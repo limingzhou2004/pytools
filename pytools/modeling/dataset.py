@@ -264,10 +264,10 @@ def check_fix_missings(load_arr:np.ndarray, w_timestamp:np.ndarray, w_arr:np.nda
     return df_tl.values.astype(float), w_arr.astype(float), t
 
 def read_weather_data_from_config(config:Config, year=-1):
-
     # load data are not separated by year
     fn_load = config.get_load_data_full_fn(DataType.LoadData, 'npz', year=-1)
-    fn_wea = config.get_load_data_full_fn(DataType.Hist_weatherData, 'npz', year=year)
+    fn_wea =  config.get_load_data_full_fn(DataType.Hist_weatherData, 'npz', year=year)
+    
     with np.load(fn_load) as dat:
         load_data = dat[DataType.LoadData.name]
     with np.load(fn_wea) as dat:
@@ -276,6 +276,22 @@ def read_weather_data_from_config(config:Config, year=-1):
         w_data = dat[DataType.Hist_weatherData.name]
 
     return load_data, paras, w_timestamp, w_data, 
+
+
+def read_past_weather_data_from_config(config:Config, year=-1):
+    fn_load = config.get_load_data_full_fn(DataType.LoadData, 'npz', year=-1)
+    fn_wea =  config.get_load_data_full_fn(DataType.Past_fst_weatherData, 'npz', year=year)
+    with np.load(fn_load) as dat:
+        load_data = dat[DataType.LoadData.name]
+    with open(fn_wea, 'rb') as fr:
+        wea_dat = pickle.load(fr)
+
+    return load_data, wea_dat
+
+
+def create_fst_data(spot_time, load_data, wea_data):
+
+    return
 
 
 # class WeatherDataSetBuilder:

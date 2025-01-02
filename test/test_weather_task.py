@@ -39,7 +39,9 @@ class TestWeatherTask:
         assert 1==1
 
     def test_commandLine_task4(self):
-        cmd_str = f'-cfg {self.config_file} task_4 --flag test -mn test0 -ind 0'
+        cfile = get_absolute_path(__file__,'../pytools/config/albany_prod.toml')
+
+        cmd_str = f'-cfg {cfile} task_4 -t0 2020-01-01 -t1 2021-01-01 -mn test0 --year 2020'
         main(cmd_str.split(' '))
         assert 1==1
 
