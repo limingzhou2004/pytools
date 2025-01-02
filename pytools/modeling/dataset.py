@@ -280,7 +280,7 @@ def read_weather_data_from_config(config:Config, year=-1):
 
 def read_past_weather_data_from_config(config:Config, year=-1):
     fn_load = config.get_load_data_full_fn(DataType.LoadData, 'npz', year=-1)
-    fn_wea =  config.get_load_data_full_fn(DataType.Past_fst_weatherData, 'npz', year=year)
+    fn_wea =  config.get_load_data_full_fn(DataType.Past_fst_weatherData, 'pkl', year=year)
     with np.load(fn_load) as dat:
         load_data = dat[DataType.LoadData.name]
     with open(fn_wea, 'rb') as fr:

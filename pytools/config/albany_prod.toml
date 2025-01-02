@@ -85,7 +85,7 @@ hyper_options.check_val_every_n_epoch=1
 hyper_options.max_epochs=49 #100
 hyper_options.min_delta=0.001
 hyper_options.patience=3
-hyper_options.epoch_step=2
+#hyper_options.epoch_step=2
 
 #----- model layer configuration parameters
 cov_net.cov1.kernel=5
