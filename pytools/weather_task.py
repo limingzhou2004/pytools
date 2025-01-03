@@ -167,9 +167,6 @@ def load_training_data(config:Config, yrs):
     return load_data, w_paras, np.concatenate(w_timestamp_list,axis=0), np.concatenate(w_data_list,axis=0)
 
 
-
-
-
 def get_trainer(config:Config, use_val:bool=True):
     model_path = osp.join(config.site_parent_folder, 'model')
     setting = config.model_pdt.hyper_options
@@ -404,20 +401,13 @@ def task_3(**args):
     load_arr = load_arr.astype(np.float32)
     num_worker = args['number_of_worker']
     ind = args['ind']
-
-
-    if flag.startswith('cv'):
-        prefix = 'cv'
-        # ds_test =  WeatherDataSet(flag=f'{prefix}_test',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
-        # ds_val =  WeatherDataSet(flag=f'{prefix}_val',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
-    elif flag.startswith('final'):
-        prefix= 'final_train'    
-    train_flag = f'{prefix}_train'
     ds_train, ds_val, ds_test = create_datasets(config, flag, tabular_data=load_arr, wea_arr=wea_arr,timestamp=t,sce_ind=ind)
-    # ds_train = WeatherDataSet(flag=train_flag,tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
-    
+   
     # add the batch dim
     wea_input_shape = [1, *wea_arr.shape]
+
+    del wea_arr
+
     m = TSWeatherNet(wea_arr_shape=wea_input_shape, config=config)
     m.setup_mean(scaler=ds_train.scaler, target_std=ds_train.target_std, target_mean=ds_train.target_mean)
     if config.model_pdt.train_frac>=1:
