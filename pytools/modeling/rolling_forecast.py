@@ -1,5 +1,5 @@
 from typing import Union, Dict
-import mlflow
+#import mlflow
 import numpy as np
 import pandas as pd
 import torch
@@ -24,10 +24,10 @@ class RollingForecast:
         self._load_name = load_name
         self._load_embed_dim = load_embed_dim
 
-    def add_model(self, hour_ahead: int, model_path: str):
-        assert isinstance(hour_ahead, int)
-        self._model_uri[hour_ahead] = model_path
-        self._model[hour_ahead] = mlflow.pytorch.load_model(model_uri=model_path)
+    # def add_model(self, hour_ahead: int, model_path: str):
+    #     assert isinstance(hour_ahead, int)
+    #     self._model_uri[hour_ahead] = model_path
+    #     self._model[hour_ahead] = mlflow.pytorch.load_model(model_uri=model_path)
 
     def _check_data(self):
         raise NotImplementedError
