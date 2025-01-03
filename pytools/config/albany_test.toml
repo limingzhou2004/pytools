@@ -85,7 +85,10 @@ final_train_hist = [
 
 hyper_options.lr=0.001
 hyper_options.weight_decay=0.001
+
 #hyper_options.epoch=20
+hyper_options.stopping_threshold=0.065
+hyper_options.num_nodes=1
 hyper_options.batch_size=1
 hyper_options.check_val_every_n_epoch=1
 hyper_options.max_epochs=30

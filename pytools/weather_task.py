@@ -16,7 +16,6 @@ from lightning.pytorch.callbacks import EarlyStopping
 from lightning.pytorch.tuner import Tuner
 import lightning as pl
 from lightning.pytorch.loggers import TensorBoardLogger, CSVLogger
-from torch.utils.data import DataLoader
 
 from pytools.arg_class import ArgClass
 from pytools.data_prep.herbie_wrapper import download_hist_fst_data
@@ -401,12 +400,10 @@ def task_3(**args):
     num_worker = args['number_of_worker']
     ind = args['ind']
     ds_train, ds_val, ds_test = create_datasets(config, flag, tabular_data=load_arr, wea_arr=wea_arr,timestamp=t,sce_ind=ind)
-   
+ 
     # add the batch dim
     wea_input_shape = [1, *wea_arr.shape]
-
     del wea_arr
-
     m = TSWeatherNet(wea_arr_shape=wea_input_shape, config=config)
     m.setup_mean(scaler=ds_train.scaler, target_std=ds_train.target_std, target_mean=ds_train.target_mean)
     if config.model_pdt.train_frac>=1:
@@ -414,23 +411,12 @@ def task_3(**args):
     else:
         use_val = True
     trainer = get_trainer(config, use_val=use_val)
-    tuner = Tuner(trainer)
-
-    def train_dl():
-        return DataLoader(ds_train, batch_size=m.batch_size,num_workers=num_worker, persistent_workers=True, shuffle=True, pin_memory=True)
-    
-    def test_dl():
-        return DataLoader(ds_test, batch_size=m.batch_size,num_workers=num_worker, persistent_workers=True,shuffle=False)
-    
-    def val_dl():
-        return DataLoader(ds_val, batch_size=m.batch_size,num_workers=num_worker, persistent_workers=True,shuffle=False)
-    
-    dm = TsWeaDataModule(batch_size=m.batch_size)
-    dm.train_dataloader = train_dl
-    if ds_test:
-        dm.test_dataloader = test_dl
-    if ds_val:
-        dm.val_dataloader = val_dl
+    tuner = Tuner(trainer)   
+    dm = TsWeaDataModule(batch_size=m.batch_size,num_worker=num_worker, ds_test=ds_test, ds_train=ds_train,ds_val=ds_val)
+    if not ds_test:
+        dm.test_dataloader = None
+    if not ds_val:
+        dm.val_dataloader = None
     sub_task = args['sub']
     if sub_task == 'find_batch_size':
         tuner.scale_batch_size(m, datamodule=dm)

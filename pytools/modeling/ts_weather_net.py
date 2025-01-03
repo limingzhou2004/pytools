@@ -6,7 +6,8 @@ import os.path as osp
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-#from torch.utils.data.dataloader import DataLoader
+from torch.utils.data import DataLoader
+
 
 import lightning as pl
 from lightning.pytorch.loggers import TensorBoardLogger
@@ -333,11 +334,25 @@ class TSWeatherNet(pl.LightningModule):
 
 
 class TsWeaDataModule(pl.LightningDataModule):
-    def __init__(self, batch_size):
-        super().__init__()
-        self.batch_size = batch_size
-        self.allow_zero_length_dataloader_with_multiple_devices = True
 
+    def __init__(self, ds_train, ds_val, ds_test, batch_size, num_worker, ):
+        super().__init__()
+        self._batch_size = batch_size
+        self.allow_zero_length_dataloader_with_multiple_devices = True
+        self._num_worker = num_worker
+        self._ds_train = ds_train
+        self._ds_val = ds_val
+        self._ds_test = ds_test 
+
+    def train_dataloader(self):
+        return DataLoader(self._ds_train, batch_size=self._batch_size,num_workers=self._num_worker, persistent_workers=True, shuffle=True, pin_memory=True)
+    
+    def test_dataloader(self):
+        return DataLoader(self._ds_test, batch_size=self._batch_size,num_workers=self._num_worker, persistent_workers=True,shuffle=False)
+    
+    def val_dataloader(self):
+        return DataLoader(self._ds_val, batch_size=self._batch_size,num_workers=self._num_worker, persistent_workers=True,shuffle=False)
+    
 
 def cv_train_ts_weather_net(sce_id, config:Config):
 
