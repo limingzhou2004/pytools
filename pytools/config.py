@@ -167,13 +167,13 @@ class Model(BaseModel):
     final_train_hist: List
     target_ind: int
     wea_ar_embedding_dim: int
-    #wea_embedding_dim: int 
     ext_ar_embedding_dim: int
     seq_length: int 
 
     cov_net: Dict 
     ext_net: Dict
     filter_net: Dict
+    ts_net:Dict
     mixed_net: Dict
 
     models: List

@@ -121,6 +121,12 @@ filter_net.band_width=96
 filter_net.scale=0.2
 filter_net.sparsity_threshold=0.01
 
+ts_net.in_channels=21
+ts_net.out_channels=3
+ts_net.kernel_size=49
+ts_net.padding=0
+ts_net.stride=24
+
 mixed_net.ts_latent_dim=5
 mixed_net.cov1d.kernel_size=5
 mixed_net.cov1d.padding=2
