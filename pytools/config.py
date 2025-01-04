@@ -154,6 +154,7 @@ class Weather(BaseModel):
 
 class Model(BaseModel):
     y_label: str
+    weather_para_to_adopt:list
     scaler_type: str
     sample_data_seq_dim: int
     hyper_options: Dict

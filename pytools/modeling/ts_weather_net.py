@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 
 
 import lightning as pl
-from lightning.pytorch.loggers import TensorBoardLogger
+#from lightning.pytorch.loggers import TensorBoardLogger
 from lightning.pytorch.callbacks import ModelCheckpoint
 # from einops import rearrange, repeat, pack, unpack
 # from xlstm import (
@@ -24,8 +24,8 @@ from lightning.pytorch.callbacks import ModelCheckpoint
 from pytools.modeling.RevIN import  RevIN
 
 from pytools.config import Config
-from pytools.modeling.TexFilter import SeqModel
-from pytools.modeling.utilities import extract_a_field
+#from pytools.modeling.TexFilter import SeqModel
+#from pytools.modeling.utilities import extract_a_field
 
 
 class DirectFC(nn.Module):
@@ -189,8 +189,11 @@ class TSWeatherNet(pl.LightningModule):
         in_channel = 1 if isinstance(config.model_pdt.target_ind, int) else len(config.model_pdt.target_ind)
         self.revin_layer = RevIN(in_channel, affine=True, subtract_last=False)
         #self.filter_net = SeqModel(config.filternet_input, filter_net_paras=filter_net_paras)
+        self.wea_channels = config.model_pdt.cov_net['last']['channel']     
+
         x = torch.zeros(1,in_channel+self.wea_channels, self._seq_length)
         self.filter_net = nn.Conv1d(**config.model_pdt.ts_net)
+        x=self.filter_net(x)
 
 
         self.ext_channels = config.model_pdt.ext_net['output_channel']

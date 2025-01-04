@@ -386,6 +386,7 @@ def task_3(**args):
     flag = args['flag']
     config = Config(args['config_file'])
     load_data, w_paras, w_timestamp, w_data = load_training_data(config=config, yrs=args['years']) 
+    w_data=w_data[...,config.model_pdt.weather_para_to_adopt]
     logger.info(f'Use these weather parameters... {w_paras}')
     load_arr, wea_arr, t = check_fix_missings(load_arr=load_data, w_timestamp=w_timestamp, w_arr=w_data)
     # import matplotlib.pyplot as plt
