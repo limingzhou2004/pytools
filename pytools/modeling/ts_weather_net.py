@@ -50,13 +50,11 @@ class MixedOutput(nn.Module):
         self._pred_len = pred_len
         self.wea_cov1d = nn.Conv1d(in_channels=wea_arr_dim, **model_paras['cov1d'])
         self.ext_cov1d = nn.Conv1d(in_channels=ext_dim, **model_paras['ext_cov1d'])
-
         in_dim = seq_latent_dim * filternet_hidden_size + model_paras['cov1d']['out_channels'] + model_paras['ext_cov1d']['out_channels']
 
         in_dim = seq_latent_dim * filternet_hidden_size + wea_arr_dim + ext_dim
 
         self.ts_latent_model = nn.Linear(in_features=seq_arr_dim,out_features=seq_latent_dim)
-        dim_between =5
         shrink_factor=10
         self.mixed_model = nn.ModuleList(
             nn.Sequential(
@@ -74,10 +72,10 @@ class MixedOutput(nn.Module):
         seq_cross = seq_arr.shape[1] * seq_arr.shape[2]
 
         y = torch.zeros(B, self._pred_len, device=device)
-        wea_arr = self.wea_cov1d(torch.permute(wea_arr,[0, 2, 1]))
+        #wea_arr = self.wea_cov1d(torch.permute(wea_arr,[0, 2, 1]))
         #ext_arr = self.ext_cov1d(torch.permute(ext_arr, [0, 2, 1]))
 
-        # wea_arr=torch.permute(wea_arr,[0, 2, 1])
+        wea_arr=torch.permute(wea_arr,[0, 2, 1])
         ext_arr=torch.permute(ext_arr, [0, 2, 1])
 
         delta =  wea_arr.shape[-1] - self._pred_len

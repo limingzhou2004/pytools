@@ -112,8 +112,8 @@ filter_net.scale=0.2
 filter_net.sparsity_threshold=0.02
 
 mixed_net.ts_latent_dim=9
-mixed_net.cov1d.kernel_size=7
-mixed_net.cov1d.padding=3
+mixed_net.cov1d.kernel_size=5
+mixed_net.cov1d.padding=2
 mixed_net.cov1d.stride=1
 mixed_net.cov1d.dilation=1
 mixed_net.cov1d.out_channels=20
