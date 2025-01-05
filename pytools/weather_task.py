@@ -189,66 +189,6 @@ def get_trainer(config:Config, use_val:bool=True):
     return trainer
 
 
-def train_model(
-    config_file: str,
-   # fst_hours: int,
-    train_options,
-    tracking_uri,
-    model_uri,
-    experiment_name,
-    tags="",
-):
-    cfg = Config(config_file)
-    cat_fraction = (
-        train_options.cat_fraction if hasattr(train_options, "cat_fraction") else None
-    )
-    data = get_training_data(cfg, cat_fraction, fst_hour=fst_hours)
-    weather_para = data.get_weather_para()
-    d = hist_load(config_file=config_file, create=False)
-    train_data, validation_data, test_data = prepare_train_data(
-        data,
-        ahead_hours=fst_hours,
-        batch_size=train_options.batch_size,
-        num_workers=None,
-        full_data=cat_fraction[0] == 1,
-    )
-    model, trainer = prepare_train_model(
-        cfg=cfg,
-        weather_para=weather_para,
-        ahead_hours=ahead_hours,
-        train_options=train_options,
-        hist_load=d,
-    )
-
-    model.add_a_logger(cfg=cfg)
-    ckpt_path = get_model_checkpoint_path(cfg, ahead_hours)
-    if cat_fraction[0] == 1:
-        sce_name = cfg.site["name"] + f"-fst-{ahead_hours}" + "-full"
-        trainer.fit(model, train_data)
-    else:
-        trainer.fit(model, train_data, validation_data)
-        sce_name = cfg.site["name"] + f"-fst-{ahead_hours}"
-        trainer.test(test_dataloaders=test_data, ckpt_path=ckpt_path)
-
-    trainer.save_checkpoint(ckpt_path)
-    # save metric and model in airflow tracking
-    save_model(
-        metric=trainer.logged_metrics,
-        artifact_file=config_file,
-        model=model,
-        sub_folder=sce_name,
-        tracking_uri=tracking_uri,
-        model_uri=model_uri,
-        experiment_name=experiment_name,
-        tags={s.split("=")[0]: s.split("=")[1] for s in tags.split(",")}
-        if tags
-        else {},
-        parameters=None,
-        run_name=sce_name,
-    )
-    return trainer
-
-
 def run_predict(d: dpm, tp0: str, tp1: str) -> ldp.LoadData:
     """
     Get prediction load data
@@ -386,8 +326,14 @@ def task_3(**args):
     flag = args['flag']
     config = Config(args['config_file'])
     load_data, w_paras, w_timestamp, w_data = load_training_data(config=config, yrs=args['years']) 
+    p_list = [ a[1] for a in list(w_paras.item().items()) ]
+    plist=[]
+    for p in p_list:
+        plist+=p
+    p_adopted = [plist[i] for i in config.model_pdt.weather_para_to_adopt]    
     w_data=w_data[...,config.model_pdt.weather_para_to_adopt]
     logger.info(f'Use these weather parameters... {w_paras}')
+    logger.info(f'Chosen {p_adopted}')
     load_arr, wea_arr, t = check_fix_missings(load_arr=load_data, w_timestamp=w_timestamp, w_arr=w_data)
     # import matplotlib.pyplot as plt
     # plt.scatter(load_arr[:,0],wea_arr[:,11,11,0])

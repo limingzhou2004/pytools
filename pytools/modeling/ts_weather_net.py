@@ -69,8 +69,9 @@ class MixedOutput(nn.Module):
         device = seq_arr.device
         B = wea_arr.shape[0]
         #seq_arr = self.ts_latent_model(seq_arr)
-        seq_arr = seq_arr.reshape(B,-1)
         seq_cross = seq_arr.shape[1] * seq_arr.shape[2]
+        #seq_arr = seq_arr.reshape(B,-1)
+
 
         y = torch.zeros(B, self._pred_len, device=device)
         #wea_arr = self.wea_cov1d(torch.permute(wea_arr,[0, 2, 1]))
@@ -184,17 +185,16 @@ class TSWeatherNet(pl.LightningModule):
         self._pred_length = pred_length
 
         self.validation_step_outputs = []
-
         #filter_net
         in_channel = 1 if isinstance(config.model_pdt.target_ind, int) else len(config.model_pdt.target_ind)
         self.revin_layer = RevIN(in_channel, affine=True, subtract_last=False)
         #self.filter_net = SeqModel(config.filternet_input, filter_net_paras=filter_net_paras)
         self.wea_channels = config.model_pdt.cov_net['last']['channel']     
 
-        x = torch.zeros(1,in_channel+self.wea_channels, self._seq_length)
+        #x = torch.zeros(1,in_channel+self.wea_channels, self._seq_length)
+        x = torch.zeros(1,in_channel, self._seq_length)
         self.filter_net = nn.Conv1d(**config.model_pdt.ts_net)
         x=self.filter_net(x)
-
 
         self.ext_channels = config.model_pdt.ext_net['output_channel']
         self.ext_net = nn.Linear(in_features=config.model_pdt.ext_net['input_channel'], out_features=self.ext_channels)   
@@ -204,8 +204,8 @@ class TSWeatherNet(pl.LightningModule):
         mix_input_dim = x.shape[1]*x.shape[2] + self.ext_channels + self.wea_channels
         self.mixed_output = MixedOutput(
             seq_arr_dim=config.model_pdt.seq_length,
-            seq_latent_dim=config.model_pdt.mixed_net['ts_latent_dim'],
-            filternet_hidden_size=mix_input_dim,
+            seq_latent_dim=x.shape[2], #config.model_pdt.mixed_net['ts_latent_dim'],
+            filternet_hidden_size=x.shape[1],#mix_input_dim,
             ext_dim=config.model_pdt.ext_net['output_channel'],
             wea_arr_dim=self.wea_channels, 
             pred_len=self._pred_length, 
@@ -239,8 +239,8 @@ class TSWeatherNet(pl.LightningModule):
         #seq_ext_y = torch.zeros(B, seq_length, self.ext_channels, device=device)
         ext_y = torch.zeros([B, e_dim, self.ext_channels], device=device)        
 
-        for i in range(seq_length):
-            seq_wea_y[:,i,:] = self.wea_net(seq_wea_arr[:,i,...])
+        # for i in range(seq_length):
+        #     seq_wea_y[:,i,:] = self.wea_net(seq_wea_arr[:,i,...])
             #seq_ext_y[:,i,:] = self.ext_net(seq_ext_arr[:,i,...])
         for i in range(w_dim):
             wea_y[:,i,:] = self.wea_net(wea_arr[:,i,...])
@@ -248,7 +248,7 @@ class TSWeatherNet(pl.LightningModule):
         #     ext_y[:,i,:] = self.ext_net(ext_arr[:,i,...])
         #seq_y = torch.cat([seq_target[...,None], seq_ext_y, seq_wea_y],dim=2).permute([0, 2, 1])
         #seq_y = self.filter_net(seq_y)
-        seq_y = torch.cat([seq_target[...,None],seq_wea_y],dim=2).permute([0, 2, 1])
+        seq_y = torch.cat([seq_target[...,None]],dim=2).permute([0, 2, 1])
         seq_y = self.filter_net(seq_y)
 
         y = self.mixed_output(seq_y, ext_y, wea_y)

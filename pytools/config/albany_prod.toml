@@ -13,7 +13,7 @@
  back_fst_window = ["2020-01-01 00:00", "2025-01-01 00:00"]
  #site_folder = "nyiso"
  #center[lon, lat]
- center = [-73.0, 43.0]
+ center = [-73.75, 42.65]
  #[east, west, south, north]
  rect = [30.0, 30.0, 30.0, 30.0]
  t0="2018-11-03"
@@ -40,7 +40,7 @@
  #fst_hours =[1, 6, 24]
 
 [weather]
-envelope = [1548, 1568, 774, 794]
+envelope = [1531, 1551, 756, 776]
 hist_weather_pickle = "../data/grib2_folder_1.pkl"
 fullfile_col_name = "full_file_name"
 filename_col_name = "filename"
@@ -52,11 +52,11 @@ hrrr_predict = "hrrr_fst"
 [model]
 scaler_type = 'standard' #'minmax'
 y_label = "load"
-forecast_horizon = [[24, 24]]
+forecast_horizon = [[48, 48]]
 sample_data_seq_dim = 1 # the dimension of AR target, 1 in dataset, 0 for Batch
 seq_length = 168
 target_ind = 0
-wea_ar_embedding_dim = 1
+wea_ar_embedding_dim = 0
 ext_ar_embedding_dim = 0
 
 weather_para_to_adopt=[0,1,2,3,4,5,6,7,9,10,11,12,13,14]
@@ -102,7 +102,7 @@ cov_net.cov2.stride=1
 cov_net.cov2.dilation=1
 cov_net.cov2.group=1
 cov_net.cov2.output_channel=6
-cov_net.last.channel=20
+cov_net.last.channel=30
 
 ext_net.input_channel=8
 ext_net.output_channel=8
@@ -113,11 +113,11 @@ filter_net.band_width=96
 filter_net.scale=0.2
 filter_net.sparsity_threshold=0.02
 
-ts_net.in_channels=21
-ts_net.out_channels=3
-ts_net.kernel_size=49
+ts_net.in_channels=1
+ts_net.out_channels=5
+ts_net.kernel_size=9
 ts_net.padding=0
-ts_net.stride=24
+ts_net.stride=1
 
 mixed_net.ts_latent_dim=9
 mixed_net.cov1d.kernel_size=7
