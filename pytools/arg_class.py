@@ -63,7 +63,7 @@ class ArgClass:
         self._add_task1(fun_list[0])
         self._add_task2(fun_list[1])
         self._add_task3(fun_list[2])
-        # self._add_task4()
+        self._add_task4(fun_list[3])
         # self._add_task5()
         # self._add_task6()
         # self._add_task7()
@@ -164,7 +164,16 @@ class ArgClass:
             required=False,
             default='cv_0',
             type=str,
-            help="train type, e.g. cv_0|final_train_0",
+            help="train type, e.g. cv|final_train",
+        )
+        sub_parser.add_argument(
+            "-yr",
+            "--years",
+            dest="years",
+            required=False,
+            default='-1',
+            type=str,
+            help="years of weather data, e.g. -1|2018-2024",
         )
         sub_parser.add_argument(
             "-ind",
@@ -184,66 +193,66 @@ class ArgClass:
             type=str,
             help="subtask, find_batch_size|find_lr|fit, default fit",
         )
+        sub_parser.add_argument(
+            "-mn",
+            "--model-name",
+            dest="model_name",
+            required=False,
+            default='test',
+            type=str,
+            help="model name to save to checkpoint",
+        )
+        sub_parser.add_argument(
+            "-nworker",
+            "--number-of-worker",
+            dest="number_of_worker",
+            required=False,
+            default=1,
+            type=int,
+            help='number of worker to use, default 1',
+        )
         sub_parser.set_defaults(func=fun)
 
     def _add_task4(self, fun):
         sub_parser = self.sub_parsers.add_parser("task_4")
         sub_parser.add_argument(
-            "-to",
-            "--train-options",
-            dest="train_options",
-            required=True,
-            default=None,
-            action=ActionJsonnetExtVars(),
-            help="training options as a json",
+            "-t0",
+            "--t0",
+            dest="t0",
+            required=False,
+            default='latest',
+            type=str,
+            help="latest, or start time for past forecast",
         )
         sub_parser.add_argument(
-            "-ah",
-            "--ahead-hours",
-            dest="ahead_hours",
+            "-t1",
+            "--t1",
+            dest='t1',
             required=False,
-            default=1,
+            default='',
+            type=str,
+            help="end time for past forecast",
+        )
+        sub_parser.add_argument(
+            "-yr",
+            "--year",
+            dest='year',
+            required=False,
+            default=2023,
             type=int,
-            help="hours ahead to forecast",
+            help="year for past forecast weather",
         )
         sub_parser.add_argument(
-            "-uri",
-            "--tracking-uri",
-            dest="tracking_uri",
+            "-mn",
+            "--model-name",
+            dest="model_name",
             required=False,
-            default=f"file://{os.path.dirname(os.path.realpath(__file__))}/modeling/mlruns",
+            default='test',
             type=str,
-            help="airflow tracking server uri",
-        )
-        sub_parser.add_argument(
-            "-muri",
-            "--model-uri",
-            dest="model_uri",
-            required=False,
-            default=f"file://{os.path.dirname(os.path.realpath(__file__))}/modeling/mlruns",
-            type=str,
-            help="airflow model registry uri",
-        )
-        sub_parser.add_argument(
-            "-env",
-            "--experiment-name",
-            dest="experiment_name",
-            required=False,
-            default=0,
-            type=str,
-            help="airflow experiment name",
-        )
-        sub_parser.add_argument(
-            "-tags",
-            "--tags",
-            dest="tags",
-            required=False,
-            default="",
-            type=str,
-            help="--tags k1=v1,k2=v2",
+            help="model name to load from checkpoint",
         )
         sub_parser.set_defaults(func=fun)
-
+        
     def _add_task5(self, fun):
         sub_parser = self.sub_parsers.add_parser("task_5")
         sub_parser.add_argument(

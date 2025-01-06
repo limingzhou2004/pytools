@@ -2,12 +2,14 @@
 import numpy as np
 import pytest
 
+from pytools.config import Config
 from pytools.data_prep.load_data_prep import LoadData
 from pytools.mocking_utils import mock_train_load, mock_predict_load, mock_max_date
 from pytools.weather_task import (
     hist_load,
    # hist_weather_prepare,
     hist_weather_prepare_from_report,
+    load_training_data,
     main,
     past_fst_weather_prepare,
    # train_model,
@@ -17,28 +19,46 @@ from pytools.utilities import get_absolute_path
 
 
 class TestWeatherTask:
-    config_file = get_absolute_path(__file__, "../pytools/config/albany_test.toml")
+    config_file = get_absolute_path(__file__, '../pytools/config/albany_test.toml')
 
-    def test_commandline_task1(self):
-        cmd_str =f'taskk_1 -cfg {self.config_file} --create '
-        #main(cmd_str.split(' '))
-        cmd_str = f'-cfg {self.config_file} task_2 -fh 2'
+    def test_commandline_task2(self):
+        cmd_str =f'-cfg {self.config_file} task_2 -flag h -year 2018'
         main(cmd_str.split(' '))
+        #cmd_str = f'-cfg {self.config_file} task_2 -fh 2 -flag f'
+        #main(cmd_str.split(' '))
 
     def test_commandline_task3(self):
-        cmd_str = f'-cfg {self.config_file} task_3 --flag cv -ind 0'
+        cmd_str = f'-cfg {self.config_file} task_3 --flag cv -ind 0 -mn test0 -yr -1 -nworker 3'
         main(cmd_str.split(' '))
         assert 1==1
 
-    def test_hist_load(self, ):
+    def test_commandline_task3_prod(self):
+        cfile = get_absolute_path(__file__,'../pytools/config/albany_prod.toml')
+        cmd_str = f'-cfg {cfile} task_3 --flag cv -ind 0 -mn prod0 -yr 2018-2023'
+        main(cmd_str.split(' '))
+        assert 1==1
+
+    def test_commandLine_task4(self):
+        cfile = get_absolute_path(__file__,'../pytools/config/albany_prod.toml')
+
+        cmd_str = f'-cfg {cfile} task_4 -t0 2020-01-01 -t1 2021-01-01 -mn test0 --year 2022'
+        main(cmd_str.split(' '))
+        assert 1==1
+
+    def test_task1_hist_load(self, ):
         #monkeypatch.setattr(LoadData, "query_train_data", mock_train_load)
         res = hist_load(config_file=self.config_file,create=True)
-        assert res.load_data.train_data.shape[1] == 8
+        assert res.load_data.train_data.shape[1] == 10
         assert res.load_data.train_data.shape[0] >= 2
 
     def test_hist_weather_from_inventory(self):
         dm = hist_weather_prepare_from_report(config_file=self.config_file, n_cores=4)
         assert dm.weather.weather_train_data.standardized_data.shape==(49, 21, 21, 16)
+
+    def test_load_weather_data(self, ):
+        c = Config(get_absolute_path(__file__,'../pytools/config/albany_prod.toml'))
+        res = load_training_data(config=c, yrs='2020-2023')
+        assert res[3].shape[0] > 30000
 
     def test_past_weather_fst(self):
         past_fst_weather_prepare(self.config_file, fst_hour=2, year=2020)

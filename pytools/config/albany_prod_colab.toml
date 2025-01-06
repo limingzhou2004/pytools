@@ -5,10 +5,10 @@
 [site]
  timezone = "US/Eastern"
  state = "NY"
- base_folder = "~/zhoul/work/energy/sites/albany-test"
+ base_folder = "/content/drive/MyDrive/sites/albany-prod"
  name = "Albany-NY"
  # alias is the folder name for each project
- file_base_name = "albany-test"
+ file_base_name = "albany-prod"
  sql_location = "CAPITL"
  back_fst_window = ["2020-01-01 00:00", "2025-01-01 00:00"]
  #site_folder = "nyiso"
@@ -17,11 +17,9 @@
  #[east, west, south, north]
  rect = [30.0, 30.0, 30.0, 30.0]
  t0="2018-11-03"
- t1="2018-11-05"
+ t1="2024-11-05"
  description = "Zone Capital of NYISO"
- comments = """name is used for database query and must match what the database use; while alias is used for setting up
-  the folder structure"""
- #envtest = "$ENV_TEST"
+ comments = """name is used for database query and must match what the database use; """
 
 [load]
  db_name="daf"
@@ -49,98 +47,82 @@ filename_col_name = "filename"
 type_col_name = "type"
 hrrr_paras_file = "data_prep/hrrr_paras_cfgrib.txt"
 
-#hrrr_hist = ["utah"] #["hrrr2", "utah"]
 hrrr_predict = "hrrr_fst"
 
 [model]
 scaler_type = 'standard' #'minmax'
 y_label = "load"
-weather_para_to_adopt=[0,1,2,3,4]
-forecast_horizon = [
-[1, 3]
-    #[1, 48], 
-]
-sample_data_seq_dim = 1 # 0 for Batch, like Batch, Seq, x, y, channel
-seq_length = 2 #168
+forecast_horizon = [[48, 48]]
+sample_data_seq_dim = 1 # the dimension of AR target, 1 in dataset, 0 for Batch
+seq_length = 168
 target_ind = 0
-wea_ar_embedding_dim = 1 #162
-ext_ar_embedding_dim =2
+wea_ar_embedding_dim = 0
+ext_ar_embedding_dim = 0
 
-#wea_embedding_dim = 1
-train_frac=1
-frac_yr1 = 0.1
+train_frac=0.8
+frac_yr1 = 0.67
 frac_split = [0.4, 0.3, 0.3]
-final_train_frac_yr1 = 0.5
+final_train_frac_yr1 = 0.8
 final_train_frac =[1, 0, 0]
 cv_settings = [
-   ["2018-11-03","2018-11-04 12:00","2018-11-04 13:00","2018-11-05"]
-    # ["2018-01-01", "2020-01-01", "2020-01-01", "2021-01-01"],
-    # ["2020-01-01", "2021-01-01", "2021-01-01","2022-01-01"],
-    # ["2021-01-01", "2022-01-01", "2022-01-01","2023-01-01"],
-    # ["2022-01-01", "2023-01-01", "2023-01-01","2024-01-01"],
-    # ["2023-01-01", "2024-01-01", "2024-01-01","2025-01-01"]
+  # ["2018-11-03","2018-11-04 12:00","2018-11-04 13:00","2018-11-05"]
+   ["2018-01-01", "2020-01-01", "2020-01-01", "2021-01-01"],
+   ["2018-01-01", "2021-01-01", "2021-01-01","2022-01-01"],
+   ["2018-01-01", "2022-01-01", "2022-01-01","2023-01-01"],
+   ["2018-01-01", "2023-01-01", "2023-01-01","2024-01-01"],
+   ["2018-01-01", "2024-01-01", "2024-01-01","2025-01-01"]
 ]
 final_train_hist = [
-    ["2018-11-03", "2018-11-05"]
+  #  ["2023-01-01", "2024-11-05"]
 ]
 
-hyper_options.lr=0.001
-hyper_options.weight_decay=0.001
-
-#hyper_options.epoch=20
 hyper_options.stopping_threshold=0.065
 hyper_options.num_nodes=1
-hyper_options.batch_size=1
-hyper_options.check_val_every_n_epoch=1
-hyper_options.max_epochs=30
-hyper_options.min_delta=1
-hyper_options.patience=1
-hyper_options.epoch_step=1
-#hyper_options.epoch_num=3
+hyper_options.lr=0.01
+hyper_options.weight_decay=0.001
+hyper_options.batch_size=100
+hyper_options.check_val_every_n_epoch=2
+hyper_options.max_epochs=100
+hyper_options.min_delta=0.001
+hyper_options.patience=4
+#hyper_options.epoch_step=2
 
 #----- model layer configuration parameters
-cov_net.cov1.kernel=3
+cov_net.cov1.kernel=5
 cov_net.cov1.padding=0
 cov_net.cov1.stride=1
-cov_net.cov1.dilation=1
+cov_net.cov1.dilation=2
 cov_net.cov1.group=1
-cov_net.cov1.output_channel=8
+cov_net.cov1.output_channel=12
 cov_net.cov2.kernel=3
 cov_net.cov2.padding=0
 cov_net.cov2.stride=1
 cov_net.cov2.dilation=1
 cov_net.cov2.group=1
-cov_net.cov2.output_channel=4
-cov_net.last.channel=8
-cov_net.dropout=0.01
+cov_net.cov2.output_channel=6
+cov_net.last.channel=20
 
 ext_net.input_channel=8
-ext_net.output_channel=3
+ext_net.output_channel=8
 
-filter_net.hidden_size=8
-filter_net.dropout=0.01
+filter_net.hidden_size=10
+filter_net.dropout=0.02
 filter_net.band_width=96
 filter_net.scale=0.2
-filter_net.sparsity_threshold=0.01
+filter_net.sparsity_threshold=0.02
 
-ts_net.in_channels=21
-ts_net.out_channels=3
-ts_net.kernel_size=49
-ts_net.padding=0
-ts_net.stride=24
-
-mixed_net.ts_latent_dim=5
+mixed_net.ts_latent_dim=9
 mixed_net.cov1d.kernel_size=5
 mixed_net.cov1d.padding=2
 mixed_net.cov1d.stride=1
 mixed_net.cov1d.dilation=1
-mixed_net.cov1d.out_channels=8
+mixed_net.cov1d.out_channels=20
 mixed_net.ext_cov1d.kernel_size=13
 mixed_net.ext_cov1d.padding=6
 mixed_net.ext_cov1d.stride=1
-mixed_net.ext_cov1d.dilation=1
-mixed_net.ext_cov1d.out_channels=3
-mixed_net.dropout=0.01
+mixed_net.ext_cov1d.dilation=2
+mixed_net.ext_cov1d.out_channels=8
+
 
 #--- model management
 models = [ ]

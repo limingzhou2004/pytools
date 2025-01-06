@@ -5,3 +5,4 @@
 *.ckpt
 pytools.egg-info/*
 .DS_Store
+.codegpt

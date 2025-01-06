@@ -5,5 +5,8 @@ echo $(pwd)
 
 config_file="pytools/config/albany_test.toml"
 echo $config_file
-python -m pytools.data_prep.weather_task -c $config_file task_2 -n 2
+# historical 
+python -m pytools.weather_task -cfg pytools/config/albany_prod.toml task_2 --n-cores 1 -year 2020 -flag h
 
+# past forecast
+#python -m pytools.weather_task -cfg pytools/config/albany_prod.toml task_2 -fh 48 --n-cores 1 -year 2022 -flag f

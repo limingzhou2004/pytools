@@ -6,10 +6,11 @@ import os.path as osp
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-#from torch.utils.data.dataloader import DataLoader
+from torch.utils.data import DataLoader
+
 
 import lightning as pl
-from lightning.pytorch.loggers import TensorBoardLogger
+#from lightning.pytorch.loggers import TensorBoardLogger
 from lightning.pytorch.callbacks import ModelCheckpoint
 # from einops import rearrange, repeat, pack, unpack
 # from xlstm import (
@@ -23,17 +24,18 @@ from lightning.pytorch.callbacks import ModelCheckpoint
 from pytools.modeling.RevIN import  RevIN
 
 from pytools.config import Config
-from pytools.modeling.TexFilter import SeqModel
-from pytools.modeling.utilities import extract_a_field
+#from pytools.modeling.TexFilter import SeqModel
+#from pytools.modeling.utilities import extract_a_field
 
 
 class DirectFC(nn.Module):
-    def __init__(self, input_shape, output_feature):
+    def __init__(self, input_shape, output_feature,dropout=0.001):
         super().__init__()
         input_feature = reduce(mul, input_shape[1:])
         self.dfc = nn.Sequential(
             nn.Linear(in_features=input_feature, out_features=output_feature),
             nn.LayerNorm(normalized_shape=output_feature),
+            nn.Dropout(dropout),
             nn.LeakyReLU(), 
         ) 
 
@@ -43,22 +45,24 @@ class DirectFC(nn.Module):
     
 
 class MixedOutput(nn.Module):
-    def __init__(self, seq_arr_dim, seq_latent_dim, filternet_hidden_size, ext_dim, wea_arr_dim, pred_len, model_paras, ):
+    def __init__(self, seq_arr_dim, seq_latent_dim, filternet_hidden_size, ext_dim, wea_arr_dim, pred_len, model_paras):
         super().__init__()
         target_dim = 1
         self._pred_len = pred_len
-        self.wea_cov1d = nn.Conv1d(in_channels=wea_arr_dim, **model_paras['cov1d'])
-        self.ext_cov1d = nn.Conv1d(in_channels=ext_dim, **model_paras['ext_cov1d'])
+        #self.wea_cov1d = nn.Conv1d(in_channels=wea_arr_dim, **model_paras['cov1d'])
+        #self.ext_cov1d = nn.Conv1d(in_channels=ext_dim, **model_paras['ext_cov1d'])
+        # in_dim = seq_latent_dim * filternet_hidden_size + model_paras['cov1d']['out_channels'] + model_paras['ext_cov1d']['out_channels']
 
-        in_dim = seq_latent_dim * filternet_hidden_size + model_paras['cov1d']['out_channels'] + model_paras['ext_cov1d']['out_channels']
+        in_dim = seq_latent_dim * filternet_hidden_size + wea_arr_dim + ext_dim
 
-        self.ts_latent_model = nn.Linear(in_features=seq_arr_dim,out_features=seq_latent_dim)
-
+        #self.ts_latent_model = nn.Linear(in_features=seq_arr_dim,out_features=seq_latent_dim)
+        shrink_factor=model_paras['shrink_factor']
         self.mixed_model = nn.ModuleList(
             nn.Sequential(
-            nn.Linear(in_features=in_dim, out_features=in_dim//2),
+            nn.Linear(in_features=in_dim, out_features=in_dim//shrink_factor),
+            nn.Dropout(model_paras['dropout']),
             nn.LeakyReLU(),
-            nn.Linear(in_features=in_dim//2, out_features=target_dim),
+            nn.Linear(in_features=in_dim//shrink_factor, out_features=target_dim),
             ) for _ in range(pred_len)
             )
 
@@ -66,12 +70,18 @@ class MixedOutput(nn.Module):
         # B, pred_len, channel
         device = seq_arr.device
         B = wea_arr.shape[0]
-        seq_arr = self.ts_latent_model(seq_arr)
+        #seq_arr = self.ts_latent_model(seq_arr)
         seq_cross = seq_arr.shape[1] * seq_arr.shape[2]
+        #seq_arr = seq_arr.reshape(B,-1)
+
 
         y = torch.zeros(B, self._pred_len, device=device)
-        wea_arr = self.wea_cov1d.forward(torch.permute(wea_arr,[0, 2, 1]))
-        ext_arr = self.ext_cov1d.forward(torch.permute(ext_arr, [0, 2, 1]))
+        #wea_arr = self.wea_cov1d(torch.permute(wea_arr,[0, 2, 1]))
+        #ext_arr = self.ext_cov1d(torch.permute(ext_arr, [0, 2, 1]))
+
+        wea_arr=torch.permute(wea_arr,[0, 2, 1])
+        ext_arr=torch.permute(ext_arr, [0, 2, 1])
+
         delta =  wea_arr.shape[-1] - self._pred_len
         if delta >=0:
             wea_arr = wea_arr[..., delta:]
@@ -95,6 +105,7 @@ class WeaCov(nn.Module):
         # input_shape, (paras/channel, x, y)
         super().__init__()
         m_list = []
+        self.dropout = layer_paras['dropout']
 
         if input_shape[1] >= min_cv1_size:
             weather_conv1_layer = nn.Conv2d(
@@ -107,11 +118,12 @@ class WeaCov(nn.Module):
             output_shape1= weather_conv1_layer(torch.rand(input_shape).permute([0,3,1,2])).shape
             m = nn.Sequential(weather_conv1_layer,
             nn.LayerNorm(normalized_shape=output_shape1[1:]), #layer_paras['cov1']['output_channel']),
+            nn.Dropout(layer_paras['dropout']),
             nn.LeakyReLU(),
             )
             m_list.append(m)          
         else:
-            m_list.append(DirectFC(input_shape, layer_paras['cov1']['output_channel']))
+            m_list.append(DirectFC(input_shape, layer_paras['cov1']['output_channel'],dropout=self.dropout))
             output_shape1 = m_list[-1].forward(torch.rand(input_shape).permute([0,3,1,2])).shape
         # if less than 5 X 5, no need for the 2nd Cov2d
 
@@ -129,11 +141,12 @@ class WeaCov(nn.Module):
             nn.LeakyReLU())
             m_list.append(m)
             output_shape_from_cov = [output_shape2[0], reduce(mul, output_shape2[1:])]
-            m_list.append(DirectFC(output_shape_from_cov, layer_paras['last']['channel']))
+            m_list.append(DirectFC(output_shape_from_cov, layer_paras['last']['channel'],dropout=self.dropout))
 
         else:
-            m_list.append(DirectFC(output_shape1, layer_paras['last']['channel']))
+            m_list.append(DirectFC(output_shape1, layer_paras['last']['channel'],dropout=self.dropout))
             output_shape2 = m_list[-1].forward(torch.rand(output_shape1)).shape
+            self.output_dim = output_shape2[1] *output_shape2[2] 
 
         self.output_shape = layer_paras['last']['channel']
         self.module_list = nn.ModuleList(m_list)
@@ -152,10 +165,10 @@ class TSWeatherNet(pl.LightningModule):
         # wea_arr_shape, N, Seq, x, y, channel/para
         self.save_hyperparameters()
         super().__init__()
-        self.model_settings = config.model_pdt.model_settings
+        self.hyper_options = config.model_pdt.hyper_options
         fn = config.get_model_file_name(class_name='model', extension='.ckpt')
-        self.lr = config.model_pdt.model_settings['lr']
-        self.batch_size = config.model_pdt.model_settings['batch_size']
+        self.lr = config.model_pdt.hyper_options['lr']
+        self.batch_size = config.model_pdt.hyper_options['batch_size']
         self.checkpoint_callback = ModelCheckpoint(
             dirpath=osp.dirname(fn),
             filename=osp.basename(fn),
@@ -165,7 +178,7 @@ class TSWeatherNet(pl.LightningModule):
         )
         #self._mdl_logger: TensorBoardLogger = None
         self._wea_arr_shape = deepcopy(wea_arr_shape)
-        seq_dim = config.model_pdt.seq_dim
+        seq_dim = config.model_pdt.sample_data_seq_dim
         wea_layer_paras = config.model_pdt.cov_net
         filter_net_paras = config.model_pdt.filter_net
         fst_ind=0        
@@ -177,21 +190,27 @@ class TSWeatherNet(pl.LightningModule):
         self._pred_length = pred_length
 
         self.validation_step_outputs = []
-
         #filter_net
         in_channel = 1 if isinstance(config.model_pdt.target_ind, int) else len(config.model_pdt.target_ind)
         self.revin_layer = RevIN(in_channel, affine=True, subtract_last=False)
-        self.filter_net = SeqModel(config.filternet_input, filter_net_paras=filter_net_paras)
+        #self.filter_net = SeqModel(config.filternet_input, filter_net_paras=filter_net_paras)
+        self.wea_channels = config.model_pdt.cov_net['last']['channel']     
+
+        #x = torch.zeros(1,in_channel+self.wea_channels, self._seq_length)
+        x = torch.zeros(1,in_channel, self._seq_length)
+        self.filter_net = nn.Conv1d(**config.model_pdt.ts_net)
+        x=self.filter_net(x)
+
         self.ext_channels = config.model_pdt.ext_net['output_channel']
         self.ext_net = nn.Linear(in_features=config.model_pdt.ext_net['input_channel'], out_features=self.ext_channels)   
         self.wea_channels = config.model_pdt.cov_net['last']['channel']     
         
         # prediction weather 1D cov
-        mix_input_dim = in_channel + self.ext_channels + self.wea_channels
+        mix_input_dim = x.shape[1]*x.shape[2] + self.ext_channels + self.wea_channels
         self.mixed_output = MixedOutput(
             seq_arr_dim=config.model_pdt.seq_length,
-            seq_latent_dim=config.model_pdt.mixed_net['ts_latent_dim'],
-            filternet_hidden_size=mix_input_dim,
+            seq_latent_dim=x.shape[2], #config.model_pdt.mixed_net['ts_latent_dim'],
+            filternet_hidden_size=x.shape[1],#mix_input_dim,
             ext_dim=config.model_pdt.ext_net['output_channel'],
             wea_arr_dim=self.wea_channels, 
             pred_len=self._pred_length, 
@@ -205,12 +224,12 @@ class TSWeatherNet(pl.LightningModule):
         # others = [p for name, p in self.named_parameters() if label not in name]
 
         #return torch.optim.Adam([{'paras':m_linear}, {'paras':others, 'weight_decay':0}], 
-                                #weight_decay=self.model_settings['weight_decay'], lr=self.#model_settings['lr'])
+                                #weight_decay=self.hyper_options['weight_decay'], lr=self.#hyper_options['lr'])
         return torch.optim.Adam(self.parameters(), lr=(self.lr))
     
     def forward(self, seq_wea_arr, seq_ext_arr, seq_target, wea_arr, ext_arr):
         device = seq_wea_arr.device
-        self.revin_layer(seq_target,'norm')
+        #seq_target = self.revin_layer(seq_target,'norm')
         B= seq_wea_arr.shape[0]
         seq_wea_arr = seq_wea_arr.detach().clone()
         seq_ext_arr = seq_ext_arr.detach().clone()
@@ -222,21 +241,23 @@ class TSWeatherNet(pl.LightningModule):
         
         seq_wea_y = torch.zeros(B, seq_length, wea_channel_num, device=device)
         wea_y = torch.zeros(B, w_dim, wea_channel_num, device=device)
-        seq_ext_y = torch.zeros(B, seq_length, self.ext_channels, device=device)
+        #seq_ext_y = torch.zeros(B, seq_length, self.ext_channels, device=device)
         ext_y = torch.zeros([B, e_dim, self.ext_channels], device=device)        
 
-        for i in range(seq_length):
-            seq_wea_y[:,i,:] = self.wea_net(seq_wea_arr[:,i,...])
-            seq_ext_y[:,i,:] = self.ext_net(seq_ext_arr[:,i,...])
+        # for i in range(seq_length):
+        #     seq_wea_y[:,i,:] = self.wea_net(seq_wea_arr[:,i,...])
+            #seq_ext_y[:,i,:] = self.ext_net(seq_ext_arr[:,i,...])
         for i in range(w_dim):
             wea_y[:,i,:] = self.wea_net(wea_arr[:,i,...])
-        for i in range(e_dim):
-            ext_y[:,i,:] = self.ext_net(ext_arr[:,i,...])
-        seq_y = torch.cat([seq_target[...,None], seq_ext_y, seq_wea_y],dim=2).permute([0, 2, 1])
+        # for i in range(e_dim):
+        #     ext_y[:,i,:] = self.ext_net(ext_arr[:,i,...])
+        #seq_y = torch.cat([seq_target[...,None], seq_ext_y, seq_wea_y],dim=2).permute([0, 2, 1])
+        #seq_y = self.filter_net(seq_y)
+        seq_y = torch.cat([seq_target[...,None]],dim=2).permute([0, 2, 1])
         seq_y = self.filter_net(seq_y)
 
         y = self.mixed_output(seq_y, ext_y, wea_y)
-        y = self.revin_layer(y, 'denorm')
+        #y = self.revin_layer(y, 'denorm')
         return y    
 
     def training_step(self, batch, batch_nb):
@@ -245,7 +266,7 @@ class TSWeatherNet(pl.LightningModule):
         y_hat = self(seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr)
         loss = F.mse_loss(y_hat, target)
         self.log('training RMSE loss',torch.sqrt(loss), on_epoch=True)
-        return torch.sqrt(loss)
+        return loss #torch.sqrt(loss)
 
     # def on_training_epoch_end(self, outputs):
     #     #  the function is called after every epoch is completed
@@ -258,23 +279,29 @@ class TSWeatherNet(pl.LightningModule):
     #     #     self.log(k, v)
     #     self.log("train_rmse_loss", float(avg_loss.squeeze()))
 
-    def _busi_loss_metrics(self, scaled_loss):
-        abs_loss = self._scaler.unscale_target(scaled_loss.cpu().reshape((-1, 1)))
+    def _busi_loss_metrics(self, pred, target):
+        abs_bias = (torch.mean(pred)-torch.mean(target)).item()
+        pred = self._scaler.unscale_target(pred.cpu().reshape((-1, 1))) 
+        target = self._scaler.unscale_target(target.cpu().reshape((-1, 1))) 
+        abs_loss = F.l1_loss(torch.tensor(pred),torch.tensor(target)).item()
         relative_loss = abs_loss / self._target_mean
+        abs_bias_perc = abs_bias/self._target_mean
         return {
-            "abs_loss(MAE)": float(abs_loss.squeeze()),
-            "relative_loss(RMAE)": float(relative_loss.squeeze()),
-            "y_mean": self._target_mean,
+            'abs_loss(MAE)': abs_loss,
+            'relative_loss(RMAE)': relative_loss,
+            'y_mean': self._target_mean,
+            'y_std': self._target_std,
+            'abs_bias':abs_bias,
+            'abs_bias_perc':abs_bias_perc,
         }
 
     def validation_step(self, batch, batch_nb):
         # OPTIONAL
         seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target = batch
         y_hat = self(seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr)
-        loss = torch.sqrt(F.mse_loss(y_hat, target))
-       # self.validation_step_outputs.append(loss)
-        self.log('val RSME loss', torch.sqrt(loss), on_epoch=True)
-        return torch.sqrt(loss)
+        loss = F.mse_loss(y_hat, target)        
+        self.log('val RMSE loss', torch.sqrt(loss), on_epoch=True)
+        return loss
 
     # def on_validation_epoch_end(self):
     #     # OPTIONAL
@@ -293,9 +320,9 @@ class TSWeatherNet(pl.LightningModule):
         # OPTIONAL
         seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target = batch
         y_hat = self(seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr)
-        loss = torch.sqrt(F.mse_loss(y_hat, target))
-        self.log('test RSME loss', loss, on_epoch=True)
-        self.log_dict(self._busi_loss_metrics(loss))
+        loss = F.mse_loss(y_hat, target)
+        self.log('test RMSE loss', torch.sqrt(loss), on_epoch=True)
+        self.log_dict(self._busi_loss_metrics(y_hat, target))
         return loss
 
     # def on_test_epoch_end(self):
@@ -309,20 +336,35 @@ class TSWeatherNet(pl.LightningModule):
     #         self.log(k, v)
     #     self.log("test_loss", float(avg_loss.squeeze()))
     #     self._mdl_logger.experiment.add_hparams(
-    #         dict(self.model_settings._asdict()), {"test_loss": avg_loss}
+    #         dict(self.hyper_options._asdict()), {"test_loss": avg_loss}
     #     )
 
-    def setup_mean(self, target_mean, scaler):
+    def setup_mean(self, target_mean, target_std, scaler):
         self._target_mean = target_mean
         self._scaler = scaler
+        self._target_std = target_std
 
 
 class TsWeaDataModule(pl.LightningDataModule):
-    def __init__(self, batch_size):
-        super().__init__()
-        self.batch_size = batch_size
-        self.allow_zero_length_dataloader_with_multiple_devices = True
 
+    def __init__(self, ds_train, ds_val, ds_test, batch_size, num_worker, ):
+        super().__init__()
+        self._batch_size = batch_size
+        self.allow_zero_length_dataloader_with_multiple_devices = True
+        self._num_worker = num_worker
+        self._ds_train = ds_train
+        self._ds_val = ds_val
+        self._ds_test = ds_test 
+
+    def train_dataloader(self):
+        return DataLoader(self._ds_train, batch_size=self._batch_size,num_workers=self._num_worker, persistent_workers=True, shuffle=True, pin_memory=True)
+    
+    def test_dataloader(self):
+        return DataLoader(self._ds_test, batch_size=self._batch_size,num_workers=self._num_worker, persistent_workers=True,shuffle=False)
+    
+    def val_dataloader(self):
+        return DataLoader(self._ds_val, batch_size=self._batch_size,num_workers=self._num_worker, persistent_workers=True,shuffle=False)
+    
 
 def cv_train_ts_weather_net(sce_id, config:Config):
 

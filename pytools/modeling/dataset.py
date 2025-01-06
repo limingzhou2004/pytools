@@ -16,9 +16,93 @@ from pytools.config import DataType
 from pytools.modeling.scaler import Scaler, load
 #from pytools.modeling.weather_net import WeatherPara
 
+np_load_old = np.load
+np.load = lambda *a,**k: np_load_old(*a, allow_pickle=True, **k)
+
+
+def _get_dt_range(t0, t1):
+    dt = pd.Timestamp(t1) - pd.Timestamp(t0)
+    dtn= dt/ np.timedelta64(1, 'h')
+    return range(int(dtn))
+
+def create_datasets(config:Config, flag, tabular_data, wea_arr, timestamp, sce_ind):
+    target_ind = config.model_pdt.target_ind
+
+    _target = tabular_data[:, target_ind]
+    _ext = np.delete(tabular_data, target_ind, axis=1)
+    _wea_arr = wea_arr   
+
+
+    _fn_scaler = config.get_model_file_name(class_name='scaler')
+ 
+    if Path(_fn_scaler).exists():
+        scaler = load(_fn_scaler)
+    else:
+        scaler = Scaler(_target, _wea_arr, scaler_type=config.model_pdt.scaler_type)
+        scaler.save(_fn_scaler)
+
+    target_mean = _target.mean()
+    target_std = _target.std()
+    _target = scaler.scale_target(_target)
+    _wea_arr = scaler.scale_arr([_wea_arr])[0]   
+    tt = config.model_pdt.cv_settings[sce_ind]
+
+    # weather dim batch, height, width, channel --> batch, channel, height, width
+    t_flag = (timestamp >= pd.Timestamp(tt[0],tz='UTC')) & (timestamp<= pd.Timestamp(tt[-1],tz='UTC'))
+    t_flag = t_flag.to_numpy().reshape((-1))
+    _target = _target[t_flag]
+    _ext = _ext[t_flag]
+    _wea_arr = _wea_arr[t_flag, ...]      
+    train_range = _get_dt_range(tt[0], tt[1])
+    fst_ind = 0
+    pre_length = config.model_pdt.forecast_horizon[fst_ind][-1]
+    full_length = _target.shape[0] - config.model_pdt.seq_length
+    full_length -= pre_length
+    train_size = len(train_range)
+    val_range = None
+    test_range = None
+
+    if flag.startswith('cv'):
+        test_range = range(train_range[-1], full_length)
+        if config.model_pdt.train_frac >= 1:
+            val_range = None
+        else:
+            train_range, val_range = train_test_split(train_range, train_size=int(config.model_pdt.train_frac*train_size))
+
+    # elif flag.startswith('final_'):
+    #     return train_range
+    # return train, val, test datasets
+
+    train_ds =  WeatherDataSet(train_range, config=config, scaler=scaler,target_mean=target_mean, 
+                               target_std=target_std, target=_target, wea_arr=_wea_arr, ext_arr=_ext) 
+    val_ds =  WeatherDataSet(val_range, config=config, scaler=scaler,target_mean=target_mean, 
+                             target_std=target_std, target=_target, wea_arr=_wea_arr, ext_arr=_ext) if val_range else None      
+    test_ds = WeatherDataSet(test_range, config=config, scaler=scaler,target_mean=target_mean,
+                             target_std=target_std, target=_target, wea_arr=_wea_arr, ext_arr=_ext) if test_range else None  
+    return train_ds, val_ds, test_ds
+
 
 class WeatherDataSet(data.Dataset):
-    def __init__(
+
+    def __init__(self, sample_iter, scaler, target_mean, target_std, target, wea_arr, ext_arr,config:Config):
+        self.scaler = scaler
+        self.target_mean = target_mean
+        self.target_std = target_std 
+        self._target = target 
+        self._wea_arr = wea_arr 
+        self._ext = ext_arr
+        self._sample_iter = sample_iter
+        seq_length = config.model_pdt.seq_length
+        fst_horizon = config.model_pdt.forecast_horizon[0]
+        self._seq_length = seq_length
+        self._pred_length = fst_horizon[-1]
+        self._fst_horizeon = fst_horizon
+        self._wea_ar_embedding_dim = config.model_pdt.wea_ar_embedding_dim
+        self._wea_embedding_dim = config.model_pdt.wea_ar_embedding_dim
+        self._ext_embedding_dim = config.model_pdt.ext_ar_embedding_dim
+        self._sample_list = list(sample_iter)
+
+    def __init00__(
         self,
         flag:str,
         tabular_data: np.ndarray,
@@ -35,19 +119,8 @@ class WeatherDataSet(data.Dataset):
         target_ind = config.model_pdt.target_ind
         seq_length = config.model_pdt.seq_length
         fst_horizon = config.model_pdt.forecast_horizon[0]
-        self._target = tabular_data[:, target_ind]
-        self._ext = np.delete(tabular_data, target_ind, axis=1)
-        self._wea_arr = wea_arr
-        self._sce_ind = sce_ind
 
-        self._seq_length = seq_length
-        self._pred_length = fst_horizon[-1]
-        self._fst_horizeon = fst_horizon
-        self._wea_ar_embedding_dim = config.model_pdt.wea_ar_embedding_dim
-        self._wea_embedding_dim = config.model_pdt.wea_ar_embedding_dim
-        self._ext_embedding_dim = config.model_pdt.ext_ar_embedding_dim
 
-        self._fn_scaler = config.get_model_file_name(class_name='scaler')
 
         if to_scale:
             if Path(self._fn_scaler).exists():
@@ -57,11 +130,10 @@ class WeatherDataSet(data.Dataset):
                 scaler.save(self._fn_scaler)
 
             self.target_mean = self._target.mean()
+            self.target_std = self._target.std()
             self._target = scaler.scale_target(self._target)
             self._wea_arr = scaler.scale_arr([self._wea_arr])[0]
-
             self.scaler = scaler
-
       
         # load the data, and selec the subset, based on flag, ind
         # filter by t0 and t1
@@ -136,6 +208,7 @@ class WeatherDataSet(data.Dataset):
         """
         index = self._sample_list[index]
         target_ind0 = index + self._seq_length 
+        
         target_ind1 = target_ind0 + self._pred_length
         wea_ind0 = target_ind0 - self._wea_embedding_dim + self._fst_horizeon[0] - 1
         wea_ind1 = target_ind1 
@@ -192,10 +265,10 @@ def check_fix_missings(load_arr:np.ndarray, w_timestamp:np.ndarray, w_arr:np.nda
     return df_tl.values.astype(float), w_arr.astype(float), t
 
 def read_weather_data_from_config(config:Config, year=-1):
-    np_load_old = np.load
-    np.load = lambda *a,**k: np_load_old(*a, allow_pickle=True, **k)
+    # load data are not separated by year
     fn_load = config.get_load_data_full_fn(DataType.LoadData, 'npz', year=-1)
-    fn_wea = config.get_load_data_full_fn(DataType.Hist_weatherData, 'npz', year=year)
+    fn_wea =  config.get_load_data_full_fn(DataType.Hist_weatherData, 'npz', year=year)
+    
     with np.load(fn_load) as dat:
         load_data = dat[DataType.LoadData.name]
     with np.load(fn_wea) as dat:
@@ -203,7 +276,23 @@ def read_weather_data_from_config(config:Config, year=-1):
         w_timestamp = dat['timestamp']
         w_data = dat[DataType.Hist_weatherData.name]
 
-    return load_data, paras, w_timestamp, w_data
+    return load_data, paras, w_timestamp, w_data, 
+
+
+def read_past_weather_data_from_config(config:Config, year=-1):
+    fn_load = config.get_load_data_full_fn(DataType.LoadData, 'npz', year=-1)
+    fn_wea =  config.get_load_data_full_fn(DataType.Past_fst_weatherData, 'pkl', year=year)
+    with np.load(fn_load) as dat:
+        load_data = dat[DataType.LoadData.name]
+    with open(fn_wea, 'rb') as fr:
+        wea_dat = pickle.load(fr)
+
+    return load_data, wea_dat
+
+
+def create_fst_data(spot_time, load_data, wea_data):
+
+    return
 
 
 # class WeatherDataSetBuilder:

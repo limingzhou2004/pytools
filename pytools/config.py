@@ -1,5 +1,6 @@
 
 from enum import Enum
+from functools import partial
 import math
 import os
 import os.path as osp
@@ -11,6 +12,7 @@ from itertools import chain
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel, FilePath, field_validator
+from sklearn.model_selection import train_test_split
 import toml
 import envtoml
 
@@ -93,7 +95,7 @@ class DataType(Enum):
 class Site(BaseModel):
     timezone:str
     state:str
-    folder_name:str
+    file_base_name:str
     name:str
     base_folder: str
     center: Tuple[float, float]
@@ -133,7 +135,7 @@ class Load(BaseModel):
     load_column:str 
     sql_template_file: str
     limit: Tuple[float,float]
-    lag_hours:int
+    #lag_hours:int
     utc_to_local_hours:int 
     #load_lag_start:int # to delete
     #fst_hours: List[int]
@@ -152,9 +154,11 @@ class Weather(BaseModel):
 
 class Model(BaseModel):
     y_label: str
+    weather_para_to_adopt:list
     scaler_type: str
-    seq_dim: int
-    model_settings: Dict
+    sample_data_seq_dim: int
+    hyper_options: Dict
+    train_frac: float
     frac_yr1: float
     frac_split: list
     final_train_frac_yr1: float
@@ -164,13 +168,13 @@ class Model(BaseModel):
     final_train_hist: List
     target_ind: int
     wea_ar_embedding_dim: int
-    #wea_embedding_dim: int 
     ext_ar_embedding_dim: int
     seq_length: int 
 
     cov_net: Dict 
     ext_net: Dict
     filter_net: Dict
+    ts_net:Dict
     mixed_net: Dict
 
     models: List
@@ -237,7 +241,7 @@ class Config:
         """
         return os.path.join(
             self.site_parent_folder,
-            prefix + self.site_pdt.folder_name + '_' + class_name + suffix + extension,
+            prefix + self.site_pdt.file_base_name + '_' + class_name + suffix + extension,
         )
     
     def get_logger_folder(self):
@@ -261,7 +265,7 @@ class Config:
             self._base_folder,
             #self.toml_dict["site"]["site_folder"],
             # self.toml_dict["category"]["name"],
-            # self.toml_dict["site"]["folder_name"],
+            # self.toml_dict["site"]["file_base_name"],
         )
 
     @property
@@ -341,7 +345,20 @@ class Config:
         )
         df.reset_index().to_csv(file_name, index=False)
 
-    def get_sample_segmentation_borders(self, full_length, fst_scenario=0, first_yr_frac=0.5, fractions=[]):
+    def get_sample_segmentation_borders(self, full_length, test_length, val_frac=0.2, fractions=[]):
+        #, fractions=[0.5, (0.4, 0.3, 0.3)]):
+        # full ind 0: len(all samples) - pred_length 
+        fst_ind = 0
+        pre_length = self.model_pdt.forecast_horizon[fst_ind][-1]
+        full_length -= pre_length
+        test_length -= pre_length
+        train_val_borders = range(int(full_length*(1-val_frac)))
+        train_ind, val_ind = train_test_split(train_val_borders, test_size=val_frac)
+        test_ind = range(test_length)
+
+        return train_ind, val_ind, test_ind
+
+    def get_sample_segmentation_borders_old(self, full_length, fst_scenario=0, first_yr_frac=0.5, fractions=[]):
         #, fractions=[0.5, (0.4, 0.3, 0.3)]):
         fraction_yr1 = first_yr_frac
         frac_train=fractions[0]
@@ -350,7 +367,8 @@ class Config:
         # full ind 0: len(all samples) - pred_length 
         # first year + 40% 2nd year (train): 30% 2nd year(test): 30% 2nd year(validate)
         # fraction = [first percetage, (second train, test, validate)]
-        pre_length = self.model_pdt.forecast_horizon[fst_scenario][-1]
+        fst_ind = 0
+        pre_length = self.model_pdt.forecast_horizon[fst_ind][-1]
         full_length -= pre_length
         train_borders = range(int(full_length*fraction_yr1))
         test_borders = range(1,0)
@@ -367,10 +385,8 @@ class Config:
             val_borders = chain(val_borders, range(int((i+frac_train+frac_test)*quarter)+m, \
                                       int((i+frac_train+frac_test+frac_val)*quarter)+m))
 
-        def fun(x):
-            return x<full_length
-        return filter(fun, train_borders), filter(fun, test_borders), \
-            filter(fun, val_borders)
+        return [t for t in train_borders if t<full_length], [t for t in test_borders if t<full_length], \
+            [t for t in val_borders if t<full_length]
 
     
     @property

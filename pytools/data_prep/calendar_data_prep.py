@@ -135,6 +135,17 @@ class CalendarData:
         d = {'holiday':h_hld, 'daylighsaving':h_dst}
         dfr = pd.DataFrame(d, index=index)
         return list(dfr), dfr
+    
+    def get_monthofyear(self, df: pd.Series):
+        h = df.apply(lambda x: pd.Timestamp(x).month).values
+        h = np.squeeze(h)
+        d = {
+            "monthofyear_sin": np.sin(h / 12 * 2 * np.pi),
+            "monthofyear_cos": np.cos(h / 12 * 2 * np.pi),
+        }
+        index = list(range(len(h)))
+        dfr = pd.DataFrame(d, index=index)
+        return list(dfr), dfr
 
     
     

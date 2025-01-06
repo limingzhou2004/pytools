@@ -6,7 +6,6 @@ import os.path as osp
 from typing import Tuple
 
 import torch
-import mlflow
 import numpy as np
 import pandas as pd
 
@@ -17,14 +16,12 @@ from lightning.pytorch.callbacks import EarlyStopping
 from lightning.pytorch.tuner import Tuner
 import lightning as pl
 from lightning.pytorch.loggers import TensorBoardLogger, CSVLogger
-from torch.utils.data import DataLoader
 
 from pytools.arg_class import ArgClass
 from pytools.data_prep.herbie_wrapper import download_hist_fst_data
-from pytools.modeling.dataset import WeatherDataSet, check_fix_missings, read_weather_data_from_config
+from pytools.modeling.dataset import WeatherDataSet, check_fix_missings, create_datasets, read_past_weather_data_from_config, read_weather_data_from_config
 from pytools.modeling.rolling_forecast import RollingForecast
 from pytools.modeling.ts_weather_net import TSWeatherNet, TsWeaDataModule
-from pytools.modeling.mlflow_helper import save_model, load_model
 from pytools.modeling.weather_task_helpers import (
   #  get_npz_train_weather_file_name,
     get_training_data,
@@ -52,9 +49,9 @@ hrrr_hist_max_fst_hour = 0
 logger = get_logger("weather_tasks")
 #weather_data_file_name = 'weather_data.npz'
 
-train_loader_settings = {'batch_size':256, 'shuffle':True, 'drop_last':True, 'pin_memory':True, 'num_workers':4}
-test_loader_settings = {'batch_size':256, 'shuffle':False, 'drop_last':False, 'num_workers':4}
-
+train_loader_settings = {'batch_size':30, 'shuffle':True, 'drop_last':True, 'pin_memory':True, 'num_workers':7}
+test_loader_settings = {'batch_size':20, 'shuffle':False, 'drop_last':False, 'num_workers':7}
+val_loader_settings = {'batch_size':20, 'shuffle':False, 'drop_last':False, 'num_workers':7}
 
 def hist_load(
     config_file: str,
@@ -137,7 +134,7 @@ def hist_weather_prepare_from_report(config_file:str, n_cores=1, suffix='v0', cr
     return d
 
 
-def past_fst_weather_prepare(config_file:str, fst_hour=48, year=-1, month=-1):
+def past_fst_weather_prepare(config_file, fst_hour=48, year=-1, month=-1):
     logger.info('Create past weather forecast, with forecast horizon of {fst_hour}...\n')
     if year>0:
         logger.info(f'Process year {year} only...')
@@ -150,11 +147,29 @@ def past_fst_weather_prepare(config_file:str, fst_hour=48, year=-1, month=-1):
         pickle.dump([spot_time, weather_arr],f)
     
 
-def get_trainer(config:Config):
+def load_training_data(config:Config, yrs):
+    if yrs=='-1':
+        return read_weather_data_from_config(config, year=-1)
+    years = yrs.split('-')
+    y0 = int(years[0])
+    y1 = int(years[-1])
+    w_timestamp_list = []
+    w_data_list = []
+    inds = []
+    for yr in range(y0, y1+1):
+        load_data, w_paras, w_timestamp, w_data = read_weather_data_from_config(config, year=yr)
+        w_timestamp_list.append(w_timestamp)
+        w_data_list.append(w_data)
+        inds.append(w_data.shape[0])
+    return load_data, w_paras, np.concatenate(w_timestamp_list,axis=0), np.concatenate(w_data_list,axis=0)
+
+
+def get_trainer(config:Config, use_val:bool=True):
     model_path = osp.join(config.site_parent_folder, 'model')
-    setting = config.model_pdt.model_settings
+    setting = config.model_pdt.hyper_options
     early_stop_callback = EarlyStopping(
-        monitor='val RSME loss',
+        monitor='val RMSE loss' if use_val else 'training RMSE loss',
+        stopping_threshold=setting['stopping_threshold'],
         min_delta=setting['min_delta'],
         patience=setting['patience'],
         verbose=False,
@@ -164,71 +179,13 @@ def get_trainer(config:Config):
     csv_logger = CSVLogger(save_dir=model_path, name='csv_logger')
     trainer = pl.Trainer(
         default_root_dir=model_path,
-        callbacks=early_stop_callback,
-        check_val_every_n_epoch=setting['epoch_step'],
+        num_nodes=setting['num_nodes'],
+       # callbacks=early_stop_callback,
+        check_val_every_n_epoch=setting['check_val_every_n_epoch'],
         max_epochs=setting['max_epochs'],   
         logger=[tb_logger, csv_logger],
     )
-    return trainer
 
-
-def train_model(
-    config_file: str,
-   # fst_hours: int,
-    train_options,
-    tracking_uri,
-    model_uri,
-    experiment_name,
-    tags="",
-):
-    cfg = Config(config_file)
-    cat_fraction = (
-        train_options.cat_fraction if hasattr(train_options, "cat_fraction") else None
-    )
-    data = get_training_data(cfg, cat_fraction, fst_hour=fst_hours)
-    weather_para = data.get_weather_para()
-    d = hist_load(config_file=config_file, create=False)
-    train_data, validation_data, test_data = prepare_train_data(
-        data,
-        ahead_hours=fst_hours,
-        batch_size=train_options.batch_size,
-        num_workers=None,
-        full_data=cat_fraction[0] == 1,
-    )
-    model, trainer = prepare_train_model(
-        cfg=cfg,
-        weather_para=weather_para,
-        ahead_hours=ahead_hours,
-        train_options=train_options,
-        hist_load=d,
-    )
-
-    model.add_a_logger(cfg=cfg)
-    ckpt_path = get_model_checkpoint_path(cfg, ahead_hours)
-    if cat_fraction[0] == 1:
-        sce_name = cfg.site["name"] + f"-fst-{ahead_hours}" + "-full"
-        trainer.fit(model, train_data)
-    else:
-        trainer.fit(model, train_data, validation_data)
-        sce_name = cfg.site["name"] + f"-fst-{ahead_hours}"
-        trainer.test(test_dataloaders=test_data, ckpt_path=ckpt_path)
-
-    trainer.save_checkpoint(ckpt_path)
-    # save metric and model in airflow tracking
-    save_model(
-        metric=trainer.logged_metrics,
-        artifact_file=config_file,
-        model=model,
-        sub_folder=sce_name,
-        tracking_uri=tracking_uri,
-        model_uri=model_uri,
-        experiment_name=experiment_name,
-        tags={s.split("=")[0]: s.split("=")[1] for s in tags.split(",")}
-        if tags
-        else {},
-        parameters=None,
-        run_name=sce_name,
-    )
     return trainer
 
 
@@ -368,44 +325,44 @@ def task_2(**args):
 def task_3(**args):
     flag = args['flag']
     config = Config(args['config_file'])
-    load_data, w_paras, w_timestamp, w_data = read_weather_data_from_config(config, year=-1)
+    load_data, w_paras, w_timestamp, w_data = load_training_data(config=config, yrs=args['years']) 
+    p_list = [ a[1] for a in list(w_paras.item().items()) ]
+    plist=[]
+    for p in p_list:
+        plist+=p
+    p_adopted = [plist[i] for i in config.model_pdt.weather_para_to_adopt]    
+    w_data=w_data[...,config.model_pdt.weather_para_to_adopt]
     logger.info(f'Use these weather parameters... {w_paras}')
+    logger.info(f'Chosen {p_adopted}')
     load_arr, wea_arr, t = check_fix_missings(load_arr=load_data, w_timestamp=w_timestamp, w_arr=w_data)
+    # import matplotlib.pyplot as plt
+    # plt.scatter(load_arr[:,0],wea_arr[:,11,11,0])
+    # #plt.show()
+    # plt.savefig('test.png')
+    # return
+
     wea_arr = wea_arr.astype(np.float32)
     load_arr = load_arr.astype(np.float32)
-
+    num_worker = args['number_of_worker']
     ind = args['ind']
-    if flag.startswith('cv'):
-        prefix = 'cv'
-        ds_test =  WeatherDataSet(flag=f'{prefix}_test',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
-      #  loader_test = DataLoader(ds_test, **test_loader_settings)
-        ds_val =  WeatherDataSet(flag=f'{prefix}_val',tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
-      #  loader_val = DataLoader(ds_val, **test_loader_settings)
-    elif flag.startswith('final'):
-        prefix= 'final_train'    
-    train_flag = f'{prefix}_train'
-    ds_train = WeatherDataSet(flag=train_flag,tabular_data=load_arr, wea_arr=wea_arr, timestamp=t, config=config, sce_ind=ind)
-    
+    ds_train, ds_val, ds_test = create_datasets(config, flag, tabular_data=load_arr, wea_arr=wea_arr,timestamp=t,sce_ind=ind)
+ 
     # add the batch dim
     wea_input_shape = [1, *wea_arr.shape]
+    del wea_arr
     m = TSWeatherNet(wea_arr_shape=wea_input_shape, config=config)
-    m.setup_mean(scaler=ds_train.scaler, target_mean=ds_train.target_mean)
-    trainer = get_trainer(config)
-    tuner = Tuner(trainer)
-
-    def train_dl():
-        return DataLoader(ds_train, batch_size=m.batch_size)
-    
-    def test_dl():
-        return DataLoader(ds_test, batch_size=m.batch_size)
-    
-    def val_dl():
-        return DataLoader(ds_val, batch_size=m.batch_size)
-    
-    dm = TsWeaDataModule(batch_size=m.batch_size)
-    dm.train_dataloader = train_dl
-    dm.test_dataloader = test_dl
-    dm.val_dataloader = val_dl
+    m.setup_mean(scaler=ds_train.scaler, target_std=ds_train.target_std, target_mean=ds_train.target_mean)
+    if config.model_pdt.train_frac>=1:
+        use_val = False
+    else:
+        use_val = True
+    trainer = get_trainer(config, use_val=use_val)
+    tuner = Tuner(trainer)   
+    dm = TsWeaDataModule(batch_size=m.batch_size,num_worker=num_worker, ds_test=ds_test, ds_train=ds_train,ds_val=ds_val)
+    if not ds_test:
+        dm.test_dataloader = None
+    if not ds_val:
+        dm.val_dataloader = None
     sub_task = args['sub']
     if sub_task == 'find_batch_size':
         tuner.scale_batch_size(m, datamodule=dm)
@@ -429,20 +386,35 @@ def task_3(**args):
 
     test_res = trainer.test(m, datamodule=dm, verbose=False)
     logger.info(f'test results: {test_res}')
-    model_name='test.ckpt'
+    #$model_name='test.ckpt'
+    model_name = args['model_name']+'.ckpt'
     ckpt_path = osp.join(config.site_parent_folder,'model', model_name)
-
     trainer.save_checkpoint(ckpt_path)
 
-    m2 =TSWeatherNet.load_from_checkpoint(ckpt_path)
+    #m2 =TSWeatherNet.load_from_checkpoint(ckpt_path)
 
-    m2.eval()
+    #m2.eval()
 
     #y = m2()
 
 
 def task_4(**args):
     # load the model for predictions
+    config = Config(args['config_file'])
+
+    year = args['year']
+
+    # get weather data
+    if args['t0'] != 'latest':
+       load_data, wea_data =  read_past_weather_data_from_config(config=config, year=year)
+    
+
+    ckpt_path = osp.join(config.site_parent_folder, 'model', args['model_name'])
+    m2 =TSWeatherNet.load_from_checkpoint(ckpt_path)
+
+
+
+    #y = m2()
 
 
     return 
@@ -507,7 +479,10 @@ def task_7(**args):
 
 if __name__ == "__main__":
 # python -m pytools.weather_task -cfg pytools/config/albany_test.toml --create task_1 
+# -fh, forecast hours
 # python -m pytools.weather_task -cfg pytools/config/albany_test.toml task_2 -fh 2 --n-cores 1 -year 2020 -flag hf
 # python -m pytools.weather_task -cfg pytools/config/albany_prod.toml task_2 --n-cores 1 -year 2018 -flag h
 # python -m pytools.weather_task -cfg pytools/config/albany_prod.toml task_2 -fh 48 --n-cores 1 -year 2024 -flag f
+
+# python -m pytools.weather_task -cfg pytools/config/albany_test.toml task_3 --flag cv --ind 0 -sb [find_batch_size|find_lr|fit] -mn test0
     main(sys.argv[1:])
