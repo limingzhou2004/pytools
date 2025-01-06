@@ -105,7 +105,7 @@ class WeaCov(nn.Module):
         # input_shape, (paras/channel, x, y)
         super().__init__()
         m_list = []
-        self.dropout = nn.Dropout(layer_paras['dropout'])
+        self.dropout = layer_paras['dropout']
 
         if input_shape[1] >= min_cv1_size:
             weather_conv1_layer = nn.Conv2d(
@@ -118,6 +118,7 @@ class WeaCov(nn.Module):
             output_shape1= weather_conv1_layer(torch.rand(input_shape).permute([0,3,1,2])).shape
             m = nn.Sequential(weather_conv1_layer,
             nn.LayerNorm(normalized_shape=output_shape1[1:]), #layer_paras['cov1']['output_channel']),
+            nn.Dropout(layer_paras['dropout']),
             nn.LeakyReLU(),
             )
             m_list.append(m)          

@@ -5,10 +5,10 @@
 [site]
  timezone = "US/Eastern"
  state = "NY"
- base_folder = "~/zhoul/work/energy/sites/albany-prod2"
+ base_folder = "~/zhoul/work/energy/sites/albany-prod4"
  name = "Albany-NY"
  # alias is the folder name for each project
- file_base_name = "albany-prod2"
+ file_base_name = "albany-prod4"
  sql_location = "CAPITL"
  back_fst_window = ["2020-01-01 00:00", "2025-01-01 00:00"]
  #site_folder = "nyiso"
@@ -40,7 +40,7 @@
  #fst_hours =[1, 6, 24]
 
 [weather]
-envelope = [1521, 1561, 746, 786]
+envelope = [1524, 1557, 749, 783]
 hist_weather_pickle = "../data/grib2_folder_1.pkl"
 fullfile_col_name = "full_file_name"
 filename_col_name = "filename"
@@ -85,7 +85,7 @@ hyper_options.lr=0.0002
 hyper_options.weight_decay=0.001
 hyper_options.batch_size=10
 hyper_options.check_val_every_n_epoch=1
-hyper_options.max_epochs=250
+hyper_options.max_epochs=600
 hyper_options.min_delta=0.001
 hyper_options.patience=6
 #hyper_options.epoch_step=2
@@ -104,7 +104,7 @@ cov_net.cov2.dilation=1
 cov_net.cov2.group=1
 cov_net.cov2.output_channel=12
 cov_net.last.channel=300
-cov_net.dropout=0.05
+cov_net.dropout=0.02
 
 ext_net.input_channel=8
 ext_net.output_channel=4
@@ -123,7 +123,7 @@ ts_net.stride=6
 
 mixed_net.ts_latent_dim=9
 mixed_net.shrink_factor=7
-mixed_net.dropout=0.05
+mixed_net.dropout=0.02
 mixed_net.cov1d.kernel_size=7
 mixed_net.cov1d.padding=3
 mixed_net.cov1d.stride=1

@@ -112,6 +112,7 @@ cov_net.cov2.dilation=1
 cov_net.cov2.group=1
 cov_net.cov2.output_channel=4
 cov_net.last.channel=8
+cov_net.dropout=0.01
 
 ext_net.input_channel=8
 ext_net.output_channel=3
@@ -139,7 +140,7 @@ mixed_net.ext_cov1d.padding=6
 mixed_net.ext_cov1d.stride=1
 mixed_net.ext_cov1d.dilation=1
 mixed_net.ext_cov1d.out_channels=3
-
+mixed_net.dropout=0.01
 
 #--- model management
 models = [ ]
