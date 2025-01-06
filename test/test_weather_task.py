@@ -21,8 +21,8 @@ from pytools.utilities import get_absolute_path
 class TestWeatherTask:
     config_file = get_absolute_path(__file__, '../pytools/config/albany_test.toml')
 
-    def test_commandline_task1(self):
-        cmd_str =f'-cfg {self.config_file} task_2 -flag h'
+    def test_commandline_task2(self):
+        cmd_str =f'-cfg {self.config_file} task_2 -flag h -year 2018'
         main(cmd_str.split(' '))
         #cmd_str = f'-cfg {self.config_file} task_2 -fh 2 -flag f'
         #main(cmd_str.split(' '))

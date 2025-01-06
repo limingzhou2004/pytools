@@ -208,6 +208,7 @@ class WeatherDataSet(data.Dataset):
         """
         index = self._sample_list[index]
         target_ind0 = index + self._seq_length 
+        
         target_ind1 = target_ind0 + self._pred_length
         wea_ind0 = target_ind0 - self._wea_embedding_dim + self._fst_horizeon[0] - 1
         wea_ind1 = target_ind1 

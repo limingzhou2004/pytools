@@ -5,10 +5,10 @@
 [site]
  timezone = "US/Eastern"
  state = "NY"
- base_folder = "~/zhoul/work/energy/sites/albany-prod"
+ base_folder = "~/zhoul/work/energy/sites/albany-prod2"
  name = "Albany-NY"
  # alias is the folder name for each project
- file_base_name = "albany-prod"
+ file_base_name = "albany-prod2"
  sql_location = "CAPITL"
  back_fst_window = ["2020-01-01 00:00", "2025-01-01 00:00"]
  #site_folder = "nyiso"
@@ -16,8 +16,8 @@
  center = [-73.75, 42.65]
  #[east, west, south, north]
  rect = [30.0, 30.0, 30.0, 30.0]
- t0="2018-11-03"
- t1="2024-11-05"
+ t0="2018-01-01"
+ t1="2026-11-05"
  description = "Zone Capital of NYISO"
  comments = """name is used for database query and must match what the database use; """
 
@@ -35,24 +35,23 @@
  sql_template_file = "sql_template/nyiso_sql_template.toml"
  #reasonable value range limit
  limit = [0, 99999]
- lag_hours = 168
+ #lag_hours = 168
  utc_to_local_hours = -5
  #fst_hours =[1, 6, 24]
 
 [weather]
-envelope = [1531, 1551, 756, 776]
+envelope = [1521, 1561, 746, 786]
 hist_weather_pickle = "../data/grib2_folder_1.pkl"
 fullfile_col_name = "full_file_name"
 filename_col_name = "filename"
 type_col_name = "type"
 hrrr_paras_file = "data_prep/hrrr_paras_cfgrib.txt"
-
 hrrr_predict = "hrrr_fst"
 
 [model]
-scaler_type = 'standard' #'minmax'
+scaler_type = 'minmax' #'standard' #'minmax'
 y_label = "load"
-forecast_horizon = [[48, 48]]
+forecast_horizon = [[1, 1]]
 sample_data_seq_dim = 1 # the dimension of AR target, 1 in dataset, 0 for Batch
 seq_length = 168
 target_ind = 0
@@ -62,13 +61,15 @@ ext_ar_embedding_dim = 0
 weather_para_to_adopt=[0,1,2,3,4,5,6,7,9,10,11,12,13,14]
 
 train_frac=0.8
+
+
 frac_yr1 = 0.67
 frac_split = [0.4, 0.3, 0.3]
 final_train_frac_yr1 = 0.8
 final_train_frac =[1, 0, 0]
 cv_settings = [
   # ["2018-11-03","2018-11-04 12:00","2018-11-04 13:00","2018-11-05"]
-   ["2018-01-01", "2020-01-01", "2020-01-01", "2021-01-01"],
+   ["2018-01-01", "2018-12-31", "2019-01-01", "2019-12-31"],
    ["2018-01-01", "2021-01-01", "2021-01-01","2022-01-01"],
    ["2018-01-01", "2022-01-01", "2022-01-01","2023-01-01"],
    ["2018-01-01", "2023-01-01", "2023-01-01","2024-01-01"],
@@ -78,34 +79,35 @@ final_train_hist = [
   #  ["2023-01-01", "2024-11-05"]
 ]
 
-hyper_options.stopping_threshold=0.065
+hyper_options.stopping_threshold=0.006
 hyper_options.num_nodes=1
-hyper_options.lr=0.01
+hyper_options.lr=0.0002
 hyper_options.weight_decay=0.001
-hyper_options.batch_size=100
+hyper_options.batch_size=10
 hyper_options.check_val_every_n_epoch=1
-hyper_options.max_epochs=100
+hyper_options.max_epochs=250
 hyper_options.min_delta=0.001
-hyper_options.patience=4
+hyper_options.patience=6
 #hyper_options.epoch_step=2
 
 #----- model layer configuration parameters
-cov_net.cov1.kernel=5
+cov_net.cov1.kernel=3
 cov_net.cov1.padding=0
 cov_net.cov1.stride=1
-cov_net.cov1.dilation=2
+cov_net.cov1.dilation=1
 cov_net.cov1.group=1
-cov_net.cov1.output_channel=12
+cov_net.cov1.output_channel=24
 cov_net.cov2.kernel=3
 cov_net.cov2.padding=0
-cov_net.cov2.stride=1
+cov_net.cov2.stride=2
 cov_net.cov2.dilation=1
 cov_net.cov2.group=1
-cov_net.cov2.output_channel=6
-cov_net.last.channel=30
+cov_net.cov2.output_channel=12
+cov_net.last.channel=300
+cov_net.dropout=0.05
 
 ext_net.input_channel=8
-ext_net.output_channel=8
+ext_net.output_channel=4
 
 filter_net.hidden_size=10
 filter_net.dropout=0.02
@@ -115,11 +117,13 @@ filter_net.sparsity_threshold=0.02
 
 ts_net.in_channels=1
 ts_net.out_channels=5
-ts_net.kernel_size=9
+ts_net.kernel_size=13
 ts_net.padding=0
-ts_net.stride=1
+ts_net.stride=6
 
 mixed_net.ts_latent_dim=9
+mixed_net.shrink_factor=7
+mixed_net.dropout=0.05
 mixed_net.cov1d.kernel_size=7
 mixed_net.cov1d.padding=3
 mixed_net.cov1d.stride=1

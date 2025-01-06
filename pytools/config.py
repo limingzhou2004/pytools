@@ -135,7 +135,7 @@ class Load(BaseModel):
     load_column:str 
     sql_template_file: str
     limit: Tuple[float,float]
-    lag_hours:int
+    #lag_hours:int
     utc_to_local_hours:int 
     #load_lag_start:int # to delete
     #fst_hours: List[int]

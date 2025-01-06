@@ -29,12 +29,13 @@ from pytools.config import Config
 
 
 class DirectFC(nn.Module):
-    def __init__(self, input_shape, output_feature):
+    def __init__(self, input_shape, output_feature,dropout=0.001):
         super().__init__()
         input_feature = reduce(mul, input_shape[1:])
         self.dfc = nn.Sequential(
             nn.Linear(in_features=input_feature, out_features=output_feature),
             nn.LayerNorm(normalized_shape=output_feature),
+            nn.Dropout(dropout),
             nn.LeakyReLU(), 
         ) 
 
@@ -44,7 +45,7 @@ class DirectFC(nn.Module):
     
 
 class MixedOutput(nn.Module):
-    def __init__(self, seq_arr_dim, seq_latent_dim, filternet_hidden_size, ext_dim, wea_arr_dim, pred_len, model_paras, ):
+    def __init__(self, seq_arr_dim, seq_latent_dim, filternet_hidden_size, ext_dim, wea_arr_dim, pred_len, model_paras):
         super().__init__()
         target_dim = 1
         self._pred_len = pred_len
@@ -55,10 +56,11 @@ class MixedOutput(nn.Module):
         in_dim = seq_latent_dim * filternet_hidden_size + wea_arr_dim + ext_dim
 
         #self.ts_latent_model = nn.Linear(in_features=seq_arr_dim,out_features=seq_latent_dim)
-        shrink_factor=2
+        shrink_factor=model_paras['shrink_factor']
         self.mixed_model = nn.ModuleList(
             nn.Sequential(
             nn.Linear(in_features=in_dim, out_features=in_dim//shrink_factor),
+            nn.Dropout(model_paras['dropout']),
             nn.LeakyReLU(),
             nn.Linear(in_features=in_dim//shrink_factor, out_features=target_dim),
             ) for _ in range(pred_len)
@@ -103,6 +105,7 @@ class WeaCov(nn.Module):
         # input_shape, (paras/channel, x, y)
         super().__init__()
         m_list = []
+        self.dropout = nn.Dropout(layer_paras['dropout'])
 
         if input_shape[1] >= min_cv1_size:
             weather_conv1_layer = nn.Conv2d(
@@ -119,7 +122,7 @@ class WeaCov(nn.Module):
             )
             m_list.append(m)          
         else:
-            m_list.append(DirectFC(input_shape, layer_paras['cov1']['output_channel']))
+            m_list.append(DirectFC(input_shape, layer_paras['cov1']['output_channel'],dropout=self.dropout))
             output_shape1 = m_list[-1].forward(torch.rand(input_shape).permute([0,3,1,2])).shape
         # if less than 5 X 5, no need for the 2nd Cov2d
 
@@ -137,11 +140,12 @@ class WeaCov(nn.Module):
             nn.LeakyReLU())
             m_list.append(m)
             output_shape_from_cov = [output_shape2[0], reduce(mul, output_shape2[1:])]
-            m_list.append(DirectFC(output_shape_from_cov, layer_paras['last']['channel']))
+            m_list.append(DirectFC(output_shape_from_cov, layer_paras['last']['channel'],dropout=self.dropout))
 
         else:
-            m_list.append(DirectFC(output_shape1, layer_paras['last']['channel']))
+            m_list.append(DirectFC(output_shape1, layer_paras['last']['channel'],dropout=self.dropout))
             output_shape2 = m_list[-1].forward(torch.rand(output_shape1)).shape
+            self.output_dim = output_shape2[1] *output_shape2[2] 
 
         self.output_shape = layer_paras['last']['channel']
         self.module_list = nn.ModuleList(m_list)
