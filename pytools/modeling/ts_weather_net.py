@@ -198,8 +198,9 @@ class TSWeatherNet(pl.LightningModule):
         #self.wea_channels = config.model_pdt.cov_net['last']['channel'] 
         self.wea_channels = self.wea_net.output_shape    
 
-        #x = torch.zeros(1,in_channel+self.wea_channels, self._seq_length)
-        x = torch.zeros(1,in_channel, self._seq_length)
+        x = torch.zeros(1,in_channel+self.wea_channels, self._seq_length)
+        #x = torch.zeros(1,in_channel, self._seq_length)
+        config.model_pdt.ts_net['in_channels'] += self.wea_channels
         self.filter_net = nn.Conv1d(**config.model_pdt.ts_net)
         x=self.filter_net(x)
 
@@ -216,8 +217,6 @@ class TSWeatherNet(pl.LightningModule):
             wea_arr_dim=self.wea_channels, 
             pred_len=self._pred_length, 
             model_paras=config.model_pdt.mixed_net)
-
-        # self.multi_linear = nn.Linear(multi_linear_input_dim, pred_length)
 
     def configure_optimizers(self, label='multi_linear'):
         # REQUIRED
@@ -254,7 +253,8 @@ class TSWeatherNet(pl.LightningModule):
         #     ext_y[:,i,:] = self.ext_net(ext_arr[:,i,...])
         #seq_y = torch.cat([seq_target[...,None], seq_ext_y, seq_wea_y],dim=2).permute([0, 2, 1])
         #seq_y = self.filter_net(seq_y)
-        seq_y = torch.cat([seq_target[...,None]],dim=2).permute([0, 2, 1])
+        seq_y = torch.cat([seq_target[...,None], seq_wea_y],dim=2).permute([0, 2, 1])
+        #seq_y = torch.cat([seq_target[...,None]],dim=2).permute([0, 2, 1])
         seq_y = self.filter_net(seq_y)
 
         y = self.mixed_output(seq_y, ext_y, wea_y)
