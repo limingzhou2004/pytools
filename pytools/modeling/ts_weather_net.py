@@ -36,7 +36,7 @@ class DirectFC(nn.Module):
             nn.Linear(in_features=input_feature, out_features=output_feature),
             nn.LayerNorm(normalized_shape=output_feature),
             nn.Dropout(dropout),
-            nn.LeakyReLU(), 
+            nn.ReLU(), 
         ) 
 
     def forward(self, wea_arr):
@@ -61,7 +61,7 @@ class MixedOutput(nn.Module):
             nn.Sequential(
             nn.Linear(in_features=in_dim, out_features=in_dim//shrink_factor),
             nn.Dropout(model_paras['dropout']),
-            nn.LeakyReLU(),
+            nn.ReLU(),
             nn.Linear(in_features=in_dim//shrink_factor, out_features=target_dim),
             ) for _ in range(pred_len)
             )
@@ -141,14 +141,15 @@ class WeaCov(nn.Module):
             nn.LeakyReLU())
             m_list.append(m)
             output_shape_from_cov = [output_shape2[0], reduce(mul, output_shape2[1:])]
-            m_list.append(DirectFC(output_shape_from_cov, layer_paras['last']['channel'],dropout=self.dropout))
+            self.output_dim = output_shape_from_cov[1]
+            # m_list.append(DirectFC(output_shape_from_cov, layer_paras['last']['channel'],dropout=self.dropout))
 
         else:
             m_list.append(DirectFC(output_shape1, layer_paras['last']['channel'],dropout=self.dropout))
             output_shape2 = m_list[-1].forward(torch.rand(output_shape1)).shape
             self.output_dim = output_shape2[1] *output_shape2[2] 
 
-        self.output_shape = layer_paras['last']['channel']
+        self.output_shape = self.output_dim #layer_paras['last']['channel']
         self.module_list = nn.ModuleList(m_list)
 
     def forward(self, wea_arr):
@@ -194,7 +195,8 @@ class TSWeatherNet(pl.LightningModule):
         in_channel = 1 if isinstance(config.model_pdt.target_ind, int) else len(config.model_pdt.target_ind)
         self.revin_layer = RevIN(in_channel, affine=True, subtract_last=False)
         #self.filter_net = SeqModel(config.filternet_input, filter_net_paras=filter_net_paras)
-        self.wea_channels = config.model_pdt.cov_net['last']['channel']     
+        #self.wea_channels = config.model_pdt.cov_net['last']['channel'] 
+        self.wea_channels = self.wea_net.output_shape    
 
         #x = torch.zeros(1,in_channel+self.wea_channels, self._seq_length)
         x = torch.zeros(1,in_channel, self._seq_length)
@@ -203,7 +205,6 @@ class TSWeatherNet(pl.LightningModule):
 
         self.ext_channels = config.model_pdt.ext_net['output_channel']
         self.ext_net = nn.Linear(in_features=config.model_pdt.ext_net['input_channel'], out_features=self.ext_channels)   
-        self.wea_channels = config.model_pdt.cov_net['last']['channel']     
         
         # prediction weather 1D cov
         mix_input_dim = x.shape[1]*x.shape[2] + self.ext_channels + self.wea_channels

@@ -211,6 +211,12 @@ class LoadData:
             df[c] = dw[c]
         return df
     
+    def add_doy(self, df, timestamp="timestamp"):
+        cols, dw = Cp.CalendarData().get_dayofyear(df[timestamp].apply(lambda t: t.tz_convert(tz=self.timezone)))
+        for c in cols:
+            df[c] = dw[c]
+        return df
+    
     def add_holiday_dst(self, df, timestamp='timestamp'):
         cols, dw = Cp.CalendarData().get_holiday_dst(df[timestamp].apply(lambda t: t.tz_convert(tz=self.timezone)), self.timezone)
         for c in cols:

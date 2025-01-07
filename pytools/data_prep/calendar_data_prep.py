@@ -146,6 +146,17 @@ class CalendarData:
         index = list(range(len(h)))
         dfr = pd.DataFrame(d, index=index)
         return list(dfr), dfr
+    
+    def get_dayofyear(self, df: pd.Series):
+        h = df.apply(lambda x: pd.Timestamp(x).day_of_year).values
+        h = np.squeeze(h)
+        d = {
+            "monthofyear_sin": np.sin(h / 365 * 2 * np.pi),
+            "monthofyear_cos": np.cos(h / 365 * 2 * np.pi),
+        }
+        index = list(range(len(h)))
+        dfr = pd.DataFrame(d, index=index)
+        return list(dfr), dfr
 
     
     
