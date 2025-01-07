@@ -93,17 +93,17 @@ hyper_options.patience=6
 #----- model layer configuration parameters
 cov_net.cov1.kernel=3
 cov_net.cov1.padding=0
-cov_net.cov1.stride=1
+cov_net.cov1.stride=2
 cov_net.cov1.dilation=1
 cov_net.cov1.group=1
-cov_net.cov1.output_channel=24
+cov_net.cov1.output_channel=8
 cov_net.cov2.kernel=3
 cov_net.cov2.padding=0
-cov_net.cov2.stride=2
+cov_net.cov2.stride=1
 cov_net.cov2.dilation=1
 cov_net.cov2.group=1
-cov_net.cov2.output_channel=12
-cov_net.last.channel=300
+cov_net.cov2.output_channel=4
+#cov_net.last.channel=300
 cov_net.dropout=0.02
 
 ext_net.input_channel=8
@@ -122,7 +122,7 @@ ts_net.padding=0
 ts_net.stride=6
 
 mixed_net.ts_latent_dim=9
-mixed_net.shrink_factor=7
+mixed_net.shrink_factor=2
 mixed_net.dropout=0.02
 mixed_net.cov1d.kernel_size=7
 mixed_net.cov1d.padding=3
