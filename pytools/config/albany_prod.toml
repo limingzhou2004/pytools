@@ -5,10 +5,10 @@
 [site]
  timezone = "US/Eastern"
  state = "NY"
- base_folder = "~/zhoul/work/energy/sites/albany-prod4"
+ base_folder = "~/zhoul/work/energy/sites/albany-prod2"
  name = "Albany-NY"
  # alias is the folder name for each project
- file_base_name = "albany-prod4"
+ file_base_name = "albany-prod2"
  sql_location = "CAPITL"
  back_fst_window = ["2020-01-01 00:00", "2025-01-01 00:00"]
  #site_folder = "nyiso"
@@ -103,27 +103,27 @@ cov_net.cov2.stride=1
 cov_net.cov2.dilation=1
 cov_net.cov2.group=1
 cov_net.cov2.output_channel=4
-#cov_net.last.channel=300
-cov_net.dropout=0.02
+cov_net.last.channel=300
+cov_net.dropout=0.01
 
 ext_net.input_channel=8
 ext_net.output_channel=4
 
 filter_net.hidden_size=10
-filter_net.dropout=0.02
+filter_net.dropout=0.01
 filter_net.band_width=96
 filter_net.scale=0.2
 filter_net.sparsity_threshold=0.02
 
 ts_net.in_channels=1
 ts_net.out_channels=5
-ts_net.kernel_size=13
+ts_net.kernel_size=5
 ts_net.padding=0
-ts_net.stride=6
+ts_net.stride=1
 
 mixed_net.ts_latent_dim=9
 mixed_net.shrink_factor=2
-mixed_net.dropout=0.02
+mixed_net.dropout=0.01
 mixed_net.cov1d.kernel_size=7
 mixed_net.cov1d.padding=3
 mixed_net.cov1d.stride=1
