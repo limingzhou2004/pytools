@@ -146,7 +146,7 @@ class LoadData:
         data = self.add_hod(data, timestamp=self.date_col)
         data = self.add_dow(data, timestamp=self.date_col)
         data = self.add_holiday_dst(data, timestamp=self.date_col)
-        data = self.add_doy(data, timestamp=self.date_col)
+        data = self.add_moy(data, timestamp=self.date_col)
 
         return data
 
