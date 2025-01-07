@@ -146,7 +146,7 @@ class LoadData:
         data = self.add_hod(data, timestamp=self.date_col)
         data = self.add_dow(data, timestamp=self.date_col)
         data = self.add_holiday_dst(data, timestamp=self.date_col)
-        data = self.add_moy(data, timestamp=self.date_col)
+        data = self.add_doy(data, timestamp=self.date_col)
 
         return data
 
@@ -207,6 +207,12 @@ class LoadData:
     
     def add_moy(self, df, timestamp="timestamp"):
         cols, dw = Cp.CalendarData().get_monthofyear(df[timestamp].apply(lambda t: t.tz_convert(tz=self.timezone)))
+        for c in cols:
+            df[c] = dw[c]
+        return df
+    
+    def add_doy(self, df, timestamp="timestamp"):
+        cols, dw = Cp.CalendarData().get_dayofyear(df[timestamp].apply(lambda t: t.tz_convert(tz=self.timezone)))
         for c in cols:
             df[c] = dw[c]
         return df
