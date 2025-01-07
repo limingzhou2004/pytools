@@ -5,7 +5,7 @@ import logging
 import os
 from os.path import expanduser
 
-__version__ = '0.0.8'
+__version__ = '0.0.9'
 
 def get_logger(name, folder=None, level=logging.INFO):
     logger = logging.getLogger(name)
