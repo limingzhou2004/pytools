@@ -217,6 +217,7 @@ class WeatherDataSet(data.Dataset):
         ar_ind0 = index
         ar_ind1 = index + self._seq_length
         target_ind0 += self._fst_horizeon[0] - 1
+        # print(f'ar_ind0={ar_ind0},ar_ind1={ar_ind1}, target_ind0={target_ind0},target_ind1={target_ind1}')
         return (
             torch.tensor(self._wea_arr[ar_ind0:ar_ind1, ...]),
             torch.tensor(self._ext[ar_ind0:ar_ind1, :]),

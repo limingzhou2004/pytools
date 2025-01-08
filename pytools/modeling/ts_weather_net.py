@@ -205,30 +205,33 @@ class TSWeatherNet(pl.LightningModule):
         x=self.filter_net(x)
 
         self.ext_channels = config.model_pdt.ext_net['output_channel']
-        self.ext_net = nn.Linear(in_features=config.model_pdt.ext_net['input_channel'], out_features=self.ext_channels)   
+        # self.ext_net = nn.Linear(in_features=config.model_pdt.ext_net['input_channel'], out_features=self.ext_channels)   
         
         # prediction weather 1D cov
-        mix_input_dim = x.shape[1]*x.shape[2] + self.ext_channels + self.wea_channels
+        #mix_input_dim = x.shape[1]*x.shape[2] + self.ext_channels + self.wea_channels
         self.mixed_output = MixedOutput(
             seq_arr_dim=config.model_pdt.seq_length,
             seq_latent_dim=x.shape[2], #config.model_pdt.mixed_net['ts_latent_dim'],
             filternet_hidden_size=x.shape[1],#mix_input_dim,
-            ext_dim=config.model_pdt.ext_net['output_channel'],
+            ext_dim=config.model_pdt.ext_net['input_channel'],
             wea_arr_dim=self.wea_channels, 
             pred_len=self._pred_length, 
             model_paras=config.model_pdt.mixed_net)
 
-    def configure_optimizers(self, label='multi_linear'):
+    def configure_optimizers(self, label='filter_net'):
         # REQUIRED
-        # m_linear = [p for name, p in self.named_parameters() if label in name]
+        #print(self.named_parameters)
+        # ts_net = [p for name, p in self.named_parameters() if label in name]
         # others = [p for name, p in self.named_parameters() if label not in name]
-
-        #return torch.optim.Adam([{'paras':m_linear}, {'paras':others, 'weight_decay':0}], 
-                                #weight_decay=self.hyper_options['weight_decay'], lr=self.#hyper_options['lr'])
+        # return torch.optim.Adam([{'params':others}, {'params':ts_net, 'lr':0.0001*self.hyper_options['lr']}],
+        #                         #weight_decay=self.hyper_options['weight_decay'], 
+        #                         lr=self.hyper_options['lr'])
         return torch.optim.Adam(self.parameters(), lr=(self.lr))
     
     def forward(self, seq_wea_arr, seq_ext_arr, seq_target, wea_arr, ext_arr):
         device = seq_wea_arr.device
+
+        #print(f'seq target shape : {seq_target.shape}')
         #seq_target = self.revin_layer(seq_target,'norm')
         B= seq_wea_arr.shape[0]
         seq_wea_arr = seq_wea_arr.detach().clone()
@@ -242,22 +245,24 @@ class TSWeatherNet(pl.LightningModule):
         seq_wea_y = torch.zeros(B, seq_length, wea_channel_num, device=device)
         wea_y = torch.zeros(B, w_dim, wea_channel_num, device=device)
         #seq_ext_y = torch.zeros(B, seq_length, self.ext_channels, device=device)
-        ext_y = torch.zeros([B, e_dim, self.ext_channels], device=device)        
+        #ext_y = torch.zeros([B, e_dim, self.ext_channels], device=device)    
 
-        # for i in range(seq_length):
-        #     seq_wea_y[:,i,:] = self.wea_net(seq_wea_arr[:,i,...])
+        #w_shape = tuple(seq_wea_arr.shape) 
+
+        #for i in range(seq_length):
+         #   seq_wea_y[:,i,:] = self.wea_net(seq_wea_arr[:,i,...])
+        #seq_wea_y = self.wea_net(seq_wea_arr.reshape((-1,*w_shape[2:]))).reshape((*w_shape[0:2],-1))
             #seq_ext_y[:,i,:] = self.ext_net(seq_ext_arr[:,i,...])
         for i in range(w_dim):
             wea_y[:,i,:] = self.wea_net(wea_arr[:,i,...])
         # for i in range(e_dim):
         #     ext_y[:,i,:] = self.ext_net(ext_arr[:,i,...])
         #seq_y = torch.cat([seq_target[...,None], seq_ext_y, seq_wea_y],dim=2).permute([0, 2, 1])
-        #seq_y = self.filter_net(seq_y)
         seq_y = torch.cat([seq_target[...,None], seq_wea_y],dim=2).permute([0, 2, 1])
         #seq_y = torch.cat([seq_target[...,None]],dim=2).permute([0, 2, 1])
         seq_y = self.filter_net(seq_y)
 
-        y = self.mixed_output(seq_y, ext_y, wea_y)
+        y = self.mixed_output(seq_y, ext_arr, wea_y)
         #y = self.revin_layer(y, 'denorm')
         return y    
 
