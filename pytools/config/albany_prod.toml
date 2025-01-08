@@ -40,7 +40,7 @@
  #fst_hours =[1, 6, 24]
 
 [weather]
-envelope = [1524, 1557, 749, 783]
+envelope = [1531, 1551, 756, 776]
 hist_weather_pickle = "../data/grib2_folder_1.pkl"
 fullfile_col_name = "full_file_name"
 filename_col_name = "filename"
@@ -117,7 +117,7 @@ filter_net.sparsity_threshold=0.02
 
 ts_net.in_channels=1
 ts_net.out_channels=5
-ts_net.kernel_size=5
+ts_net.kernel_size=7
 ts_net.padding=0
 ts_net.stride=1
 
