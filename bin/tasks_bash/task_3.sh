@@ -8,4 +8,4 @@ echo $config_file
 
 # python -m pytools.weather_task -cfg pytools/config/albany_prod.toml task_3 --flag cv -ind 0 -sb find_batch_size -mn prod0 -yr 2018-2024
 
-python -m pytools.weather_task -cfg pytools/config/albany_prod.toml task_3 --flag cv -ind 0 -sb fit -mn prod2-1h-v38 -yr 2018-2019 -nworker 7
+python -m pytools.weather_task -cfg pytools/config/albany_prod.toml task_3 --flag cv -ind 1 -sb fit -mn prod2-1h-v41 -yr 2018-2024 -nworker 7

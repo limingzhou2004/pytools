@@ -401,13 +401,22 @@ def task_3(**args):
 def task_4(**args):
     # load the model for predictions
     config = Config(args['config_file'])
-
     year = args['year']
 
     # get weather data
     if args['t0'] != 'latest':
        load_data, wea_data =  read_past_weather_data_from_config(config=config, year=year)
     
+    spot_t = wea_data[0]
+    fst_t = wea_data[1][0][0]
+    wea_arr = wea_data[1][0][1]
+
+    for i, t in enumerate(fst_t):
+        if i==0 or t<fst_t[i+1]:
+            cur_t = spot_t.pop(0)
+            
+
+    load_arr, wea_arr, t = check_fix_missings(load_arr=load_data, w_timestamp=w_timestamp, w_arr=w_data)
 
     ckpt_path = osp.join(config.site_parent_folder, 'model', args['model_name'])
     m2 =TSWeatherNet.load_from_checkpoint(ckpt_path)

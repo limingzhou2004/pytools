@@ -288,10 +288,33 @@ def read_past_weather_data_from_config(config:Config, year=-1):
     with open(fn_wea, 'rb') as fr:
         wea_dat = pickle.load(fr)
 
+    # load_data, :, 10, timestamp, load, ...
+    # wea_data= [spot timestamp], [fst timestamp-[1][0][0:] , arr-[1][1][0:]]
+
     return load_data, wea_dat
 
 
-def create_fst_data(spot_time, load_data, wea_data):
+def create_fst_data( load_data, cur_t,  wea_data, rolling_fst_horizon:int =48, config:Config=None,fst_ind=0):
+    # returns seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target
+    # need to use local timezone
+    default_fst_horizon = 1
+    default_seq_length = 168
+    if config:
+        fst_horizon = config.model_pdt.forecast_horizon[fst_ind][1], 
+        seq_length = config.model_pdt.seq_length
+    else:
+        fst_horizon = default_fst_horizon
+        seq_length = default_seq_length
+    t0 = cur_t - np.timedelta64(seq_length-1,'h')
+    t1 = cur_t + np.timedelta64(rolling_fst_horizon, 'h')
+    df_load = pd.DataFrame(load_data).set_index(0)
+    df_t=pd.DataFrame(pd.date_range(t0,t1,freq='h',inclusive='both'))
+    df_all = df_t.join(df_load,how='left')
+    df_all = df_all.fillna()
+
+
+
+
 
     return
 

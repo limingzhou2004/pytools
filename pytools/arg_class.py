@@ -1,8 +1,6 @@
 from argparse import ArgumentParser
 import sys, os
 
-from pytools.data_prep import weather_data_prep as wp
-
 
 class ArgClass:
     """
