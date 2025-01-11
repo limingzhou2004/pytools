@@ -414,12 +414,15 @@ def task_4(**args):
     for i, t in enumerate(fst_t):
         if i==0 or t<fst_t[i+1]:
             cur_t = spot_t.pop(0)
-            
+
 
     load_arr, wea_arr, t = check_fix_missings(load_arr=load_data, w_timestamp=w_timestamp, w_arr=w_data)
 
     ckpt_path = osp.join(config.site_parent_folder, 'model', args['model_name'])
     m2 =TSWeatherNet.load_from_checkpoint(ckpt_path)
+
+    #df_result =  # timestamp, actual load, fst load
+
 
 
 

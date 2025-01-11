@@ -294,9 +294,10 @@ def read_past_weather_data_from_config(config:Config, year=-1):
     return load_data, wea_dat
 
 
-def create_fst_data( load_data, cur_t,  wea_data, rolling_fst_horizon:int =48, config:Config=None,fst_ind=0):
+def create_rolling_fst_data( load_data, cur_t:pd.Timestamp,  wea_data, rolling_fst_horizon:int =48, config:Config=None,fst_ind=0):
     # returns seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target
     # need to use local timezone
+    tz = cur_t.timetz
     default_fst_horizon = 1
     default_seq_length = 168
     if config:
@@ -305,14 +306,27 @@ def create_fst_data( load_data, cur_t,  wea_data, rolling_fst_horizon:int =48, c
     else:
         fst_horizon = default_fst_horizon
         seq_length = default_seq_length
-    t0 = cur_t - np.timedelta64(seq_length-1,'h')
-    t1 = cur_t + np.timedelta64(rolling_fst_horizon, 'h')
+    
+    # necessary hist time range for load, fill missing 
+    t0 = cur_t - np.timedelta64(seq_length, 'h') - 1
+    t1 = cur_t + np.timedelta64(fst_horizon, 'h')
+    dft = pd.date_range(t0, t1, freq='h')
+    dft=pd.DataFrame(dft).join(load_data.set_index(0),how='left')
+
+    # necessary weather range for weather, fill missing
+
+
+
+    t_fst0 = cur_t - np.timedelta64(seq_length-1,'h')
+    t_fst1 = cur_t + np.timedelta64(rolling_fst_horizon, 'h')
+
+    
+    timestamp_fst = pd.date_range(cur_t+np.timedelta64(1, 'h'), t1+np.timedelta64(1, 'h'),)
+ 
     df_load = pd.DataFrame(load_data).set_index(0)
     df_t=pd.DataFrame(pd.date_range(t0,t1,freq='h',inclusive='both'))
-    df_all = df_t.join(df_load,how='left')
+    df_all = df_t.join(df_load,how='left')  
     df_all = df_all.fillna()
-
-
 
 
 

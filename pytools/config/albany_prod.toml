@@ -85,7 +85,7 @@ hyper_options.lr=0.0002
 hyper_options.weight_decay=0.001
 hyper_options.batch_size=20
 hyper_options.check_val_every_n_epoch=1
-hyper_options.max_epochs=50
+hyper_options.max_epochs=150
 hyper_options.min_delta=0.001
 hyper_options.patience=6
 #hyper_options.epoch_step=2
@@ -104,13 +104,13 @@ cov_net.cov2.dilation=1
 cov_net.cov2.group=1
 cov_net.cov2.output_channel=4
 cov_net.last.channel=300
-cov_net.dropout=0.01
+cov_net.dropout=0
 
 ext_net.input_channel=8
 ext_net.output_channel=4
 
 filter_net.hidden_size=10
-filter_net.dropout=0.01
+filter_net.dropout=0
 filter_net.band_width=96
 filter_net.scale=0.2
 filter_net.sparsity_threshold=0.02
@@ -123,7 +123,7 @@ ts_net.stride=1
 
 mixed_net.ts_latent_dim=9
 mixed_net.shrink_factor=2
-mixed_net.dropout=0.01
+mixed_net.dropout=0
 mixed_net.cov1d.kernel_size=7
 mixed_net.cov1d.padding=3
 mixed_net.cov1d.stride=1
