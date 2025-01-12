@@ -5,6 +5,8 @@ from typing import Tuple, List
 
 import numpy as np
 import pandas as pd
+from scipy import interpolate
+
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 import torch
@@ -294,7 +296,7 @@ def read_past_weather_data_from_config(config:Config, year=-1):
     return load_data, wea_dat
 
 
-def create_rolling_fst_data( load_data, cur_t:pd.Timestamp,  wea_data, rolling_fst_horizon:int =48, config:Config=None,fst_ind=0):
+def create_rolling_fst_data( load_data, cur_t:pd.Timestamp, w_timestamp, wea_data, rolling_fst_horizon:int =48, config:Config=None,fst_ind=0):
     # returns seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target
     # need to use local timezone
     tz = cur_t.timetz
@@ -308,12 +310,34 @@ def create_rolling_fst_data( load_data, cur_t:pd.Timestamp,  wea_data, rolling_f
         seq_length = default_seq_length
     
     # necessary hist time range for load, fill missing 
-    t0 = cur_t - np.timedelta64(seq_length, 'h') - 1
-    t1 = cur_t + np.timedelta64(fst_horizon, 'h')
+    t0 = cur_t - pd.Timedelta(seq_length-1,'h')
+    t1 = cur_t + pd.Timedelta(rolling_fst_horizon, 'h')
     dft = pd.date_range(t0, t1, freq='h')
-    dft=pd.DataFrame(dft).join(load_data.set_index(0),how='left')
-
+    df = pd.DataFrame()
+    df.index=dft
+    df=df.join(load_data, how='right')
+    df=df.ffill()
+    wet_arr = np.zeros((rolling_fst_horizon, *wea_data[0].shape)) + np.nan
+    w_timestamp_local = pd.DatetimeIndex(list(w_timestamp)).tz_localize('UTC')
+    w_timestamp_local = list(w_timestamp_local)
     # necessary weather range for weather, fill missing
+    valid_inds = []
+    wea_data = np.stack(wea_data,axis=0)
+    for h in range(rolling_fst_horizon):
+        tp = cur_t + pd.Timedelta(h+1, 'h') 
+        if tp in w_timestamp_local:
+            ind = w_timestamp_local.index(tp)
+            wet_arr[h, ...] = wea_data[ind]
+            valid_inds.append(ind)
+    nan_inds = set(range(rolling_fst_horizon)) - set(valid_inds)
+            #interpolate 
+    for i in nan_inds:
+        tmp = interpolate.interp1d(np.array(valid_inds), wea_data[valid_inds,...],axis=0,fill_value='extrapolate')
+        wet_arr[ind,...] = tmp(np.array(i))
+
+    return df, wet_arr
+
+
 
 
 

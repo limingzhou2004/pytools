@@ -60,16 +60,20 @@ def test_create_rolling_fst_data(config,):
     t_load = pd.date_range('2020-03-01', '2020-05-01',tz='US/Eastern')
     data = np.random.rand(len(t_load), 9)
     df_load = pd.DataFrame(data)
-    df_load.set_index(t_load)
+    df_load.index =t_load
     t_wea_list = []
     wea_arr_list = []
     rolling_forecast_horizeon=23
-    for h in range(rolling_forecast_horizeon):
-        t_wea_list.append(np.datetime64(cur_t_str)+np.timedelta64(1,'h'))
-        wea_arr_list.append(np.random.rand(21,21,14))
+    for i in range(rolling_forecast_horizeon):
+        if i==3:
+            continue
+        else:
+            t_wea_list.append(np.datetime64(cur_t_str)+np.timedelta64(i,'h'))
+            wea_arr_list.append(np.random.rand(21,21,14))
 
-    seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target = create_rolling_fst_data(
-        load_data=df_load, cur_t=cur_t, wea_data=wea_arr_list,rolling_fst_horizon=rolling_forecast_horizeon+2, )
+    # seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target 
+    df_tab, wet_arr = create_rolling_fst_data(
+        load_data=df_load, cur_t=cur_t, wea_data=wea_arr_list,rolling_fst_horizon=rolling_forecast_horizeon+2, w_timestamp=t_wea_list)
     
     assert 1==1
 # @pytest.mark.parametrize(
