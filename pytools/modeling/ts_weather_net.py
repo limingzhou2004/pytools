@@ -200,8 +200,10 @@ class TSWeatherNet(pl.LightningModule):
 
         x = torch.zeros(1,in_channel+self.wea_channels, self._seq_length)
         #x = torch.zeros(1,in_channel, self._seq_length)
-        config.model_pdt.ts_net['in_channels'] += self.wea_channels
-        self.filter_net = nn.Conv1d(**config.model_pdt.ts_net)
+        para_copy = deepcopy(config.model_pdt.ts_net)
+        #config.model_pdt.ts_net['in_channels'] += self.wea_channels
+        para_copy['in_channels'] += self.wea_channels
+        self.filter_net = nn.Conv1d(**para_copy) #config.model_pdt.ts_net)
         x=self.filter_net(x)
 
         self.ext_channels = config.model_pdt.ext_net['output_channel']

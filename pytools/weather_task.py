@@ -19,7 +19,7 @@ from lightning.pytorch.loggers import TensorBoardLogger, CSVLogger
 
 from pytools.arg_class import ArgClass
 from pytools.data_prep.herbie_wrapper import download_hist_fst_data
-from pytools.modeling.dataset import WeatherDataSet, check_fix_missings, create_datasets, read_past_weather_data_from_config, read_weather_data_from_config
+from pytools.modeling.dataset import WeatherDataSet, check_fix_missings, create_datasets, create_rolling_fst_data, read_past_weather_data_from_config, read_weather_data_from_config
 from pytools.modeling.rolling_forecast import RollingForecast
 from pytools.modeling.ts_weather_net import TSWeatherNet, TsWeaDataModule
 from pytools.modeling.weather_task_helpers import (
@@ -402,24 +402,55 @@ def task_4(**args):
     # load the model for predictions
     config = Config(args['config_file'])
     year = args['year']
-
+    ckpt_path = osp.join(config.site_parent_folder, 'model', args['model_name']+'.ckpt')
+    model:TSWeatherNet = TSWeatherNet.load_from_checkpoint(ckpt_path)
     # get weather data
     if args['t0'] != 'latest':
        load_data, wea_data =  read_past_weather_data_from_config(config=config, year=year)
     
-    spot_t = wea_data[0]
+    spot_t_list = wea_data[0]
     fst_t = wea_data[1][0][0]
-    wea_arr = wea_data[1][0][1]
+    wea_arr = np.stack(wea_data[1][0][1], axis=0)
 
-    for i, t in enumerate(fst_t):
-        if i==0 or t<fst_t[i+1]:
-            cur_t = spot_t.pop(0)
+    load_timestamp_list = list(load_data[:,0])
+
+    seq_length = model._seq_length
+    #seq_length = config.model_pdt.seq_length
+    #fst_horizon = args['rolling_fst_hzn']
+
+    buffer = 100
+    i = 0
+    t_pointer = 0
+    wea_arr_list = []
+    tab_data_list = []
+    w_timestamp = []
+    while i<len(fst_t)-1:
+        if spot_t_list[t_pointer] == fst_t[i]:
+            cur_t:pd.Timestamp = spot_t_list.pop(0)
+            load_ind = load_timestamp_list.index(cur_t)
+            ind_start = load_ind-seq_length-buffer
+            tab_data_list.append(load_data.values[0 if ind_start<0 else ind_start:ind_start+buffer,:])
+            for j in range(i, i+buffer):
+                if fst_t[j] > fst_t[j+1]:
+                    break 
+
+            wea_arr_list.append(wea_arr[i:j,...])
+            w_timestamp.append(fst_t[i:j])
+            i = j + 1
+            t_pointer += 1
+        else:
+            i = i + 1
+
+    for t, tdata, wt, wdata in zip(spot_t_list, tab_data_list, w_timestamp, wea_arr_list):
+        create_rolling_fst_data(load_data=tdata,cur_t=t, w_timestamp=wt,
+                                wea_data=wdata,
+                                rolling_fst_horizon=48,config=config)
 
 
-    load_arr, wea_arr, t = check_fix_missings(load_arr=load_data, w_timestamp=w_timestamp, w_arr=w_data)
 
-    ckpt_path = osp.join(config.site_parent_folder, 'model', args['model_name'])
-    m2 =TSWeatherNet.load_from_checkpoint(ckpt_path)
+
+
+
 
     #df_result =  # timestamp, actual load, fst load
 

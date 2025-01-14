@@ -4,7 +4,7 @@ import torch
 import numpy as np
 import pandas as pd
 
-from pytools.modeling.dataset import WeatherDataSet, check_fix_missings, create_rolling_fst_data, read_weather_data_from_config, read_past_fst_weather
+from pytools.modeling.dataset import WeatherDataSet, check_fix_missings, create_rolling_fst_data, get_hourly_fst_data, read_weather_data_from_config, read_past_fst_weather
 
 
 # CUDA for PyTorch
@@ -74,6 +74,9 @@ def test_create_rolling_fst_data(config,):
     # seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target 
     df_tab, wet_arr = create_rolling_fst_data(
         load_data=df_load, cur_t=cur_t, wea_data=wea_arr_list,rolling_fst_horizon=rolling_forecast_horizeon+2, w_timestamp=t_wea_list)
+
+    res = get_hourly_fst_data(df=df_tab, wea_arr=wet_arr, cur_t=cur_t)
+    res = get_hourly_fst_data(df=df_tab, wea_arr=wet_arr, cur_t=cur_t+pd.Timedelta(1,'h'))
     
     assert 1==1
 # @pytest.mark.parametrize(

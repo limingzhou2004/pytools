@@ -249,6 +249,15 @@ class ArgClass:
             type=str,
             help="model name to load from checkpoint",
         )
+        sub_parser.add_argument(
+            "-rfh",
+            "--rolling-fst-horizon",
+            dest="rolling_fst_hzn",
+            required=False,
+            default=48,
+            type=int,
+            help="rolling forecast horizon hours",
+        )
         sub_parser.set_defaults(func=fun)
         
     def _add_task5(self, fun):

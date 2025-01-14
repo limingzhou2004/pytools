@@ -299,14 +299,14 @@ def read_past_weather_data_from_config(config:Config, year=-1):
 def create_rolling_fst_data( load_data, cur_t:pd.Timestamp, w_timestamp, wea_data, rolling_fst_horizon:int =48, config:Config=None,fst_ind=0):
     # returns seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target
     # need to use local timezone
-    tz = cur_t.timetz
-    default_fst_horizon = 1
+    # tz = cur_t.timetz
+    #default_fst_horizon = 1
     default_seq_length = 168
     if config:
-        fst_horizon = config.model_pdt.forecast_horizon[fst_ind][1], 
+       # fst_horizon = config.model_pdt.forecast_horizon[fst_ind][1], 
         seq_length = config.model_pdt.seq_length
     else:
-        fst_horizon = default_fst_horizon
+        #fst_horizon = default_fst_horizon
         seq_length = default_seq_length
     
     # necessary hist time range for load, fill missing 
@@ -338,24 +338,18 @@ def create_rolling_fst_data( load_data, cur_t:pd.Timestamp, w_timestamp, wea_dat
     return df, wet_arr
 
 
+def get_hourly_fst_data(target_arr, ext_arr, wea_arr, hr, seq_length):
 
+    #seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target
+    seq_wea_arr = None
+    seq_ext_arr = None
+    ext_arr = ext_arr[hr, ...]
+    seq_target = target_arr[hr:seq_length+hr]
+    wea_arr = wea_arr[hr, ...]
 
-
-    t_fst0 = cur_t - np.timedelta64(seq_length-1,'h')
-    t_fst1 = cur_t + np.timedelta64(rolling_fst_horizon, 'h')
-
+    res=[ seq_wea_arr,seq_ext_arr, seq_target, ext_arr, target_arr[seq_length+hr]]
     
-    timestamp_fst = pd.date_range(cur_t+np.timedelta64(1, 'h'), t1+np.timedelta64(1, 'h'),)
- 
-    df_load = pd.DataFrame(load_data).set_index(0)
-    df_t=pd.DataFrame(pd.date_range(t0,t1,freq='h',inclusive='both'))
-    df_all = df_t.join(df_load,how='left')  
-    df_all = df_all.fillna()
-
-
-
-    return
-
+    return [torch.from_numpy(x.astype(np.float32))[None,...] for x in res]
 
 # class WeatherDataSetBuilder:
 #     """
