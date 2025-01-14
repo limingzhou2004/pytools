@@ -439,7 +439,11 @@ def task_4(**args):
             i = j + 1
             t_pointer += 1
         else:
-            i = i + 1
+            if fst_t[i] > spot_t_list[t_pointer]:
+                t_pointer += 1
+            else:
+                i = i + 1
+            
 
     for t, tdata, wt, wdata in zip(spot_t_list, tab_data_list, w_timestamp, wea_arr_list):
         create_rolling_fst_data(load_data=tdata,cur_t=t, w_timestamp=wt,
