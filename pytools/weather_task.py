@@ -424,12 +424,12 @@ def task_4(**args):
     wea_arr_list = []
     tab_data_list = []
     w_timestamp = []
-    while i<len(fst_t)-1:
+    while i<len(fst_t)-1-buffer:
         if spot_t_list[t_pointer] == fst_t[i]:
             cur_t:pd.Timestamp = spot_t_list.pop(0)
-            load_ind = load_timestamp_list.index(cur_t)
-            ind_start = load_ind-seq_length-buffer
-            tab_data_list.append(load_data.values[0 if ind_start<0 else ind_start:ind_start+buffer,:])
+            load_ind = load_timestamp_list.index(cur_t.tz_localize('UTC'))
+            ind_start = load_ind-seq_length - buffer
+            tab_data_list.append(load_data[0 if ind_start<0 else ind_start:ind_start+buffer,:])
             for j in range(i, i+buffer):
                 if fst_t[j] > fst_t[j+1]:
                     break 
@@ -446,7 +446,7 @@ def task_4(**args):
             
 
     for t, tdata, wt, wdata in zip(spot_t_list, tab_data_list, w_timestamp, wea_arr_list):
-        create_rolling_fst_data(load_data=tdata,cur_t=t, w_timestamp=wt,
+        res = create_rolling_fst_data(load_data=tdata,cur_t=t, w_timestamp=wt,
                                 wea_data=wdata,
                                 rolling_fst_horizon=48,config=config)
 
