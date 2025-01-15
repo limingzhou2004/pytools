@@ -19,7 +19,7 @@ from lightning.pytorch.loggers import TensorBoardLogger, CSVLogger
 
 from pytools.arg_class import ArgClass
 from pytools.data_prep.herbie_wrapper import download_hist_fst_data
-from pytools.modeling.dataset import WeatherDataSet, check_fix_missings, create_datasets, create_rolling_fst_data, read_past_weather_data_from_config, read_weather_data_from_config
+from pytools.modeling.dataset import WeatherDataSet, check_fix_missings, create_datasets, create_rolling_fst_data, get_hourly_fst_data, read_past_weather_data_from_config, read_weather_data_from_config
 from pytools.modeling.rolling_forecast import RollingForecast
 from pytools.modeling.ts_weather_net import TSWeatherNet, TsWeaDataModule
 from pytools.modeling.weather_task_helpers import (
@@ -446,9 +446,14 @@ def task_4(**args):
             
 
     for t, tdata, wt, wdata in zip(spot_t_list, tab_data_list, w_timestamp, wea_arr_list):
-        res = create_rolling_fst_data(load_data=tdata,cur_t=t, w_timestamp=wt,
+        df, wea = create_rolling_fst_data(load_data=tdata,cur_t=t, w_timestamp=wt,
                                 wea_data=wdata,
                                 rolling_fst_horizon=48,config=config)
+        
+        
+        seq_wea_arr, seq_ext_arr, seq_target, ext_arr, target = \
+            get_hourly_fst_data(target_arr, ext_arr, wea_arr, hr, seq_length)
+
 
 
 
