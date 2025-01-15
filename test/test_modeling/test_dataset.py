@@ -68,17 +68,17 @@ def test_create_rolling_fst_data(config,):
         if i==3:
             continue
         else:
-            t_wea_list.append(np.datetime64(cur_t_str)+np.timedelta64(i,'h'))
+            t_wea_list.append(pd.Timestamp(cur_t_str,tz='UTC')+pd.Timedelta(i,'h'))
             wea_arr_list.append(np.random.rand(21,21,14))
 
     # seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target 
     df_tab, wet_arr = create_rolling_fst_data(
         load_data=df_load, cur_t=cur_t, wea_data=wea_arr_list,rolling_fst_horizon=rolling_forecast_horizeon+2, w_timestamp=t_wea_list)
 
-    res = get_hourly_fst_data(df=df_tab, wea_arr=wet_arr, cur_t=cur_t)
-    res = get_hourly_fst_data(df=df_tab, wea_arr=wet_arr, cur_t=cur_t+pd.Timedelta(1,'h'))
+    res = get_hourly_fst_data(target_arr=df_tab.loc[:,0].values, ext_arr=df_tab.loc[:,1:].values, wea_arr=wet_arr, hr=1, seq_length=3)
+    res = get_hourly_fst_data(target_arr=df_tab.loc[:,0].values, ext_arr=df_tab.loc[:,1:].values, wea_arr=wet_arr, hr=2, seq_length=3)
     
-    assert 1==1
+    assert len(res) == 6
 # @pytest.mark.parametrize(
 #     "para, wea_shape, lag_load_shape",
 #     [

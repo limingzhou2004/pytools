@@ -1,3 +1,4 @@
+from pathlib import Path
 import pickle
 import sys
 import datetime as dt
@@ -18,6 +19,7 @@ import lightning as pl
 from lightning.pytorch.loggers import TensorBoardLogger, CSVLogger
 
 from pytools.arg_class import ArgClass
+from pytools.modeling.scaler import Scaler, load
 from pytools.data_prep.herbie_wrapper import download_hist_fst_data
 from pytools.modeling.dataset import WeatherDataSet, check_fix_missings, create_datasets, create_rolling_fst_data, get_hourly_fst_data, read_past_weather_data_from_config, read_weather_data_from_config
 from pytools.modeling.rolling_forecast import RollingForecast
@@ -409,7 +411,9 @@ def task_4(**args):
        load_data, wea_data =  read_past_weather_data_from_config(config=config, year=year)
     
     spot_t_list = wea_data[0]
+    spot_t_list = [t.tz_localize('UTC') for t in spot_t_list]
     fst_t = wea_data[1][0][0]
+    fst_t = [t.tz_localize('UTC') for t in fst_t]
     wea_arr = np.stack(wea_data[1][0][1], axis=0)
 
     load_timestamp_list = list(load_data[:,0])
@@ -418,7 +422,7 @@ def task_4(**args):
     #seq_length = config.model_pdt.seq_length
     #fst_horizon = args['rolling_fst_hzn']
 
-    buffer = 100
+    buffer = 10
     i = 0
     t_pointer = 0
     wea_arr_list = []
@@ -427,7 +431,7 @@ def task_4(**args):
     while i<len(fst_t)-1-buffer:
         if spot_t_list[t_pointer] == fst_t[i]:
             cur_t:pd.Timestamp = spot_t_list.pop(0)
-            load_ind = load_timestamp_list.index(cur_t.tz_localize('UTC'))
+            load_ind = load_timestamp_list.index(cur_t)
             ind_start = load_ind-seq_length - buffer
             tab_data_list.append(load_data[0 if ind_start<0 else ind_start:ind_start+buffer,:])
             for j in range(i, i+buffer):
@@ -443,16 +447,50 @@ def task_4(**args):
                 t_pointer += 1
             else:
                 i = i + 1
-            
+
+    # get scalers for target, wea array
+    _fn_scaler = config.get_model_file_name(class_name='scaler')
+ 
+    if Path(_fn_scaler).exists():
+        scaler:Scaler = load(_fn_scaler)
+    else:
+        raise ValueError(f'sclaer file {_fn_scaler} does not exist!')
+    
+    res_spot_time = []
+    res_fst_time = []
+    res_actual_y = []
+    res_fst_y = []
+
+    rolling_fst_horizon = 48
 
     for t, tdata, wt, wdata in zip(spot_t_list, tab_data_list, w_timestamp, wea_arr_list):
-        df, wea = create_rolling_fst_data(load_data=tdata,cur_t=t, w_timestamp=wt,
-                                wea_data=wdata,
-                                rolling_fst_horizon=48,config=config)
-        
-        
-        seq_wea_arr, seq_ext_arr, seq_target, ext_arr, target = \
-            get_hourly_fst_data(target_arr, ext_arr, wea_arr, hr, seq_length)
+        # col 0 is timestamp, col 1 is the load/target
+
+        df_load = pd.DataFrame(tdata).set_index(0)
+        df, wea = create_rolling_fst_data(load_data=df_load,cur_t=t, w_timestamp=wt, wea_data=wdata, rolling_fst_horizon=rolling_fst_horizon,config=config)
+        scaled_target = scaler.scale_target(df.values[:,0])
+        scaled_wea = scaler.scale_arr(wea)
+
+        for hr in range(1, 2): #rolling_fst_horizon+1):
+            seq_wea_arr, seq_ext_arr, seq_target, ext_arr, target = \
+            get_hourly_fst_data(target_arr=scaled_target, 
+                                    ext_arr=df.values[:,1:], 
+                                    wea_arr=scaled_wea, 
+                                    hr=hr, seq_length=seq_length)
+            fst_batch = (seq_wea_arr, seq_ext_arr, seq_target, ext_arr)
+            y = model(fst_batch)
+            y = scaler.unscale_target(y)
+            res_spot_time.append(t)
+            res_fst_time.append(t+pd.Timedelta(hr, 'h'))
+            res_actual_y.append(target.values)
+            res_fst_y.append(y)
+
+
+    res_df = pd.DataFrame(res_spot_time)
+    res_df['fst_time'] = res_fst_time
+    res_df['target'] = res_actual_y
+    res_df['fst'] = res_fst_y
+
 
 
 

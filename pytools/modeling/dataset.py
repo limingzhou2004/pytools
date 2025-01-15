@@ -296,12 +296,16 @@ def read_past_weather_data_from_config(config:Config, year=-1):
     return load_data, wea_dat
 
 
-def create_rolling_fst_data( load_data, cur_t:pd.Timestamp, w_timestamp, wea_data, rolling_fst_horizon:int =48, config:Config=None,fst_ind=0):
+def create_rolling_fst_data(load_data:np.ndarray, cur_t:pd.Timestamp, 
+                            w_timestamp, wea_data:np.ndarray, 
+                            rolling_fst_horizon:int =48, 
+                            config:Config=None, fst_ind=0,
+                            default_seq_length = 168):
     # returns seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target
     # need to use local timezone
     # tz = cur_t.timetz
     #default_fst_horizon = 1
-    default_seq_length = 168
+
     if config:
        # fst_horizon = config.model_pdt.forecast_horizon[fst_ind][1], 
         seq_length = config.model_pdt.seq_length
@@ -318,8 +322,9 @@ def create_rolling_fst_data( load_data, cur_t:pd.Timestamp, w_timestamp, wea_dat
     df=df.join(load_data, how='right')
     df=df.ffill()
     wet_arr = np.zeros((rolling_fst_horizon, *wea_data[0].shape)) + np.nan
-    w_timestamp_local = pd.DatetimeIndex(list(w_timestamp)).tz_localize('UTC')
-    w_timestamp_local = list(w_timestamp_local)
+
+    #w_timestamp_local = pd.DatetimeIndex(list(w_timestamp)).tz_localize('UTC')
+    w_timestamp_local = list(w_timestamp) #list(w_timestamp_local)
     # necessary weather range for weather, fill missing
     valid_inds = []
     wea_data = np.stack(wea_data,axis=0)
@@ -341,15 +346,15 @@ def create_rolling_fst_data( load_data, cur_t:pd.Timestamp, w_timestamp, wea_dat
 def get_hourly_fst_data(target_arr, ext_arr, wea_arr, hr, seq_length):
 
     #seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target
-    seq_wea_arr = None
-    seq_ext_arr = None
-    ext_arr = ext_arr[hr, ...]
-    seq_target = target_arr[hr:seq_length+hr]
-    wea_arr = wea_arr[hr, ...]
+    seq_wea_arr = wea_arr[hr-1:seq_length+hr-1,...]
+    seq_ext_arr = ext_arr[hr-1:seq_length+hr-1,...]
+    ext_arr = ext_arr[seq_length+hr-1, ...]
+    seq_target = target_arr[hr-1:seq_length+hr-1,...]
+    wea_arr = wea_arr[seq_length+hr-1, ...]
 
-    res=[ seq_wea_arr,seq_ext_arr, seq_target, ext_arr, target_arr[seq_length+hr]]
+    res=[ seq_wea_arr,seq_ext_arr, seq_target, wea_arr, ext_arr, target_arr[seq_length+hr-1,...]]
     
-    return [torch.from_numpy(x.astype(np.float32))[None,...] for x in res]
+    return [torch.from_numpy(x.astype(np.float32))[None,...] for x in res ]
 
 # class WeatherDataSetBuilder:
 #     """
