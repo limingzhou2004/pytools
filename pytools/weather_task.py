@@ -442,7 +442,9 @@ def task_4(**args):
             if fst_t[j] > fst_t[j+1]:
                 ind_end = j
                 break 
-        wea_start_ind = i
+        wea_start_ind = i - seq_length
+        if wea_start_ind < 0:
+            wea_start_ind = 0
         wea_arr_list.append(wea_arr[wea_start_ind:ind_end+1,:,:,config.model_pdt.weather_para_to_adopt])
         tab_data_list.append(load_data[0 if load_ind_start<0 else load_ind_start:load_ind_end,:])
         w_timestamp.append(fst_t[wea_start_ind:ind_end+1])
