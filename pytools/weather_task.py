@@ -18,6 +18,7 @@ from lightning.pytorch.callbacks import EarlyStopping
 from lightning.pytorch.tuner import Tuner
 import lightning as pl
 from lightning.pytorch.loggers import TensorBoardLogger, CSVLogger
+import tqdm
 
 from pytools.arg_class import ArgClass
 from pytools.modeling.scaler import Scaler, load
@@ -466,7 +467,8 @@ def task_4(**args):
     res_actual_y = []
     res_fst_y = []
 
-    for t, tdata, wt, wdata in zip(spot_t_list, tab_data_list, w_timestamp, wea_arr_list):
+    for t, tdata, wt, wdata in tqdm(zip(spot_t_list, tab_data_list, w_timestamp, wea_arr_list)):
+        logger.info(f'processing {t}...')
         # col 0 is timestamp, col 1 is the load/target
         df_load = pd.DataFrame(tdata).set_index(0)
         df, wea = create_rolling_fst_data(load_data=df_load,cur_t=t, w_timestamp=wt, wea_data=wdata, rolling_fst_horizon=rolling_fst_horizon,default_seq_length=seq_length)
@@ -501,6 +503,7 @@ def task_4(**args):
     mae = res_df['mae'].mean()
     rmae = mae/res_df['target'].mean()
     logger.info(f'mae = {mae}, rmae={rmae}')
+    res_df.to_pickle(f'past-test-{year}.pkl')
 
 
 
