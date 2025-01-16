@@ -346,11 +346,11 @@ def create_rolling_fst_data(load_data:np.ndarray, cur_t:pd.Timestamp,
 def get_hourly_fst_data(target_arr, ext_arr, wea_arr, hr, seq_length):
 
     #seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target
-    seq_wea_arr = wea_arr[hr-1:seq_length+hr-1,...]
+    seq_wea_arr = np.zeros([seq_length,*wea_arr.shape[1:]]) #wea_arr[hr-1:seq_length+hr-1,...]
     seq_ext_arr = ext_arr[hr-1:seq_length+hr-1,...]
     ext_arr = ext_arr[seq_length+hr-1, ...]
     seq_target = target_arr[hr-1:seq_length+hr-1,...]
-    wea_arr = wea_arr[seq_length+hr-1, ...]
+    wea_arr = wea_arr[hr-1, ...]
 
     res=[ seq_wea_arr,seq_ext_arr, seq_target, wea_arr, ext_arr, target_arr[seq_length+hr-1,...]]
     

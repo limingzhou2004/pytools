@@ -442,9 +442,10 @@ def task_4(**args):
             if fst_t[j] > fst_t[j+1]:
                 ind_end = j
                 break 
-        wea_arr_list.append(wea_arr[i:ind_end+1,:,:,config.model_pdt.weather_para_to_adopt])
+        wea_start_ind = i
+        wea_arr_list.append(wea_arr[wea_start_ind:ind_end+1,:,:,config.model_pdt.weather_para_to_adopt])
         tab_data_list.append(load_data[0 if load_ind_start<0 else load_ind_start:load_ind_end,:])
-        w_timestamp.append(fst_t[i:ind_end+1])
+        w_timestamp.append(fst_t[wea_start_ind:ind_end+1])
         if abs((fst_t[i] - cur_t)/pd.Timedelta(1,'h')) > 24:
             logger.warning(f'time difference between spot time {cur_t} and first fst time {fst_t[i]}exceeds 24 hours!')
         i = ind_end + 1
@@ -492,6 +493,11 @@ def task_4(**args):
     res_df['fst_time'] = res_fst_time
     res_df['target'] = res_actual_y
     res_df['fst'] = res_fst_y
+
+    res_df['mae'] = abs(res_df['fst'] - res_df['target'])
+    mae = res_df['mae'].mean()
+    rmae = mae/res_df['target'].mean()
+    logger.info(f'mae = {mae}, rmae={rmae}')
 
 
 
