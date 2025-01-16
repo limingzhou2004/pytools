@@ -480,7 +480,8 @@ def task_4(**args):
                                     wea_arr=scaled_wea, 
                                     hr=hr, seq_length=seq_length)
             fst_batch = (seq_wea_arr, seq_ext_arr, seq_target, ext_arr)
-            y = model(fst_batch)
+            with torch.no_grad():
+                y = model(fst_batch)
             y = scaler.unscale_target(y)
             res_spot_time.append(t)
             res_fst_time.append(t+pd.Timedelta(hr, 'h'))
