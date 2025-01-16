@@ -327,7 +327,7 @@ def create_rolling_fst_data(load_data:np.ndarray, cur_t:pd.Timestamp,
     w_timestamp_local = list(w_timestamp) #list(w_timestamp_local)
     # necessary weather range for weather, fill missing
     valid_inds = []
-    wea_data = np.stack(wea_data,axis=0)
+    #wea_data = np.stack(wea_data,axis=0)
     for h in range(rolling_fst_horizon):
         tp = cur_t + pd.Timedelta(h+1, 'h') 
         if tp in w_timestamp_local:

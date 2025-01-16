@@ -431,30 +431,24 @@ def task_4(**args):
     w_timestamp = []
     rolling_fst_horizon = args['rolling_fst_hzn']
  
-    while i<len(fst_t)-1-buffer:
+    while i<len(fst_t)-rolling_fst_horizon-buffer:
         #if spot_t_list[t_pointer] == fst_t[i]+pd.Timedelta(-1,'h'):
         cur_t:pd.Timestamp = spot_t_list[t_pointer]
         load_ind = load_timestamp_list.index(cur_t)
-        ind_start = load_ind-seq_length - buffer
+        load_ind_start = load_ind-seq_length - buffer
+        load_ind_end = load_ind + rolling_fst_horizon + buffer
         ind_end = i
         for j in range(i, i+rolling_fst_horizon+buffer):
             if fst_t[j] > fst_t[j+1]:
                 ind_end = j
                 break 
-
-        wea_arr_list.append(wea_arr[i:ind_end+1,...])
-        tab_data_list.append(load_data[0 if ind_start<0 else ind_start:ind_start+rolling_fst_horizon+buffer,:])
+        wea_arr_list.append(wea_arr[i:ind_end+1,:,:,config.model_pdt.weather_para_to_adopt])
+        tab_data_list.append(load_data[0 if load_ind_start<0 else load_ind_start:load_ind_end,:])
         w_timestamp.append(fst_t[i:ind_end+1])
         if abs((fst_t[i] - cur_t)/pd.Timedelta(1,'h')) > 24:
             logger.warning(f'time difference between spot time {cur_t} and first fst time {fst_t[i]}exceeds 24 hours!')
         i = ind_end + 1
         t_pointer += 1
-
-       # else:
-        # if fst_t[i] > spot_t_list[t_pointer]+pd.Timedelta(1,'h'):
-        #     t_pointer += 1
-        # else:
-        #     i = i + 1
 
     # get scalers for target, wea array
     _fn_scaler = config.get_model_file_name(class_name='scaler')
@@ -469,16 +463,14 @@ def task_4(**args):
     res_actual_y = []
     res_fst_y = []
 
-
     for t, tdata, wt, wdata in zip(spot_t_list, tab_data_list, w_timestamp, wea_arr_list):
         # col 0 is timestamp, col 1 is the load/target
-
         df_load = pd.DataFrame(tdata).set_index(0)
         df, wea = create_rolling_fst_data(load_data=df_load,cur_t=t, w_timestamp=wt, wea_data=wdata, rolling_fst_horizon=rolling_fst_horizon,default_seq_length=seq_length)
         scaled_target = copy.deepcopy(scaler.scale_target(df.values[:,0]))
         #find the ind of hr=0
         ind_0 = list(df.index).index(t)
-        scaled_wea = scaler.scale_arr(wea)
+        scaled_wea = np.stack(scaler.scale_arr(wea), axis=0)
 
         for hr in range(1, 2): #rolling_fst_horizon+1):
             seq_wea_arr, seq_ext_arr, seq_target, ext_arr, target = \
@@ -506,11 +498,7 @@ def task_4(**args):
 
 
 
-
-
-
     #df_result =  # timestamp, actual load, fst load
-
 
 
 
