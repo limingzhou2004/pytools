@@ -70,16 +70,16 @@ def test_create_rolling_fst_data(config,):
         else:
             t_wea_list.append(pd.Timestamp(cur_t_str,tz='UTC')+pd.Timedelta(i,'h'))
             wea_arr_list.append(np.random.rand(21,21,14))
-
+    seq_length=168
     # seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target 
     df_tab, wet_arr = create_rolling_fst_data(
-        load_data=df_load, cur_t=cur_t, wea_data=wea_arr_list,rolling_fst_horizon=rolling_forecast_horizeon+2, w_timestamp=t_wea_list)
+        load_data=df_load, cur_t=cur_t, wea_data=wea_arr_list,rolling_fst_horizon=rolling_forecast_horizeon+2, w_timestamp=t_wea_list, default_seq_length=seq_length)
 
     assert df_tab.shape[0]==193
     assert wet_arr.shape[0]==193
-    
-    res = get_hourly_fst_data(target_arr=df_tab.loc[:,0].values, ext_arr=df_tab.loc[:,1:].values, wea_arr=wet_arr, hr=1, seq_length=3)
-    res = get_hourly_fst_data(target_arr=df_tab.loc[:,0].values, ext_arr=df_tab.loc[:,1:].values, wea_arr=wet_arr, hr=2, seq_length=3)
+
+    res = get_hourly_fst_data(target_arr=df_tab.loc[:,0].values, ext_arr=df_tab.loc[:,1:].values, wea_arr=wet_arr, hr=1, seq_length=seq_length)
+    res = get_hourly_fst_data(target_arr=df_tab.loc[:,0].values, ext_arr=df_tab.loc[:,1:].values, wea_arr=wet_arr, hr=2, seq_length=seq_length)
     
     assert len(res) == 6
 
