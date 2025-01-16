@@ -483,26 +483,29 @@ def task_4(**args):
                                     ext_arr=df.values[:,1:], 
                                     wea_arr=scaled_wea, 
                                     hr=hr, seq_length=seq_length)
-            fst_batch = (seq_wea_arr, seq_ext_arr, seq_target, wea_arr, ext_arr)
             with torch.no_grad():
-                y = model(fst_batch)
+                y = model(seq_wea_arr=seq_wea_arr,
+                          seq_ext_arr=seq_ext_arr,
+                          seq_target=seq_target,
+                          wea_arr=wea_arr,
+                          ext_arr=ext_arr)
             y = scaler.unscale_target(y)
             res_spot_time.append(t)
             res_fst_time.append(t+pd.Timedelta(hr, 'h'))
-            res_actual_y.append(target.values)
-            res_fst_y.append(y)
+            res_actual_y.append(target.item())
+            res_fst_y.append(y.item())
             scaled_target[ind_0+hr] = y
 
-
-    res_df = pd.DataFrame(res_spot_time)
+    res_df = pd.DataFrame(res_spot_time,columns=['spot_time'])
     res_df['fst_time'] = res_fst_time
     res_df['target'] = res_actual_y
     res_df['fst'] = res_fst_y
 
     res_df['mae'] = abs(res_df['fst'] - res_df['target'])
     mae = res_df['mae'].mean()
-    rmae = mae/res_df['target'].mean()
-    logger.info(f'mae = {mae}, rmae={rmae}')
+    mean_target = res_df['target'].mean()
+    rmae = mae/mean_target
+    logger.info(f'mae = {mae}, rmae={rmae}, mean_target={mean_target}')
     res_df.to_pickle(f'past-test-{year}.pkl')
 
 
