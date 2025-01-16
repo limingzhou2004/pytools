@@ -319,26 +319,28 @@ def create_rolling_fst_data(load_data:np.ndarray, cur_t:pd.Timestamp,
     dft = pd.date_range(t0, t1, freq='h')
     df = pd.DataFrame()
     df.index=dft
-    df=df.join(load_data, how='right')
+    df=df.join(load_data, how='left')
     df=df.ffill()
-    wet_arr = np.zeros((rolling_fst_horizon, *wea_data[0].shape)) + np.nan
+
+    wet_arr = np.zeros((seq_length+rolling_fst_horizon, *wea_data[0].shape)) + np.nan
 
     #w_timestamp_local = pd.DatetimeIndex(list(w_timestamp)).tz_localize('UTC')
     w_timestamp_local = list(w_timestamp) #list(w_timestamp_local)
     # necessary weather range for weather, fill missing
     valid_inds = []
-    #wea_data = np.stack(wea_data,axis=0)
-    for h in range(rolling_fst_horizon):
-        tp = cur_t + pd.Timedelta(h+1, 'h') 
+    for h in range(seq_length+rolling_fst_horizon):
+        tp = cur_t + pd.Timedelta(h+1-seq_length, 'h') 
         if tp in w_timestamp_local:
             ind = w_timestamp_local.index(tp)
             wet_arr[h, ...] = wea_data[ind]
-            valid_inds.append(ind)
-    nan_inds = set(range(rolling_fst_horizon)) - set(valid_inds)
+            valid_inds.append(h)
+    nan_inds = set(range(seq_length+rolling_fst_horizon)) - set(valid_inds)
+    wea_data = np.stack(wea_data,axis=0)
+
             #interpolate 
     for i in nan_inds:
-        tmp = interpolate.interp1d(np.array(valid_inds), wea_data[valid_inds,...],axis=0,fill_value='extrapolate')
-        wet_arr[ind,...] = tmp(np.array(i))
+        tmp = interpolate.interp1d(np.array(valid_inds), wea_data,axis=0,fill_value='extrapolate')
+        wet_arr[i,...] = tmp(np.array(i))
 
     return df, wet_arr
 

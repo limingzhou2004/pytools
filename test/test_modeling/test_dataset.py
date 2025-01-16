@@ -57,7 +57,7 @@ def test_read_past_fst_weather(config):
 def test_create_rolling_fst_data(config,):
     cur_t_str = '2020-04-01'
     cur_t = pd.Timestamp(cur_t_str,tz='US/Eastern')
-    t_load = pd.date_range('2020-03-01', '2020-05-01',tz='US/Eastern')
+    t_load = pd.date_range('2020-03-01', '2020-05-01',tz='US/Eastern',freq='h')
     data = np.random.rand(len(t_load), 9)
     df_load = pd.DataFrame(data)
     df_load.index =t_load
@@ -75,10 +75,14 @@ def test_create_rolling_fst_data(config,):
     df_tab, wet_arr = create_rolling_fst_data(
         load_data=df_load, cur_t=cur_t, wea_data=wea_arr_list,rolling_fst_horizon=rolling_forecast_horizeon+2, w_timestamp=t_wea_list)
 
+    assert df_tab.shape[0]==193
+    assert wet_arr.shape[0]==193
+    
     res = get_hourly_fst_data(target_arr=df_tab.loc[:,0].values, ext_arr=df_tab.loc[:,1:].values, wea_arr=wet_arr, hr=1, seq_length=3)
     res = get_hourly_fst_data(target_arr=df_tab.loc[:,0].values, ext_arr=df_tab.loc[:,1:].values, wea_arr=wet_arr, hr=2, seq_length=3)
     
     assert len(res) == 6
+
 # @pytest.mark.parametrize(
 #     "para, wea_shape, lag_load_shape",
 #     [
