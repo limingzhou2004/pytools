@@ -18,7 +18,7 @@ from lightning.pytorch.callbacks import EarlyStopping
 from lightning.pytorch.tuner import Tuner
 import lightning as pl
 from lightning.pytorch.loggers import TensorBoardLogger, CSVLogger
-import tqdm
+from tqdm import tqdm
 
 from pytools.arg_class import ArgClass
 from pytools.modeling.scaler import Scaler, load
@@ -478,12 +478,12 @@ def task_4(**args):
         scaled_wea = np.stack(scaler.scale_arr(wea), axis=0)
 
         for hr in range(1, 2): #rolling_fst_horizon+1):
-            seq_wea_arr, seq_ext_arr, seq_target, ext_arr, target = \
+            seq_wea_arr, seq_ext_arr, seq_target, wea_arr, ext_arr, target = \
             get_hourly_fst_data(target_arr=scaled_target, 
                                     ext_arr=df.values[:,1:], 
                                     wea_arr=scaled_wea, 
                                     hr=hr, seq_length=seq_length)
-            fst_batch = (seq_wea_arr, seq_ext_arr, seq_target, ext_arr)
+            fst_batch = (seq_wea_arr, seq_ext_arr, seq_target, wea_arr, ext_arr)
             with torch.no_grad():
                 y = model(fst_batch)
             y = scaler.unscale_target(y)
