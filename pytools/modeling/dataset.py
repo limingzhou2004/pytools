@@ -322,19 +322,19 @@ def create_rolling_fst_data(load_data:np.ndarray, cur_t:pd.Timestamp,
     df=df.join(load_data, how='left')
     df=df.ffill()
 
-    wet_arr = np.zeros((seq_length+rolling_fst_horizon, *wea_data[0].shape)) + np.nan
+    wet_arr = np.zeros((rolling_fst_horizon, *wea_data[0].shape)) + np.nan
 
     #w_timestamp_local = pd.DatetimeIndex(list(w_timestamp)).tz_localize('UTC')
     w_timestamp_local = list(w_timestamp) #list(w_timestamp_local)
     # necessary weather range for weather, fill missing
     valid_inds = []
-    for h in range(seq_length+rolling_fst_horizon):
-        tp = cur_t + pd.Timedelta(h+1-seq_length, 'h') 
+    for h in range(rolling_fst_horizon):
+        tp = cur_t + pd.Timedelta(h+1, 'h') 
         if tp in w_timestamp_local:
             ind = w_timestamp_local.index(tp)
             wet_arr[h, ...] = wea_data[ind]
             valid_inds.append(h)
-    nan_inds = set(range(seq_length+rolling_fst_horizon)) - set(valid_inds)
+    nan_inds = set(range(rolling_fst_horizon)) - set(valid_inds)
     wea_data = np.stack(wea_data,axis=0)
     tmp = interpolate.interp1d(np.array(valid_inds), wea_data,axis=0,fill_value='extrapolate')
     for i in nan_inds:
@@ -346,11 +346,13 @@ def create_rolling_fst_data(load_data:np.ndarray, cur_t:pd.Timestamp,
 def get_hourly_fst_data(target_arr, ext_arr, wea_arr, hr, seq_length):
 
     #seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target
-    seq_wea_arr = wea_arr[hr-1:seq_length+hr-1,...]
+    seq_w_shape = list(wea_arr.shape)
+    seq_w_shape[0] = seq_length
+    seq_wea_arr = np.zeros(seq_w_shape) #wea_arr[hr-1:seq_length+hr-1,...]
     seq_ext_arr = ext_arr[hr-1:seq_length+hr-1,...]
     ext_arr = ext_arr[seq_length+hr-1:seq_length+hr,  ...]
     seq_target = target_arr[hr-1:seq_length+hr-1,...]
-    wea_arr = wea_arr[seq_length+hr-1:seq_length+hr, ...]
+    wea_arr = wea_arr[hr-1:hr, ...]
 
     res=[ seq_wea_arr,seq_ext_arr, seq_target, wea_arr, ext_arr, target_arr[seq_length+hr-1,...]]
     

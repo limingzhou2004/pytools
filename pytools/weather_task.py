@@ -443,7 +443,8 @@ def task_4(**args):
             if fst_t[j] > fst_t[j+1]:
                 ind_end = j
                 break 
-        wea_start_ind = i - seq_length
+        # seq_wea is fake data and not used.
+        wea_start_ind = i+1 #- seq_length
         if wea_start_ind < 0:
             wea_start_ind = 0
         wea_arr_list.append(wea_arr[wea_start_ind:ind_end+1,:,:,config.model_pdt.weather_para_to_adopt])
@@ -468,7 +469,7 @@ def task_4(**args):
     res_fst_scaled_y = []
 
     ziped = zip(spot_t_list, tab_data_list, w_timestamp, wea_arr_list)
-    for t, tdata, wt, wdata in tqdm(list(ziped)[0:10]):
+    for t, tdata, wt, wdata in tqdm(list(ziped)):
         logger.info(f'processing {t}...')
         # col 0 is timestamp, col 1 is the load/target
         df_load = pd.DataFrame(tdata).set_index(0)
@@ -478,7 +479,7 @@ def task_4(**args):
         ind_0 = list(df.index).index(t)
         scaled_wea = np.stack(scaler.scale_arr(wea), axis=0)
 
-        for hr in range(1, 3): #rolling_fst_horizon+1):
+        for hr in range(1, 6):#rolling_fst_horizon+1):
             seq_wea_arr, seq_ext_arr, seq_target, wea_arr, ext_arr, target = \
             get_hourly_fst_data(target_arr=scaled_target, 
                                     ext_arr=df.values[:,1:], 
@@ -490,8 +491,7 @@ def task_4(**args):
                           seq_target=seq_target,
                           wea_arr=wea_arr,
                           ext_arr=ext_arr)
-            scaled_target[ind_0+hr] = y
-            #y = scaler.unscale_target(y)
+            scaled_target[ind_0+hr] = y.item()
             res_spot_time.append(t)
             res_fst_time.append(t+pd.Timedelta(hr, 'h'))
             res_actual_scaled_y.append(target.item())
