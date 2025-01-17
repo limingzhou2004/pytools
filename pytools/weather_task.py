@@ -464,10 +464,11 @@ def task_4(**args):
     
     res_spot_time = []
     res_fst_time = []
-    res_actual_y = []
-    res_fst_y = []
+    res_actual_scaled_y = []
+    res_fst_scaled_y = []
 
-    for t, tdata, wt, wdata in tqdm(zip(spot_t_list, tab_data_list, w_timestamp, wea_arr_list)):
+    ziped = zip(spot_t_list, tab_data_list, w_timestamp, wea_arr_list)
+    for t, tdata, wt, wdata in tqdm(list(ziped)[0:10]):
         logger.info(f'processing {t}...')
         # col 0 is timestamp, col 1 is the load/target
         df_load = pd.DataFrame(tdata).set_index(0)
@@ -477,7 +478,7 @@ def task_4(**args):
         ind_0 = list(df.index).index(t)
         scaled_wea = np.stack(scaler.scale_arr(wea), axis=0)
 
-        for hr in range(1, 2): #rolling_fst_horizon+1):
+        for hr in range(1, 3): #rolling_fst_horizon+1):
             seq_wea_arr, seq_ext_arr, seq_target, wea_arr, ext_arr, target = \
             get_hourly_fst_data(target_arr=scaled_target, 
                                     ext_arr=df.values[:,1:], 
@@ -489,21 +490,24 @@ def task_4(**args):
                           seq_target=seq_target,
                           wea_arr=wea_arr,
                           ext_arr=ext_arr)
-            y = scaler.unscale_target(y)
+            scaled_target[ind_0+hr] = y
+            #y = scaler.unscale_target(y)
             res_spot_time.append(t)
             res_fst_time.append(t+pd.Timedelta(hr, 'h'))
-            res_actual_y.append(target.item())
-            res_fst_y.append(y.item())
-            scaled_target[ind_0+hr] = y
+            res_actual_scaled_y.append(target.item())
+            res_fst_scaled_y.append(y.item())            
 
     res_df = pd.DataFrame(res_spot_time,columns=['spot_time'])
     res_df['fst_time'] = res_fst_time
-    res_df['target'] = res_actual_y
-    res_df['fst'] = res_fst_y
+    res_df['target_scaled'] = res_actual_scaled_y
+    res_df['fst_scaled'] = res_fst_scaled_y
 
-    res_df['mae'] = abs(res_df['fst'] - res_df['target'])
+    res_df['target_unscaled'] = scaler.unscale_target(res_df['target_scaled'].values)
+    res_df['fst_unscaled'] = scaler.unscale_target(res_df['fst_scaled'].values)
+
+    res_df['mae'] = abs(res_df['fst_unscaled'] - res_df['target_unscaled'])
     mae = res_df['mae'].mean()
-    mean_target = res_df['target'].mean()
+    mean_target = res_df['target_unscaled'].mean()
     rmae = mae/mean_target
     logger.info(f'mae = {mae}, rmae={rmae}, mean_target={mean_target}')
     res_df.to_pickle(f'past-test-{year}.pkl')

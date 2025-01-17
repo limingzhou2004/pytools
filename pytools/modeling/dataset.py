@@ -336,10 +336,8 @@ def create_rolling_fst_data(load_data:np.ndarray, cur_t:pd.Timestamp,
             valid_inds.append(h)
     nan_inds = set(range(seq_length+rolling_fst_horizon)) - set(valid_inds)
     wea_data = np.stack(wea_data,axis=0)
-
-            #interpolate 
+    tmp = interpolate.interp1d(np.array(valid_inds), wea_data,axis=0,fill_value='extrapolate')
     for i in nan_inds:
-        tmp = interpolate.interp1d(np.array(valid_inds), wea_data,axis=0,fill_value='extrapolate')
         wet_arr[i,...] = tmp(np.array(i))
 
     return df, wet_arr
