@@ -56,13 +56,19 @@ class MixedOutput(nn.Module):
         in_dim = seq_latent_dim * filternet_hidden_size + wea_arr_dim + ext_dim
 
         #self.ts_latent_model = nn.Linear(in_features=seq_arr_dim,out_features=seq_latent_dim)
-        shrink_factor=model_paras['shrink_factor']
+        #shrink_factor=model_paras['shrink_factor']
         self.mixed_model = nn.ModuleList(
             nn.Sequential(
-            nn.Linear(in_features=in_dim, out_features=in_dim//shrink_factor),
+            nn.Linear(in_features=in_dim, out_features=model_paras['channel0']),
             nn.Dropout(model_paras['dropout']),
             nn.ReLU(),
-            nn.Linear(in_features=in_dim//shrink_factor, out_features=target_dim),
+            nn.Linear(in_features=model_paras['channel0'], out_features=model_paras['channel1']),
+            nn.ReLU(),
+            nn.Linear(in_features=model_paras['channel1'], out_features=model_paras['channel2']),
+            nn.ReLU(),
+            nn.Linear(in_features=model_paras['channel2'],out_features=model_paras['channel3']),
+            nn.ReLU(),
+            nn.Linear(in_features=model_paras['channel3'],out_features=target_dim)
             ) for _ in range(pred_len)
             )
 
@@ -179,6 +185,7 @@ class TSWeatherNet(pl.LightningModule):
         )
         #self._mdl_logger: TensorBoardLogger = None
         self._wea_arr_shape = deepcopy(wea_arr_shape)
+
         seq_dim = config.model_pdt.sample_data_seq_dim
         wea_layer_paras = config.model_pdt.cov_net
         filter_net_paras = config.model_pdt.filter_net
@@ -197,12 +204,15 @@ class TSWeatherNet(pl.LightningModule):
         #self.filter_net = SeqModel(config.filternet_input, filter_net_paras=filter_net_paras)
         #self.wea_channels = config.model_pdt.cov_net['last']['channel'] 
         self.wea_channels = self.wea_net.output_shape    
-
-        x = torch.zeros(1,in_channel+self.wea_channels, self._seq_length)
-        #x = torch.zeros(1,in_channel, self._seq_length)
         para_copy = deepcopy(config.model_pdt.ts_net)
+        if self.hyper_options['zero_inflation']:
+            x = torch.zeros(1,in_channel+self.wea_channels, self._seq_length)
+            para_copy['in_channels'] += self.wea_channels
+
+        else:
+            x = torch.zeros(1,in_channel, self._seq_length)
+
         #config.model_pdt.ts_net['in_channels'] += self.wea_channels
-        para_copy['in_channels'] += self.wea_channels
         self.filter_net = nn.Conv1d(**para_copy) #config.model_pdt.ts_net)
         x=self.filter_net(x)
 
@@ -260,8 +270,10 @@ class TSWeatherNet(pl.LightningModule):
         # for i in range(e_dim):
         #     ext_y[:,i,:] = self.ext_net(ext_arr[:,i,...])
         #seq_y = torch.cat([seq_target[...,None], seq_ext_y, seq_wea_y],dim=2).permute([0, 2, 1])
-        seq_y = torch.cat([seq_target[...,None], seq_wea_y],dim=2).permute([0, 2, 1])
-        #seq_y = torch.cat([seq_target[...,None]],dim=2).permute([0, 2, 1])
+        if self.hyper_options['zero_inflation']:
+            seq_y = torch.cat([seq_target[...,None], seq_wea_y],dim=2).permute([0, 2, 1])
+        else:
+            seq_y = torch.cat([seq_target[...,None]],dim=2).permute([0, 2, 1])
         seq_y = self.filter_net(seq_y)
 
         y = self.mixed_output(seq_y, ext_arr, wea_y)
