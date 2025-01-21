@@ -22,10 +22,14 @@ np_load_old = np.load
 np.load = lambda *a,**k: np_load_old(*a, allow_pickle=True, **k)
 
 
-def _get_dt_range(t0, t1):
-    dt = pd.Timestamp(t1) - pd.Timestamp(t0)
+def _get_dt_range(t0, t1, t):
+    t1 = pd.Timestamp(t1, tz='UTC') 
+    t0 = pd.Timestamp(t0,tz='UTC') 
+    dt=t1-t0
     dtn= dt/ np.timedelta64(1, 'h')
+    t_new = t[(t0<=t) & (t<=t1)]
     return range(int(dtn))
+    #return range(len(t_new))
 
 def create_datasets(config:Config, flag, tabular_data, wea_arr, timestamp, sce_ind):
     target_ind = config.model_pdt.target_ind
@@ -33,7 +37,6 @@ def create_datasets(config:Config, flag, tabular_data, wea_arr, timestamp, sce_i
     _target = tabular_data[:, target_ind]
     _ext = np.delete(tabular_data, target_ind, axis=1)
     _wea_arr = wea_arr   
-
 
     _fn_scaler = config.get_model_file_name(class_name='scaler')
  
@@ -54,8 +57,9 @@ def create_datasets(config:Config, flag, tabular_data, wea_arr, timestamp, sce_i
     t_flag = t_flag.to_numpy().reshape((-1))
     _target = _target[t_flag]
     _ext = _ext[t_flag]
-    _wea_arr = _wea_arr[t_flag, ...]      
-    train_range = _get_dt_range(tt[0], tt[1])
+    _wea_arr = _wea_arr[t_flag, ...]   
+
+    train_range = _get_dt_range(tt[0], tt[1], timestamp[t_flag])
     fst_ind = 0
     pre_length = config.model_pdt.forecast_horizon[fst_ind][-1]
     full_length = _target.shape[0] - config.model_pdt.seq_length
@@ -69,7 +73,14 @@ def create_datasets(config:Config, flag, tabular_data, wea_arr, timestamp, sce_i
         if config.model_pdt.train_frac >= 1:
             val_range = None
         else:
-            train_range, val_range = train_test_split(train_range, train_size=int(config.model_pdt.train_frac*train_size))
+            # train_range, val_range = train_test_split(train_range, train_size=int(config.model_pdt.train_frac*train_size))
+            train_len = len(train_range)
+            new_train_len = int(train_len * config.model_pdt.train_frac)
+            train_range = range(new_train_len)
+            val_range = range(new_train_len,train_len)
+
+
+
 
     # elif flag.startswith('final_'):
     #     return train_range
@@ -243,9 +254,9 @@ def read_past_fst_weather(config:Config, year=-1, month=-1):
         pass
     return
 
-def check_fix_missings(load_arr:np.ndarray, w_timestamp:np.ndarray, w_arr:np.ndarray)->Tuple[np.ndarray, np.ndarray]:
+def check_fix_missings(load_arr:np.ndarray, w_timestamp:np.ndarray, w_arr:np.ndarray,month=-1)->Tuple[np.ndarray, np.ndarray]:
     # sync data, fill missings
-    w_timestamp = pd.DatetimeIndex(list(w_timestamp)).tz_localize('UTC')
+    #w_timestamp = pd.DatetimeIndex(list(w_timestamp)).tz_localize('UTC')
     t_str = 'timestamp'
     t0 = max(load_arr[0][0].tz_convert('UTC'), w_timestamp[0])
     t1 = min(load_arr[-1][0].tz_convert('UTC'), w_timestamp[-1])
@@ -265,7 +276,15 @@ def check_fix_missings(load_arr:np.ndarray, w_timestamp:np.ndarray, w_arr:np.nda
         if math.isnan(df_tw.iloc[i]['value']):
             w_arr = np.insert(w_arr, [i], w_arr[i], axis=0)
 
-    return df_tl.values.astype(float), w_arr.astype(float), t
+    ret_df = df_tl.values.astype(float)
+    ret_w = w_arr.astype(float)
+    if month==-1:
+        return ret_df, ret_w, t
+    else:        
+        mths=[month, month+1 if month+1<=12 else 1, month-1 if month-1>0 else 12]
+        ind_months = t[t_str].apply(lambda x: x.month in mths)
+        return ret_df[ind_months,...], ret_w[ind_months], t[ind_months]
+
 
 def read_weather_data_from_config(config:Config, year=-1):
     # load data are not separated by year

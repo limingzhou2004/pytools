@@ -58,9 +58,9 @@ target_ind = 0
 wea_ar_embedding_dim = 0
 ext_ar_embedding_dim = 0
 
-weather_para_to_adopt=[0,1,2,3,4,5,6,7,9,10,11,12,13,14]
+weather_para_to_adopt=[0,1,3,15]
 #[0,1,3,4,9,11,12,13,14]
-train_frac=0.8
+train_frac=0.85
 
 
 frac_yr1 = 0.67
@@ -69,10 +69,10 @@ final_train_frac_yr1 = 0.8
 final_train_frac =[1, 0, 0]
 cv_settings = [
   # ["2018-11-03","2018-11-04 12:00","2018-11-04 13:00","2018-11-05"]
-   ["2018-01-01", "2018-12-31", "2019-01-01", "2019-12-31"],
+   ["2018-01-01", "2019-1-1", "2019-1-1", "2020-1-1"],
    ["2018-01-01", "2021-01-01", "2021-01-01","2022-01-01"],
    ["2018-01-01", "2022-01-01", "2022-01-01","2023-01-01"],
-   ["2022-01-01", "2023-01-01", "2023-01-01","2024-01-01"],
+   ["2019-01-01", "2023-01-01", "2023-01-01","2024-01-01"],
    ["2018-01-01", "2024-01-01", "2024-01-01","2025-01-01"]
 ]
 final_train_hist = [
@@ -92,18 +92,18 @@ hyper_options.zero_inflation=0
 #hyper_options.epoch_step=2
 
 #----- model layer configuration parameters
-cov_net.cov1.kernel=5
-cov_net.cov1.padding=0
-cov_net.cov1.stride=3
+cov_net.cov1.kernel=7
+cov_net.cov1.padding=7
+cov_net.cov1.stride=4
 cov_net.cov1.dilation=1
 cov_net.cov1.group=1
-cov_net.cov1.output_channel=51
-cov_net.cov2.kernel=5
+cov_net.cov1.output_channel=2
+cov_net.cov2.kernel=3
 cov_net.cov2.padding=0
 cov_net.cov2.stride=3
 cov_net.cov2.dilation=1
 cov_net.cov2.group=1
-cov_net.cov2.output_channel=8
+cov_net.cov2.output_channel=1
 cov_net.last.channel=300
 cov_net.dropout=0
 
@@ -118,9 +118,9 @@ filter_net.sparsity_threshold=0.02
 
 ts_net.in_channels=1
 ts_net.out_channels=5
-ts_net.kernel_size=7
+ts_net.kernel_size=25
 ts_net.padding=0
-ts_net.stride=1
+ts_net.stride=6
 
 mixed_net.ts_latent_dim=9
 mixed_net.shrink_factor=2

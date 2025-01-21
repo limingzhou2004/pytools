@@ -10,7 +10,8 @@ from typing import Tuple
 import torch
 import numpy as np
 import pandas as pd
-
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
 # from torch.utils.data.dataloader import DataLoader
 
 # from pytools.modeling.dataset import WeatherDataSet
@@ -166,6 +167,27 @@ def load_training_data(config:Config, yrs):
         w_data_list.append(w_data)
         inds.append(w_data.shape[0])
     return load_data, w_paras, np.concatenate(w_timestamp_list,axis=0), np.concatenate(w_data_list,axis=0)
+
+
+def pca_processing(t, t0, t1, wea_arr, n_components=10):
+    #original_shape = wea_arr.shape
+    t1 = pd.Timestamp(t1, tz='UTC') 
+    t0 = pd.Timestamp(t0,tz='UTC') 
+    train_ind = (t>=t0) & (t<=t1)
+    val_ind = ~ train_ind
+    wea_arr = wea_arr.reshape((wea_arr.shape[0], -1))
+    scaler = StandardScaler()
+    wea_arr_train= wea_arr[train_ind]
+    wea_arr_val = wea_arr[val_ind]
+    wea_arr_train = scaler.fit_transform(wea_arr_train)
+    wea_arr_val = scaler.transform(wea_arr_val)
+    svd_solver = 'auto' if n_components>=1 else 'full'
+    pca=PCA(n_components=n_components, svd_solver=svd_solver)
+    wea_train = pca.fit_transform(wea_arr_train)
+    wea_valtest = pca.transform(wea_arr_val)
+    warr = np.vstack((wea_train,wea_valtest))
+    #warr= scaler.inverse_transform(warr)
+    return pca, warr #.reshape(original_shape)
 
 
 def get_trainer(config:Config, use_val:bool=True):
@@ -329,7 +351,14 @@ def task_2(**args):
 def task_3(**args):
     flag = args['flag']
     config = Config(args['config_file'])
-    load_data, w_paras, w_timestamp, w_data = load_training_data(config=config, yrs=args['years']) 
+    load_data, w_paras, w_timestamp, w_data = load_training_data(config=config, yrs=args['years'])
+    # tc=293 
+    # hdd = w_data[...,0] - tc 
+    # hdd[hdd<0]=0
+    # cdd = tc - w_data[...,0]
+    # cdd[cdd<0] =0 
+    # w_data[...,0] =hdd
+    # w_data = np.concatenate((w_data, np.expand_dims(cdd,axis=3)),axis=3)
     p_list = [ a[1] for a in list(w_paras.item().items()) ]
     plist=[]
     for p in p_list:
@@ -338,7 +367,21 @@ def task_3(**args):
     w_data=w_data[...,config.model_pdt.weather_para_to_adopt]
     logger.info(f'Use these weather parameters... {w_paras}')
     logger.info(f'Chosen {p_adopted}')
-    load_arr, wea_arr, t = check_fix_missings(load_arr=load_data, w_timestamp=w_timestamp, w_arr=w_data)
+    ind = args['ind']
+    model_month=args['model_month']
+    pcas = []
+    cv_t = config.model_pdt.cv_settings[ind]
+    w_timestamp = pd.DatetimeIndex(list(w_timestamp)).tz_localize('UTC')
+    wshape=list(w_data.shape)
+    c=3
+    w_data_pca = np.zeros((wshape[0],c,wshape[-1]))
+    for i in range(w_data.shape[-1]):
+        pca, w_arr = pca_processing(t=w_timestamp,t0=cv_t[0] , t1=cv_t[1] , wea_arr=w_data[...,i],n_components=c)
+        pcas.append(pca)
+        w_data_pca[...,i] =w_arr 
+    w_data = w_data_pca
+    
+    load_arr, wea_arr, t = check_fix_missings(load_arr=load_data, w_timestamp=w_timestamp, w_arr=w_data, month=model_month)
     # import matplotlib.pyplot as plt
     # plt.scatter(load_arr[:,0],wea_arr[:,11,11,0])
     # #plt.show()
@@ -348,8 +391,8 @@ def task_3(**args):
     wea_arr = wea_arr.astype(np.float32)
     load_arr = load_arr.astype(np.float32)
     num_worker = args['number_of_worker']
-    ind = args['ind']
-    ds_train, ds_val, ds_test = create_datasets(config, flag, tabular_data=load_arr, wea_arr=wea_arr,timestamp=t,sce_ind=ind)
+
+    ds_train, ds_val, ds_test = create_datasets(config, flag, tabular_data=load_arr, wea_arr=wea_arr,timestamp=t,sce_ind=ind,)
  
     # add the batch dim
     wea_input_shape = [1, *wea_arr.shape]

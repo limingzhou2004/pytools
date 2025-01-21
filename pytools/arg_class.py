@@ -209,6 +209,15 @@ class ArgClass:
             type=int,
             help='number of worker to use, default 1',
         )
+        sub_parser.add_argument(
+            "-mmonth",
+            "--model-month",
+            dest="model_month",
+            required=False,
+            default=-1,
+            type=int,
+            help='month to model, default -1 for all months',
+        )
         sub_parser.set_defaults(func=fun)
 
     def _add_task4(self, fun):
