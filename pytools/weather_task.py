@@ -352,19 +352,23 @@ def task_3(**args):
     flag = args['flag']
     config = Config(args['config_file'])
     load_data, w_paras, w_timestamp, w_data = load_training_data(config=config, yrs=args['years'])
-    # tc=293 
-    # hdd = w_data[...,0] - tc 
-    # hdd[hdd<0]=0
-    # cdd = tc - w_data[...,0]
-    # cdd[cdd<0] =0 
-    # w_data[...,0] =hdd
-    # w_data = np.concatenate((w_data, np.expand_dims(cdd,axis=3)),axis=3)
+
     p_list = [ a[1] for a in list(w_paras.item().items()) ]
     plist=[]
     for p in p_list:
         plist+=p
     p_adopted = [plist[i] for i in config.model_pdt.weather_para_to_adopt]    
     w_data=w_data[...,config.model_pdt.weather_para_to_adopt]
+    
+    # tc=300 
+    # th=285
+    # hdd = w_data[...,0] - tc 
+    # hdd[hdd<0]=0
+    # cdd = th - w_data[...,0]
+    # cdd[cdd<0] =0 
+    # w_data[...,0] =hdd
+    # w_data = np.concatenate((w_data, np.expand_dims(cdd,axis=3)),axis=3)
+
     logger.info(f'Use these weather parameters... {w_paras}')
     logger.info(f'Chosen {p_adopted}')
     ind = args['ind']
@@ -373,13 +377,13 @@ def task_3(**args):
     cv_t = config.model_pdt.cv_settings[ind]
     w_timestamp = pd.DatetimeIndex(list(w_timestamp)).tz_localize('UTC')
     wshape=list(w_data.shape)
-    c=3
-    w_data_pca = np.zeros((wshape[0],c,wshape[-1]))
-    for i in range(w_data.shape[-1]):
-        pca, w_arr = pca_processing(t=w_timestamp,t0=cv_t[0] , t1=cv_t[1] , wea_arr=w_data[...,i],n_components=c)
-        pcas.append(pca)
-        w_data_pca[...,i] =w_arr 
-    w_data = w_data_pca
+    c=22
+    # w_data_pca = np.zeros((wshape[0],c,wshape[-1]))
+    # for i in range(w_data.shape[-1]):
+    #     pca, w_arr = pca_processing(t=w_timestamp,t0=cv_t[0] , t1=cv_t[1] , wea_arr=w_data[...,i],n_components=c)
+    #     pcas.append(pca)
+    #     w_data_pca[...,i] =w_arr 
+    # w_data = w_data_pca
     
     load_arr, wea_arr, t = check_fix_missings(load_arr=load_data, w_timestamp=w_timestamp, w_arr=w_data, month=model_month)
     # import matplotlib.pyplot as plt
@@ -433,6 +437,7 @@ def task_3(**args):
 
     test_res = trainer.test(m, datamodule=dm, verbose=False)
     logger.info(f'test results: {test_res}')
+    logger.info(f'beta is : {m.beta}')
     #$model_name='test.ckpt'
     model_name = args['model_name']+'.ckpt'
     ckpt_path = osp.join(config.site_parent_folder,'model', model_name)
@@ -510,6 +515,7 @@ def task_4(**args):
     res_fst_time = []
     res_actual_scaled_y = []
     res_fst_scaled_y = []
+    hr_list = []
 
     ziped = zip(spot_t_list, tab_data_list, w_timestamp, wea_arr_list)
     for t, tdata, wt, wdata in tqdm(list(ziped)):
@@ -522,7 +528,8 @@ def task_4(**args):
         ind_0 = list(df.index).index(t)
         scaled_wea = np.stack(scaler.scale_arr(wea), axis=0)
 
-        for hr in range(1, 6):#rolling_fst_horizon+1):
+
+        for hr in range(1, rolling_fst_horizon+1):
             seq_wea_arr, seq_ext_arr, seq_target, wea_arr, ext_arr, target = \
             get_hourly_fst_data(target_arr=scaled_target, 
                                     ext_arr=df.values[:,1:], 
@@ -535,15 +542,18 @@ def task_4(**args):
                           wea_arr=wea_arr,
                           ext_arr=ext_arr)
             scaled_target[ind_0+hr] = y.item()
+            hr_list.append(hr)
             res_spot_time.append(t)
             res_fst_time.append(t+pd.Timedelta(hr, 'h'))
             res_actual_scaled_y.append(target.item())
-            res_fst_scaled_y.append(y.item())            
+            res_fst_scaled_y.append(y.item())    
+
 
     res_df = pd.DataFrame(res_spot_time,columns=['spot_time'])
     res_df['fst_time'] = res_fst_time
     res_df['target_scaled'] = res_actual_scaled_y
     res_df['fst_scaled'] = res_fst_scaled_y
+    res_df['hr_ahead'] = hr_list
 
     res_df['target_unscaled'] = scaler.unscale_target(res_df['target_scaled'].values)
     res_df['fst_unscaled'] = scaler.unscale_target(res_df['fst_scaled'].values)
@@ -553,78 +563,8 @@ def task_4(**args):
     mean_target = res_df['target_unscaled'].mean()
     rmae = mae/mean_target
     logger.info(f'mae = {mae}, rmae={rmae}, mean_target={mean_target}')
+    res_mae = res_df.groupby('hr_ahead')['mae'].mean()
     res_df.to_pickle(f'past-test-{year}.pkl')
-
-
-
-
-
-
-    #df_result =  # timestamp, actual load, fst load
-
-
-
-    #y = m2()
-
-
-    return 
-
-
-def task_5(**args):
-    return predict_weather_prepare(**args)
-
-
-def task_6(
-    config_file: str,
-    max_hours_ahead=36,
-    grib_type=wp.GribType.hrrr,
-    current_time=None,
-    report_t0=None,
-    report_t1=None,
-):
-    (
-        df_load,
-        load_timestamp_name,
-        load_col_name,
-        wea,
-        load_embed_dim,
-        load_scaler,
-    ) = get_predict_data(
-        config_file=config_file,
-        grib_type=grib_type,
-        current_time=current_time,
-        max_hours_ahead=max_hours_ahead,
-    )
-    roll_f = RollingForecast(
-        df_load=df_load,
-        wea=wea,
-        load_embed_dim=load_embed_dim,
-        timestamp_name="timestamp",
-    )
-    cfg = Config(config_file)
-    models = cfg.model["models"]
-    for m in models:
-        roll_f.add_model(hour_ahead=m["ahead"], model_path=m["uri"])
-    y, start_time, hrs = roll_f.predict(hrs=max_hours_ahead)
-    y[load_col_name] = load_scaler.inverse_transform(
-        y[load_col_name].values.reshape((-1, 1))
-    )
-    if not report_t0:
-        report_t0 = start_time
-    if not report_t1:
-        report_t1 = y["timestamp"].max()
-    y.set_index("timestamp", inplace=True)
-    dfr = y[report_t0:report_t1][load_col_name]
-    cfg.report_predictions(
-        df=dfr,
-        start_time=report_t0,
-        hours_ahead=(report_t1 - start_time) // np.timedelta64(1, "h"),
-    )
-    return dfr
-
-
-def task_7(**args):
-    raise NotImplementedError
 
 
 if __name__ == "__main__":
