@@ -6,8 +6,8 @@ The HRRR data provide 3 km spatial resolution, and are supposed to provide more 
 <img src='images/temp_full_2m_f000.png' alt="drawing" width="250">
 
 The findings include:
-- 1 hour ahead forecast, for NYISO Zone F, in 2021, was tested.
-<img src="images/error.png" alt="drawing" width="250">
+- 1 hour ahead forecast, for NYISO Zone F, in 2021, was tested. Below are the error comparison:
+<img src="images/error.png" alt="drawing" width="320">
 
 
 - The improvement seems to be from the time series contribution from the 1-D convolution. 
