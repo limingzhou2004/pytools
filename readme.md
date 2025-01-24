@@ -1,4 +1,4 @@
-# An Exploration of HHHR Data for Short Term Load Forecast
+# An Exploration of HHHR Data for Electric Short Term Load Forecast
 
 This is a research project to explore how [HRRR](https://rapidrefresh.noaa.gov/hrrr/) weather data can improve the short term electric load forecast. We use [NYISO](https://www.nyiso.com/real-time-dashboard) load data at Zone F to compare our model based on HRRR data, and NYISO model performance.
 
