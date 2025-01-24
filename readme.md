@@ -12,13 +12,13 @@ The findings include:
 
 - The improvement seems to be from the time series contribution from the 1-D convolution. 
 
-- The weather data does not appear to have abundant spatial informaiton. A PCA analysis for the 2-m temperature shows the first component explains over 99.7% of the total variance. The HRRR model seems to capture large scale spatial changes but tend to smooth out local details. 
+- The weather data does not appear to have abundant spatial informaiton. A PCA analysis for the 2-m temperature shows the first component explains over 99.7% of the total variance. The HRRR model seems to capture large scale spatial changes but tend to smooth out local details. It may be better to combine the HRRR data and local observational data for further improvement.
 - In addition to the temperature, humidity and wind speed, other parameters, like boundary layer height, radiation can improve the accuracy slightly.
 
 - The prior hour weather reduces error, and the coefficients are estimated within the model.
 
 
-Some details on how the data are retrieved and how the model are trained are explained in the [readme_techincal.md](https://github.com/limingzhou2004/pytools/blob/rolling-forecast/readme_technical.md) file. 
+The details on how the data are retrieved and how the model are trained are explained in the [readme_techincal.md](https://github.com/limingzhou2004/pytools/blob/rolling-forecast/readme_technical.md) file. 
 
 *** 
 The pytools code base provides the tools, 

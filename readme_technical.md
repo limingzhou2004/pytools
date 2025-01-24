@@ -37,4 +37,4 @@ The weather steps include:
 2. To get the envelope based on the lon/lat, use grib2_utils notebook. Task 2, get historical weather `python -m pytools.weather_task -cfg pytools/config/albany_prod.toml task_2 --n-cores 1 -year 2018 -flag h`. To get past forecast weather, `python -m pytools.weather_task -cfg pytools/config/albany_prod.toml task_2 -fh 48 --n-cores 1 -year 2024 -flag f`
 3. Task 3, sync load and weather data.
 - CV training, `python -m pytools.weather_task -cfg pytools/config/albany_test.toml task_3 --flag cv --ind 0 -sb [find_batch_size|find_lr|fit] -mn test0 -yr 2018-2024`
-- 
+  
