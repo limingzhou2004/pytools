@@ -13,11 +13,11 @@
  back_fst_window = ["2020-01-01 00:00", "2025-01-01 00:00"]
  #site_folder = "nyiso"
  #center[lon, lat]
- center = [-73.0, 43.0]
+ center = [-73.75, 42.65]
  #[east, west, south, north]
  rect = [30.0, 30.0, 30.0, 30.0]
  t0="2018-11-03"
- t1="2018-11-05"
+ t1="2021-11-05"
  description = "Zone Capital of NYISO"
  comments = """name is used for database query and must match what the database use; while alias is used for setting up
   the folder structure"""

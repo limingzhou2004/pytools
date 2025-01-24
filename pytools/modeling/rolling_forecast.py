@@ -5,7 +5,8 @@ import pandas as pd
 import torch
 from torch import Tensor
 
-from pytools.modeling.weather_net import WeatherNet
+from pytools.config import Config
+from pytools.modeling.ts_weather_net import TsWeaDataModule
 
 
 class RollingForecast:
@@ -14,20 +15,8 @@ class RollingForecast:
     """
 
     def __init__(
-        self, df_load, wea, load_embed_dim, timestamp_name="timestamp", load_name="load"
-    ):
-        self._timestamp_name = timestamp_name
-        self._df_load: pd.DataFrame = df_load
-        self._wea = wea
-        self._model = {}
-        self._model_uri: Dict[WeatherNet] = {}
-        self._load_name = load_name
-        self._load_embed_dim = load_embed_dim
-
-    # def add_model(self, hour_ahead: int, model_path: str):
-    #     assert isinstance(hour_ahead, int)
-    #     self._model_uri[hour_ahead] = model_path
-    #     self._model[hour_ahead] = mlflow.pytorch.load_model(model_uri=model_path)
+        self, config:Config, ):
+        self.config = config
 
     def _check_data(self):
         raise NotImplementedError

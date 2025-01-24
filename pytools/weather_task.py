@@ -1,3 +1,5 @@
+import copy
+from pathlib import Path
 import pickle
 import sys
 import datetime as dt
@@ -8,7 +10,8 @@ from typing import Tuple
 import torch
 import numpy as np
 import pandas as pd
-
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
 # from torch.utils.data.dataloader import DataLoader
 
 # from pytools.modeling.dataset import WeatherDataSet
@@ -16,10 +19,12 @@ from lightning.pytorch.callbacks import EarlyStopping
 from lightning.pytorch.tuner import Tuner
 import lightning as pl
 from lightning.pytorch.loggers import TensorBoardLogger, CSVLogger
+from tqdm import tqdm
 
 from pytools.arg_class import ArgClass
+from pytools.modeling.scaler import Scaler, load
 from pytools.data_prep.herbie_wrapper import download_hist_fst_data
-from pytools.modeling.dataset import WeatherDataSet, check_fix_missings, create_datasets, read_past_weather_data_from_config, read_weather_data_from_config
+from pytools.modeling.dataset import WeatherDataSet, check_fix_missings, create_datasets, create_rolling_fst_data, get_hourly_fst_data, read_past_weather_data_from_config, read_weather_data_from_config
 from pytools.modeling.rolling_forecast import RollingForecast
 from pytools.modeling.ts_weather_net import TSWeatherNet, TsWeaDataModule
 from pytools.modeling.weather_task_helpers import (
@@ -162,6 +167,27 @@ def load_training_data(config:Config, yrs):
         w_data_list.append(w_data)
         inds.append(w_data.shape[0])
     return load_data, w_paras, np.concatenate(w_timestamp_list,axis=0), np.concatenate(w_data_list,axis=0)
+
+
+def pca_processing(t, t0, t1, wea_arr, n_components=10):
+    #original_shape = wea_arr.shape
+    t1 = pd.Timestamp(t1, tz='UTC') 
+    t0 = pd.Timestamp(t0,tz='UTC') 
+    train_ind = (t>=t0) & (t<=t1)
+    val_ind = ~ train_ind
+    wea_arr = wea_arr.reshape((wea_arr.shape[0], -1))
+    scaler = StandardScaler()
+    wea_arr_train= wea_arr[train_ind]
+    wea_arr_val = wea_arr[val_ind]
+    wea_arr_train = scaler.fit_transform(wea_arr_train)
+    wea_arr_val = scaler.transform(wea_arr_val)
+    svd_solver = 'auto' if n_components>=1 else 'full'
+    pca=PCA(n_components=n_components, svd_solver=svd_solver)
+    wea_train = pca.fit_transform(wea_arr_train)
+    wea_valtest = pca.transform(wea_arr_val)
+    warr = np.vstack((wea_train,wea_valtest))
+    #warr= scaler.inverse_transform(warr)
+    return pca, warr #.reshape(original_shape)
 
 
 def get_trainer(config:Config, use_val:bool=True):
@@ -325,16 +351,41 @@ def task_2(**args):
 def task_3(**args):
     flag = args['flag']
     config = Config(args['config_file'])
-    load_data, w_paras, w_timestamp, w_data = load_training_data(config=config, yrs=args['years']) 
+    load_data, w_paras, w_timestamp, w_data = load_training_data(config=config, yrs=args['years'])
+
     p_list = [ a[1] for a in list(w_paras.item().items()) ]
     plist=[]
     for p in p_list:
         plist+=p
     p_adopted = [plist[i] for i in config.model_pdt.weather_para_to_adopt]    
     w_data=w_data[...,config.model_pdt.weather_para_to_adopt]
+    
+    # tc=300 
+    # th=285
+    # hdd = w_data[...,0] - tc 
+    # hdd[hdd<0]=0
+    # cdd = th - w_data[...,0]
+    # cdd[cdd<0] =0 
+    # w_data[...,0] =hdd
+    # w_data = np.concatenate((w_data, np.expand_dims(cdd,axis=3)),axis=3)
+
     logger.info(f'Use these weather parameters... {w_paras}')
     logger.info(f'Chosen {p_adopted}')
-    load_arr, wea_arr, t = check_fix_missings(load_arr=load_data, w_timestamp=w_timestamp, w_arr=w_data)
+    ind = args['ind']
+    model_month=args['model_month']
+    pcas = []
+    cv_t = config.model_pdt.cv_settings[ind]
+    w_timestamp = pd.DatetimeIndex(list(w_timestamp)).tz_localize('UTC')
+    wshape=list(w_data.shape)
+    c=22
+    # w_data_pca = np.zeros((wshape[0],c,wshape[-1]))
+    # for i in range(w_data.shape[-1]):
+    #     pca, w_arr = pca_processing(t=w_timestamp,t0=cv_t[0] , t1=cv_t[1] , wea_arr=w_data[...,i],n_components=c)
+    #     pcas.append(pca)
+    #     w_data_pca[...,i] =w_arr 
+    # w_data = w_data_pca
+    
+    load_arr, wea_arr, t = check_fix_missings(load_arr=load_data, w_timestamp=w_timestamp, w_arr=w_data, month=model_month)
     # import matplotlib.pyplot as plt
     # plt.scatter(load_arr[:,0],wea_arr[:,11,11,0])
     # #plt.show()
@@ -344,8 +395,8 @@ def task_3(**args):
     wea_arr = wea_arr.astype(np.float32)
     load_arr = load_arr.astype(np.float32)
     num_worker = args['number_of_worker']
-    ind = args['ind']
-    ds_train, ds_val, ds_test = create_datasets(config, flag, tabular_data=load_arr, wea_arr=wea_arr,timestamp=t,sce_ind=ind)
+
+    ds_train, ds_val, ds_test = create_datasets(config, flag, tabular_data=load_arr, wea_arr=wea_arr,timestamp=t,sce_ind=ind,)
  
     # add the batch dim
     wea_input_shape = [1, *wea_arr.shape]
@@ -386,6 +437,7 @@ def task_3(**args):
 
     test_res = trainer.test(m, datamodule=dm, verbose=False)
     logger.info(f'test results: {test_res}')
+    logger.info(f'beta is : {m.beta}')
     #$model_name='test.ckpt'
     model_name = args['model_name']+'.ckpt'
     ckpt_path = osp.join(config.site_parent_folder,'model', model_name)
@@ -401,80 +453,118 @@ def task_3(**args):
 def task_4(**args):
     # load the model for predictions
     config = Config(args['config_file'])
-
     year = args['year']
-
+    ckpt_path = osp.join(config.site_parent_folder, 'model', args['model_name']+'.ckpt')
+    model:TSWeatherNet = TSWeatherNet.load_from_checkpoint(ckpt_path)
     # get weather data
     if args['t0'] != 'latest':
        load_data, wea_data =  read_past_weather_data_from_config(config=config, year=year)
     
+    spot_t_list = wea_data[0]
+    spot_t_list = [t.tz_localize('UTC') for t in spot_t_list]
+    fst_t = wea_data[1][0][0]
+    fst_t = [t.tz_localize('UTC') for t in fst_t]
+    wea_arr = np.stack(wea_data[1][0][1], axis=0)
 
-    ckpt_path = osp.join(config.site_parent_folder, 'model', args['model_name'])
-    m2 =TSWeatherNet.load_from_checkpoint(ckpt_path)
+    load_timestamp_list = list(load_data[:,0])
+
+    seq_length = model._seq_length
+    #seq_length = config.model_pdt.seq_length
+    #fst_horizon = args['rolling_fst_hzn']
+
+    buffer = 10
+    i = 0
+    t_pointer = 0
+    wea_arr_list = []
+    tab_data_list = []
+    w_timestamp = []
+    rolling_fst_horizon = args['rolling_fst_hzn']
+ 
+    while i<len(fst_t)-rolling_fst_horizon-buffer:
+        #if spot_t_list[t_pointer] == fst_t[i]+pd.Timedelta(-1,'h'):
+        cur_t:pd.Timestamp = spot_t_list[t_pointer]
+        load_ind = load_timestamp_list.index(cur_t)
+        load_ind_start = load_ind-seq_length - buffer
+        load_ind_end = load_ind + rolling_fst_horizon + buffer
+        ind_end = i
+        for j in range(i, i+rolling_fst_horizon+buffer):
+            if fst_t[j] > fst_t[j+1]:
+                ind_end = j
+                break 
+        # seq_wea is fake data and not used.
+        wea_start_ind = i+1 #- seq_length
+        if wea_start_ind < 0:
+            wea_start_ind = 0
+        wea_arr_list.append(wea_arr[wea_start_ind:ind_end+1,:,:,config.model_pdt.weather_para_to_adopt])
+        tab_data_list.append(load_data[0 if load_ind_start<0 else load_ind_start:load_ind_end,:])
+        w_timestamp.append(fst_t[wea_start_ind:ind_end+1])
+        if abs((fst_t[i] - cur_t)/pd.Timedelta(1,'h')) > 24:
+            logger.warning(f'time difference between spot time {cur_t} and first fst time {fst_t[i]}exceeds 24 hours!')
+        i = ind_end + 1
+        t_pointer += 1
+
+    # get scalers for target, wea array
+    _fn_scaler = config.get_model_file_name(class_name='scaler')
+ 
+    if Path(_fn_scaler).exists():
+        scaler:Scaler = load(_fn_scaler)
+    else:
+        raise ValueError(f'sclaer file {_fn_scaler} does not exist!')
+    
+    res_spot_time = []
+    res_fst_time = []
+    res_actual_scaled_y = []
+    res_fst_scaled_y = []
+    hr_list = []
+
+    ziped = zip(spot_t_list, tab_data_list, w_timestamp, wea_arr_list)
+    for t, tdata, wt, wdata in tqdm(list(ziped)):
+        logger.info(f'processing {t}...')
+        # col 0 is timestamp, col 1 is the load/target
+        df_load = pd.DataFrame(tdata).set_index(0)
+        df, wea = create_rolling_fst_data(load_data=df_load,cur_t=t, w_timestamp=wt, wea_data=wdata, rolling_fst_horizon=rolling_fst_horizon,default_seq_length=seq_length)
+        scaled_target = copy.deepcopy(scaler.scale_target(df.values[:,0]))
+        #find the ind of hr=0
+        ind_0 = list(df.index).index(t)
+        scaled_wea = np.stack(scaler.scale_arr(wea), axis=0)
 
 
-
-    #y = m2()
-
-
-    return 
-
-
-def task_5(**args):
-    return predict_weather_prepare(**args)
-
-
-def task_6(
-    config_file: str,
-    max_hours_ahead=36,
-    grib_type=wp.GribType.hrrr,
-    current_time=None,
-    report_t0=None,
-    report_t1=None,
-):
-    (
-        df_load,
-        load_timestamp_name,
-        load_col_name,
-        wea,
-        load_embed_dim,
-        load_scaler,
-    ) = get_predict_data(
-        config_file=config_file,
-        grib_type=grib_type,
-        current_time=current_time,
-        max_hours_ahead=max_hours_ahead,
-    )
-    roll_f = RollingForecast(
-        df_load=df_load,
-        wea=wea,
-        load_embed_dim=load_embed_dim,
-        timestamp_name="timestamp",
-    )
-    cfg = Config(config_file)
-    models = cfg.model["models"]
-    for m in models:
-        roll_f.add_model(hour_ahead=m["ahead"], model_path=m["uri"])
-    y, start_time, hrs = roll_f.predict(hrs=max_hours_ahead)
-    y[load_col_name] = load_scaler.inverse_transform(
-        y[load_col_name].values.reshape((-1, 1))
-    )
-    if not report_t0:
-        report_t0 = start_time
-    if not report_t1:
-        report_t1 = y["timestamp"].max()
-    y.set_index("timestamp", inplace=True)
-    dfr = y[report_t0:report_t1][load_col_name]
-    cfg.report_predictions(
-        df=dfr,
-        start_time=report_t0,
-        hours_ahead=(report_t1 - start_time) // np.timedelta64(1, "h"),
-    )
-    return dfr
+        for hr in range(1, rolling_fst_horizon+1):
+            seq_wea_arr, seq_ext_arr, seq_target, wea_arr, ext_arr, target = \
+            get_hourly_fst_data(target_arr=scaled_target, 
+                                    ext_arr=df.values[:,1:], 
+                                    wea_arr=scaled_wea, 
+                                    hr=hr, seq_length=seq_length)
+            with torch.no_grad():
+                y = model(seq_wea_arr=seq_wea_arr,
+                          seq_ext_arr=seq_ext_arr,
+                          seq_target=seq_target,
+                          wea_arr=wea_arr,
+                          ext_arr=ext_arr)
+            scaled_target[ind_0+hr] = y.item()
+            hr_list.append(hr)
+            res_spot_time.append(t)
+            res_fst_time.append(t+pd.Timedelta(hr, 'h'))
+            res_actual_scaled_y.append(target.item())
+            res_fst_scaled_y.append(y.item())    
 
 
-def task_7(**args):
-    raise NotImplementedError
+    res_df = pd.DataFrame(res_spot_time,columns=['spot_time'])
+    res_df['fst_time'] = res_fst_time
+    res_df['target_scaled'] = res_actual_scaled_y
+    res_df['fst_scaled'] = res_fst_scaled_y
+    res_df['hr_ahead'] = hr_list
+
+    res_df['target_unscaled'] = scaler.unscale_target(res_df['target_scaled'].values)
+    res_df['fst_unscaled'] = scaler.unscale_target(res_df['fst_scaled'].values)
+
+    res_df['mae'] = abs(res_df['fst_unscaled'] - res_df['target_unscaled'])
+    mae = res_df['mae'].mean()
+    mean_target = res_df['target_unscaled'].mean()
+    rmae = mae/mean_target
+    logger.info(f'mae = {mae}, rmae={rmae}, mean_target={mean_target}')
+    res_mae = res_df.groupby('hr_ahead')['mae'].mean()
+    res_df.to_pickle(f'past-test-{year}.pkl')
 
 
 if __name__ == "__main__":

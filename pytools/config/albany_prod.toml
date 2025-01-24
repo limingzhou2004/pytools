@@ -40,7 +40,7 @@
  #fst_hours =[1, 6, 24]
 
 [weather]
-envelope = [1531, 1551, 756, 776]
+envelope = [1527, 1551, 756, 786]
 hist_weather_pickle = "../data/grib2_folder_1.pkl"
 fullfile_col_name = "full_file_name"
 filename_col_name = "filename"
@@ -58,9 +58,9 @@ target_ind = 0
 wea_ar_embedding_dim = 0
 ext_ar_embedding_dim = 0
 
-weather_para_to_adopt=[0,1,2,3,4,5,6,7,9,10,11,12,13,14]
-
-train_frac=0.8
+weather_para_to_adopt=[0,1,3,5,6, 9, 12, 13,14]
+#[0,1,3,4,9,11,12,13,14]
+train_frac=0.85
 
 
 frac_yr1 = 0.67
@@ -69,10 +69,10 @@ final_train_frac_yr1 = 0.8
 final_train_frac =[1, 0, 0]
 cv_settings = [
   # ["2018-11-03","2018-11-04 12:00","2018-11-04 13:00","2018-11-05"]
-   ["2018-01-01", "2018-12-31", "2019-01-01", "2019-12-31"],
+   ["2018-01-01", "2020-1-1", "2020-1-1", "2020-12-31"],
    ["2018-01-01", "2021-01-01", "2021-01-01","2022-01-01"],
    ["2018-01-01", "2022-01-01", "2022-01-01","2023-01-01"],
-   ["2018-01-01", "2023-01-01", "2023-01-01","2024-01-01"],
+   ["2019-01-01", "2023-01-01", "2023-01-01","2024-01-01"],
    ["2018-01-01", "2024-01-01", "2024-01-01","2025-01-01"]
 ]
 final_train_hist = [
@@ -81,36 +81,38 @@ final_train_hist = [
 
 hyper_options.stopping_threshold=0.006
 hyper_options.num_nodes=1
-hyper_options.lr=0.0002
+hyper_options.lr=0.00005
 hyper_options.weight_decay=0.001
-hyper_options.batch_size=10
+hyper_options.batch_size=20
 hyper_options.check_val_every_n_epoch=1
-hyper_options.max_epochs=180
+hyper_options.max_epochs=30
 hyper_options.min_delta=0.001
 hyper_options.patience=6
+hyper_options.zero_inflation=0
+hyper_options.wea_channel = 12
 #hyper_options.epoch_step=2
 
 #----- model layer configuration parameters
-cov_net.cov1.kernel=3
-cov_net.cov1.padding=0
-cov_net.cov1.stride=2
+cov_net.cov1.kernel=7
+cov_net.cov1.padding=7
+cov_net.cov1.stride=4
 cov_net.cov1.dilation=1
 cov_net.cov1.group=1
-cov_net.cov1.output_channel=8
+cov_net.cov1.output_channel=16
 cov_net.cov2.kernel=3
 cov_net.cov2.padding=0
-cov_net.cov2.stride=1
+cov_net.cov2.stride=3
 cov_net.cov2.dilation=1
 cov_net.cov2.group=1
-cov_net.cov2.output_channel=4
+cov_net.cov2.output_channel=8
 cov_net.last.channel=300
-cov_net.dropout=0.01
+cov_net.dropout=0
 
 ext_net.input_channel=8
-ext_net.output_channel=4
+ext_net.output_channel=16
 
 filter_net.hidden_size=10
-filter_net.dropout=0.01
+filter_net.dropout=0
 filter_net.band_width=96
 filter_net.scale=0.2
 filter_net.sparsity_threshold=0.02
@@ -123,6 +125,10 @@ ts_net.stride=1
 
 mixed_net.ts_latent_dim=9
 mixed_net.shrink_factor=2
+mixed_net.channel0=100
+mixed_net.channel1=50
+mixed_net.channel2=25
+mixed_net.channel3=13
 mixed_net.dropout=0.01
 mixed_net.cov1d.kernel_size=7
 mixed_net.cov1d.padding=3

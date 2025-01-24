@@ -86,3 +86,5 @@ def parallelize_dataframe(df, func, n_cores=7, partition_size=1):
         res = file_bag.map(func).compute()
 
     return res
+
+

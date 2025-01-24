@@ -2,8 +2,9 @@ import pytest
 import torch
 #from torch.utils import data
 import numpy as np
+import pandas as pd
 
-from pytools.modeling.dataset import WeatherDataSet, check_fix_missings, read_weather_data_from_config, read_past_fst_weather
+from pytools.modeling.dataset import WeatherDataSet, check_fix_missings, create_rolling_fst_data, get_hourly_fst_data, read_weather_data_from_config, read_past_fst_weather
 
 
 # CUDA for PyTorch
@@ -52,6 +53,35 @@ def test_read_past_fst_weather(config):
 
     assert 1==1
 
+
+def test_create_rolling_fst_data(config,):
+    cur_t_str = '2020-04-01'
+    cur_t = pd.Timestamp(cur_t_str,tz='US/Eastern')
+    t_load = pd.date_range('2020-03-01', '2020-05-01',tz='US/Eastern',freq='h')
+    data = np.random.rand(len(t_load), 9)
+    df_load = pd.DataFrame(data)
+    df_load.index =t_load
+    t_wea_list = []
+    wea_arr_list = []
+    rolling_forecast_horizeon=23
+    for i in range(rolling_forecast_horizeon):
+        if i==3:
+            continue
+        else:
+            t_wea_list.append(pd.Timestamp(cur_t_str,tz='UTC')+pd.Timedelta(i,'h'))
+            wea_arr_list.append(np.random.rand(21,21,14))
+    seq_length=168
+    # seq_wea_arr, seq_ext_arr, seq_arr, wea_arr, ext_arr, target 
+    df_tab, wet_arr = create_rolling_fst_data(
+        load_data=df_load, cur_t=cur_t, wea_data=wea_arr_list,rolling_fst_horizon=rolling_forecast_horizeon+2, w_timestamp=t_wea_list, default_seq_length=seq_length)
+
+    assert df_tab.shape[0]==193
+    assert wet_arr.shape[0]==193
+
+    res = get_hourly_fst_data(target_arr=df_tab.loc[:,0].values, ext_arr=df_tab.loc[:,1:].values, wea_arr=wet_arr, hr=1, seq_length=seq_length)
+    res = get_hourly_fst_data(target_arr=df_tab.loc[:,0].values, ext_arr=df_tab.loc[:,1:].values, wea_arr=wet_arr, hr=2, seq_length=seq_length)
+    
+    assert len(res) == 6
 
 # @pytest.mark.parametrize(
 #     "para, wea_shape, lag_load_shape",

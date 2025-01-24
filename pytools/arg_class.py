@@ -1,8 +1,6 @@
 from argparse import ArgumentParser
 import sys, os
 
-from pytools.data_prep import weather_data_prep as wp
-
 
 class ArgClass:
     """
@@ -211,6 +209,15 @@ class ArgClass:
             type=int,
             help='number of worker to use, default 1',
         )
+        sub_parser.add_argument(
+            "-mmonth",
+            "--model-month",
+            dest="model_month",
+            required=False,
+            default=-1,
+            type=int,
+            help='month to model, default -1 for all months',
+        )
         sub_parser.set_defaults(func=fun)
 
     def _add_task4(self, fun):
@@ -250,6 +257,15 @@ class ArgClass:
             default='test',
             type=str,
             help="model name to load from checkpoint",
+        )
+        sub_parser.add_argument(
+            "-rfh",
+            "--rolling-fst-horizon",
+            dest="rolling_fst_hzn",
+            required=False,
+            default=48,
+            type=int,
+            help="rolling forecast horizon hours",
         )
         sub_parser.set_defaults(func=fun)
         

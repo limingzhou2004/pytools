@@ -34,14 +34,16 @@ class TestWeatherTask:
 
     def test_commandline_task3_prod(self):
         cfile = get_absolute_path(__file__,'../pytools/config/albany_prod.toml')
-        cmd_str = f'-cfg {cfile} task_3 --flag cv -ind 0 -mn prod0 -yr 2018-2023'
+        cmd_str = f'-cfg {cfile} task_3 --flag cv -ind 0 -mn prod0 -yr 2018-2019 --model-month -1'
         main(cmd_str.split(' '))
         assert 1==1
 
     def test_commandLine_task4(self):
         cfile = get_absolute_path(__file__,'../pytools/config/albany_prod.toml')
 
-        cmd_str = f'-cfg {cfile} task_4 -t0 2020-01-01 -t1 2021-01-01 -mn test0 --year 2022'
+        cmd_str = f'-cfg {cfile} task_4 -t0 2023-01-01 -t1 2024-01-01 -mn prod2-1h-v2005b --year 2023'
+        #cmd_str = f'-cfg {cfile} task_4 -t0 2018-11-04 -t1 2018-11-05 -mn test0 -rfh 3 --year -1'
+
         main(cmd_str.split(' '))
         assert 1==1
 
@@ -63,11 +65,7 @@ class TestWeatherTask:
     def test_past_weather_fst(self):
         past_fst_weather_prepare(self.config_file, fst_hour=2, year=2020)
 
-        assert 1==1
-
-
-        
-
+       
     @pytest.mark.parametrize(
         "shape_cal, shape_weather",
         [
@@ -193,4 +191,4 @@ class TestWeatherTask:
         monkeypatch.setattr(LoadData, "query_predict_data", mock_predict_load)
         r = main(argument_str.split())
 
-        assert 1
+   

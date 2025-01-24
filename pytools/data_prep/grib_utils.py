@@ -11,6 +11,7 @@ from typing import List, Tuple, Union, Dict
 
 
 import cartopy.crs as ccrs
+from matplotlib.path import Path
 import pandas as pd
 import pendulum as pu
 import requests
@@ -68,6 +69,15 @@ def find_ind_fromlatlon(lon:float, lat:float, arr_lon:np.ndarray, arr_lat:np.nda
     x_ind = _find_nearest_index(lon, arr_lon)
     y_ind = _find_nearest_index(lat, arr_lat)
 
+    # dims = arr_lon.shape 
+    # for i in range(dims[0]-1):
+    #     for j in range(dims[1]-1):
+    #        if Path([(arr_lon[i,j],arr_lat[i,j]), (arr_lon[i+1,j],arr_lat[i+1,j]), \
+    #             (arr_lon[i+1,j+1],arr_lat[i+1,j+1]),(arr_lon[i,j+1],arr_lat[i,j+1])]).contains_point((lon,lat)):
+    #                 #return the lower left corner
+    #             return (i, j)
+    # raise ValueError(f'the cell contains lon={lon} and lat={lat} not found!')
+
     return x_ind, y_ind
 
 
@@ -114,6 +124,8 @@ def _extract_fn_arr(fn_arr, group, paras, extract_latlon=False):
 
 
 def _get_evelope_ind(lon:float,lat:float, radius, arr_lon, arr_lat):
+
+
     proj_latlon = ccrs.PlateCarree()
     projection = get_LCC_proj()
     coords = projection.transform_points(src_crs=proj_latlon, x=arr_lon, y=arr_lat)
