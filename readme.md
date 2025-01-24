@@ -18,7 +18,7 @@ The findings include:
 - The prior hour weather reduces error, and the coefficients are estimated within the model.
 
 
-Some details on how the data are retrieved and how the model are trained are explained in the [readme_technical.md](readme_techincal.md) file. 
+Some details on how the data are retrieved and how the model are trained are explained in the [readme_techincal.md](https://github.com/limingzhou2004/pytools/blob/rolling-forecast/readme_technical.md) file. 
 
 *** 
 The pytools code base provides the tools, 
