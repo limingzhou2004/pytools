@@ -13,12 +13,13 @@
 
 This is a research project to explore how [HRRR](https://rapidrefresh.noaa.gov/hrrr/) weather data can improve the short term electric load forecast. We use [NYISO](https://www.nyiso.com/real-time-dashboard) load data at Zone F to compare our model based on HRRR data, and NYISO model performance.
 
-The HRRR data provide 3 km spatial resolution, and are supposed to provide more spatial information to improve forecast accuracies. Here is an example of HRRR temperature data at 2m. 
-<img src='images/temp_full_2m_f000.png' alt="drawing" width="250">
+The HRRR data provide 3 km spatial resolution, and are supposed to provide more spatial information to improve forecast accuracies. Here is an example of HRRR temperature data at 2m.
+<div style="text-align:center">
+<img src='images/temp_full_2m_f000.png' alt="drawing" width="250" ></div>
 
 The findings include:
 - 1 hour ahead forecast, for NYISO Zone F, in 2021, was tested. Below are the error comparison:
-<img src="images/error.png" alt="drawing" width="320">
+<img src="images/error.png" alt="HRRR temperature at 2 m" width="320">
 
 
 - The improvement seems to be from the time series contribution from the 1-D convolution. 
